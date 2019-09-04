@@ -1,0 +1,37 @@
+{
+  "name": "bingcool/workerfy",
+  "description": "workerfy is a cli Framework based on swoole extension, for everyone use it easily!",
+  "keywords": [
+    "workerfy",
+    "swoole",
+    "php",
+    "cli",
+    "console"
+  ],
+  "license": "MIT",
+  "type": "project",
+  "authors": [
+    {
+      "name": "bingcool",
+      "email": "2437667702@qq.com",
+      "role": "mutil worker cli of php"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "php" : ">=7.1.0",
+    "ext-swoole" : ">=4.2.13",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Workerfy\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Workerfy\\Tests\\": "tests/"
+    }
+  }
+
+}
