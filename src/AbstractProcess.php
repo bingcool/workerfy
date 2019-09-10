@@ -22,7 +22,7 @@ abstract class AbstractProcess {
     private $extend_data;
     private $enable_coroutine = false;
     private $pid;
-    private $process_worker_id;
+    private $process_worker_id = 0;
 
     const SWOOLEFY_PROCESS_KILL_FLAG = "process::worker::action::restart";
 
@@ -57,7 +57,7 @@ abstract class AbstractProcess {
 
     /**
      * __start 创建process的成功回调处理
-     * @param  Process $process
+     * @param  Process $swooleProcess
      * @return void
      */
     public function __start(Process $swooleProcess) {
@@ -67,19 +67,20 @@ abstract class AbstractProcess {
             pcntl_async_signals(true);
         }
 
-        \Swoole\Process::signal(SIGTERM, function() use($swooleProcess) {
+        var_dump("process start");
+
+        Process::signal(SIGTERM, function ($signo) {
             try {
                 $this->onShutDown();
             }catch (\Throwable $t) {
                 throw new \Exception($t->getMessage());
             }
-            swoole_event_del($swooleProcess->pipe);
+            \Swoole\Event::del($this->swooleProcess->pipe);
             $this->swooleProcess->exit(0);
-
         });
 
         if($this->async){
-            swoole_event_add($this->swooleProcess->pipe, function(){
+            \Swoole\Event::add($this->swooleProcess->pipe, function() {
                 $msg = $this->swooleProcess->read(64 * 1024);
                 try{
                     if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
@@ -94,9 +95,10 @@ abstract class AbstractProcess {
             });
         }
 
-        $this->swooleProcess->name('php-process-worker:'.$this->getProcessName());
+        $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
+
         try {
-            $this->run($this->swooleProcess);
+            $this->run();
         }catch(\Throwable $t) {
             throw new \Exception($t->getMessage());
         }
@@ -119,6 +121,13 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @return Process
+     */
+    public function getSwooleProcess() {
+        return $this->swooleProcess;
+    }
+
+    /**
      * getProcessWorkerId
      * @return int
      */
@@ -131,7 +140,17 @@ abstract class AbstractProcess {
      * @return int
      */
     public function getPid() {
-        return $this->pid;
+        return $this->swooleProcess->pid;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isStart() {
+        if(isset($this->pid) && $this->pid > 0) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -177,7 +196,10 @@ abstract class AbstractProcess {
      * @return
      */
     public function reboot() {
-        \Swoole\Process::kill($this->getPid(), SIGTERM);
+        $pid = $this->getPid();
+        if(\Swoole\Process::kill($pid, 0)) {
+            \Swoole\Process::kill($pid, SIGTERM);
+        }
     }
 
     /**
@@ -185,7 +207,7 @@ abstract class AbstractProcess {
      * @param  Process $process
      * @return void
      */
-    public abstract function run(\Swoole\Process $process);
+    public abstract function run();
 
     /**
      * @return mixed

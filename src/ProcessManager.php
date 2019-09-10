@@ -15,44 +15,51 @@ use Swoole\Process;
 
 class ProcessManager {
 
-	private $process_lists = [];
+    use \Workerfy\Traits\SingletonTrait;
+
+    private $process_lists = [];
 
 	private $process_wokers = [];
 
 	private $process_pid_map = [];
 
-	use \Workerfy\Traits\SingletonTrait;
+	private $master_pid;
 
 	public function __construct(...$args) {}
 
-	public function addProcess(string $process_name, string $process_class, int $process_worker_num = 1, bool $async = true, array $args = [], $extend_data = null, bool $enable_coroutine = false) {   
+	public function addProcess(
+	    string $process_name,
+        string $process_class,
+        int $process_worker_num = 1,
+        bool $async = true,
+        array $args = [],
+        $extend_data = null,
+        bool $enable_coroutine = false
+    ) {
         $key = md5($process_name);
-        if(isset($this->process_lists[$key])) {
-            throw new \Exception(__CLASS__." Error : you can not add the same process : $processName", 1);
+        if (isset($this->process_lists[$key])) {
+            throw new \Exception(__CLASS__ . " Error : you can not add the same process : $process_name", 1);
         }
-
         $this->process_lists[$key] = [
-        	'process_name' => $process_name,
-        	'process_class' => $process_class,
-        	'process_worker_num' =>$process_worker_num,
-        	'async' => $async,
-        	'args' => $args,
-        	'extend_data' => $extend_data,
-        	'enable_coroutine' => $enable_coroutine
+            'process_name' => $process_name,
+            'process_class' => $process_class,
+            'process_worker_num' => $process_worker_num,
+            'async' => $async,
+            'args' => $args,
+            'extend_data' => $extend_data,
+            'enable_coroutine' => $enable_coroutine
         ];
-
-        $this->singal();
     }
 
     /**
      * start
      * @return
      */
-    public function start() {
+    public function start(bool $is_daemon = false) {
     	if(!empty($this->process_lists)) {
     		foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
-    			for($i = 1; $i <= $process_worker_num; $i++) {
+    			for($i = 0; $i < $process_worker_num; $i++) {
     				try {
 	    				$process_name = $list['process_name'];
 			        	$process_class = $list['process_class'];
@@ -60,63 +67,124 @@ class ProcessManager {
 			        	$args = $list['args'] ?? [];
 			        	$extend_data = $list['extend_data'] ?? null;
 			        	$enable_coroutine = $list['enable_coroutine'] ?? false;
-
 		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-
 		    			$process->setProcessWorkerId($i);
+                        if(!isset($this->process_wokers[$key][$i])) {
+                            $this->process_wokers[$key][$i] = $process;
+                        }
 		    			$process->start();
-
-		    			!isset($this->process_wokers[$key]) && $this->process_wokers[$key] = $process;
+                        sleep(1);
 	    			}catch(\Throwable $t) {
 	    				throw new \Exception($t->getMessage());
 	    			}
     			}
     		}
+            $this->signal();
+    		$this->swooleEventAdd();
+    		if($is_daemon) {
+    		    $this->daemon();
+            }
     	}
     }
 
     /**
-     * singal
-     * @return
+     * signal
+     * @return void
      */
-    private function singal() {
-    	Process::signal(SIGCHLD, function($singal) {
+    private function signal() {
+        \Swoole\Process::signal(SIGCHLD, function($signo) {
   			//必须为false，非阻塞模式
 		  	while($ret = Process::wait(false)) {
-		      	echo "PID={$ret['pid']}\n";
+		      	$pid = $ret['pid'];
+		      	var_dump($ret);
+		      	if(!(\Swoole\Process::kill($pid, 0))) {
+		      	    $process = $this->getProcessByPid($pid);
+		      	    $process_name = $process->getProcessName();
+		      	    $process_worker_id = $process->getProcessWorkerId();
+		      	    $key = md5($process_name);
+		      	    $list = $this->process_lists[$key];
+		      	    \Swoole\Event::del($process->getSwooleProcess()->pipe);
+                    unset($this->process_wokers[$key][$process_worker_id]);
+
+		      	    if(is_array($list)) {
+                        try {
+                            $process_name = $list['process_name'];
+                            $process_class = $list['process_class'];
+                            $async = $list['async'] ?? true;
+                            $args = $list['args'] ?? [];
+                            $extend_data = $list['extend_data'] ?? null;
+                            $enable_coroutine = $list['enable_coroutine'] ?? false;
+                            $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                            $process->setProcessWorkerId($process_worker_id);
+                            if(!isset($this->process_wokers[$key][$process_worker_id])) {
+                                $this->process_wokers[$key][$process_worker_id] = $process;
+                            }
+                            $process->start();
+                            sleep(1);
+                        }catch(\Throwable $t) {
+                            throw new \Exception($t->getMessage());
+                        }
+                        $this->swooleEventAdd($process);
+                    }
+                }
 		  	}
 		});
     }
 
     /**
-     * setProcess 设置一个进程
-     * @param string          $process_name
-     * @param AbstractProcess $process
+     * @param null $process
      */
-    public static function setProcess(string $process_name, \Workerfy\AbstractProcess $process) {
-        $key = md5($process_name);
-        $process_worker_num = $this->process_lists[$key]['process_worker_num'] ?? 0;
-        $this->process_lists[$key] = [
-        	'process_name' => $process->getProcessName(),
-        	'process_class' => get_class($process),
-        	'process_worker_num' => $process_worker_num + 1,
-        	'async' => $process->isAsync(),
-        	'args' => $process->getArgs(),
-        	'extend_data' => $process->getExtendData(),
-        	'enable_coroutine' => $process->isEnableCoroutine()
-        ];
-		!isset($this->process_wokers[$key]) && $this->process_wokers[$key] = $process;    
-	}
+    private function swooleEventAdd($process = null) {
+        if(isset($process)) {
+            if($process instanceof AbstractProcess) {
+                $swooleProcess = $process->getSwooleProcess();
+                \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+
+                });
+            }else {
+                throw new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
+            }
+        }else {
+            foreach($this->process_wokers as $key => $processes) {
+                foreach($processes as $worker_id => $process) {
+                    $swooleProcess = $process->getSwooleProcess();
+                    \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+
+                    });
+                }
+            }
+        }
+    }
+
+    /**
+     * daemon
+     */
+    public function daemon() {
+        if(!isset($this->start_daemon)) {
+            \Swoole\Process::daemon();
+            $this->start_daemon = true;
+        }
+    }
+
+    /**
+     * @return int
+     */
+    public function getMasterPid() {
+        if(!isset($this->master_pid)) {
+            $this->master_pid = posix_getpid();
+        }
+        return $this->master_pid;
+    }
 
     /**
 	 * getProcessByName 通过名称获取一个进程
 	 * @param  string $process_name
 	 * @return mixed
 	 */
-	public static function getProcessByName(string $process_name) {
+	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
         $key = md5($process_name);
-        if(isset($this->process_wokers[$key])){
-            return $this->process_wokers[$key];
+        if(isset($this->process_wokers[$key][$process_worker_id])){
+            return $this->process_wokers[$key][$process_worker_id];
         }else{
             return null;
         }
@@ -127,14 +195,34 @@ class ProcessManager {
      * @param  int    $pid
      * @return mixed
      */
-    public static function getProcessByPid(int $pid) {
+    public function getProcessByPid(int $pid) {
     	$p = null;
-       	foreach ($this->process_wokers as $key => $process) {
-       		if($process->getPid() == $pid) {
-       			$p = $process;
-       			break;
-       		}
+       	foreach ($this->process_wokers as $key => $processes) {
+            foreach ($processes as $worker_id => $process) {
+                if($process->getPid() == $pid) {
+                    $p = $process;
+                    break;
+                }
+            }
+            if($p) {
+                break;
+            }
        	}
        	return $p;
+    }
+
+    /**
+     * @param string $process_name
+     * @param int $process_worker_id
+     * @return mixed
+     * @throws \Exception
+     */
+    public function getPidByName(string $process_name, int $process_worker_id = 0) {
+        $process = $this->getProcessByName($process_name, $process_worker_id);
+        if(method_exists($process, 'getPid')) {
+            return $process->getPid();
+        }else {
+            throw new \Exception(get_class($process)."::getPid() method is not exist");
+        }
     }
 }

@@ -21,6 +21,7 @@
   "require": {
     "php" : ">=7.1.0",
     "ext-swoole" : ">=4.2.13",
+    "ext-pcntl" : "*",
     "ext-json": "*"
   },
   "autoload": {
