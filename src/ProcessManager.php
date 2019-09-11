@@ -34,11 +34,14 @@ class ProcessManager {
         bool $async = true,
         array $args = [],
         $extend_data = null,
-        bool $enable_coroutine = false
+        bool $enable_coroutine = true
     ) {
         $key = md5($process_name);
         if (isset($this->process_lists[$key])) {
             throw new \Exception(__CLASS__ . " Error : you can not add the same process : $process_name", 1);
+        }
+        if(!$enable_coroutine) {
+            $enable_coroutine = true;
         }
         $this->process_lists[$key] = [
             'process_name' => $process_name,
@@ -66,7 +69,7 @@ class ProcessManager {
 			        	$async = $list['async'] ?? true;
 			        	$args = $list['args'] ?? [];
 			        	$extend_data = $list['extend_data'] ?? null;
-			        	$enable_coroutine = $list['enable_coroutine'] ?? false;
+			        	$enable_coroutine = $list['enable_coroutine'] ?? true;
 		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
 		    			$process->setProcessWorkerId($i);
                         if(!isset($this->process_wokers[$key][$i])) {
@@ -120,7 +123,6 @@ class ProcessManager {
                                 $this->process_wokers[$key][$process_worker_id] = $process;
                             }
                             $process->start();
-                            sleep(1);
                         }catch(\Throwable $t) {
                             throw new \Exception($t->getMessage());
                         }

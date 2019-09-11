@@ -62,23 +62,6 @@ abstract class AbstractProcess {
      */
     public function __start(Process $swooleProcess) {
         $this->pid = $this->swooleProcess->pid;
-
-        if(extension_loaded('pcntl')) {
-            pcntl_async_signals(true);
-        }
-
-        var_dump("process start");
-
-        Process::signal(SIGTERM, function ($signo) {
-            try {
-                $this->onShutDown();
-            }catch (\Throwable $t) {
-                throw new \Exception($t->getMessage());
-            }
-            \Swoole\Event::del($this->swooleProcess->pipe);
-            $this->swooleProcess->exit(0);
-        });
-
         if($this->async){
             \Swoole\Event::add($this->swooleProcess->pipe, function() {
                 $msg = $this->swooleProcess->read(64 * 1024);
@@ -94,6 +77,20 @@ abstract class AbstractProcess {
                 }
             });
         }
+
+        defer(function () {
+            try{
+                $this->onShutDown();
+            }catch (\Throwable $t){
+                throw new \Exception($t->getMessage());
+            }
+        });
+
+        Process::signal(SIGTERM, function ($signo) {
+            \Swoole\Event::del($this->swooleProcess->pipe);
+            Process::signal(SIGTERM, null);
+            \Swoole\Event::exit();
+        });
 
         $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
 
