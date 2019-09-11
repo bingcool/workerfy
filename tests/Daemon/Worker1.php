@@ -17,7 +17,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
             var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }
 
-        $this->reboot();
+        //$this->reboot();
 	}
 
 	public function onShutDown() {

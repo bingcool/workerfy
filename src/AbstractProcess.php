@@ -12,6 +12,7 @@
 namespace Workerfy;
 
 use Swoole\Process;
+use Swoole\Event;
 
 abstract class AbstractProcess {
 
@@ -63,7 +64,7 @@ abstract class AbstractProcess {
     public function __start(Process $swooleProcess) {
         $this->pid = $this->swooleProcess->pid;
         if($this->async){
-            \Swoole\Event::add($this->swooleProcess->pipe, function() {
+            Event::add($this->swooleProcess->pipe, function() {
                 $msg = $this->swooleProcess->read(64 * 1024);
                 try{
                     if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
@@ -87,9 +88,9 @@ abstract class AbstractProcess {
         });
 
         Process::signal(SIGTERM, function ($signo) {
-            \Swoole\Event::del($this->swooleProcess->pipe);
+            Event::del($this->swooleProcess->pipe);
             Process::signal(SIGTERM, null);
-            \Swoole\Event::exit();
+            Event::exit();
         });
 
         $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());

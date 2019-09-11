@@ -60,6 +60,9 @@ class ProcessManager {
      */
     public function start(bool $is_daemon = false) {
     	if(!empty($this->process_lists)) {
+            if($is_daemon) {
+                $this->daemon();
+            }
     		foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
     			for($i = 0; $i < $process_worker_num; $i++) {
@@ -84,9 +87,6 @@ class ProcessManager {
     		}
             $this->signal();
     		$this->swooleEventAdd();
-    		if($is_daemon) {
-    		    $this->daemon();
-            }
     	}
     }
 
