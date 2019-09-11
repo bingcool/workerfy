@@ -14,12 +14,12 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'worker1';
 $process_class = \Workerfy\Tests\Daemon\Worker1::class;
-$process_worker_num = 2;
+$process_worker_num = 1;
 $async = true;
 $args = [];
 $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
-$processManager->start(true);
+$processManager->start();
 

@@ -25,7 +25,13 @@ class ProcessManager {
 
 	private $master_pid;
 
-	public function __construct(...$args) {}
+    private $master_worker_id;
+
+    private $master_worker_name = 'master_worker';
+
+	public function __construct(...$args) {
+        \Swoole\Runtime::enableCoroutine(true);
+    }
 
 	public function addProcess(
 	    string $process_name,
@@ -43,6 +49,9 @@ class ProcessManager {
         if(!$enable_coroutine) {
             $enable_coroutine = true;
         }
+
+        $this->master_worker_id = $process_worker_num;
+
         $this->process_lists[$key] = [
             'process_name' => $process_name,
             'process_class' => $process_class,
@@ -52,6 +61,12 @@ class ProcessManager {
             'extend_data' => $extend_data,
             'enable_coroutine' => $enable_coroutine
         ];
+
+        $key = md5($this->master_worker_name);
+        $i = $this->master_worker_id;
+        if(!isset($this->process_wokers[$key][$i])) {
+            $this->process_wokers[$key][$i] = $this;
+        }
     }
 
     /**
@@ -62,7 +77,7 @@ class ProcessManager {
     	if(!empty($this->process_lists)) {
             if($is_daemon) {
                 $this->daemon();
-            }
+            }            
     		foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
     			for($i = 0; $i < $process_worker_num; $i++) {
@@ -141,7 +156,18 @@ class ProcessManager {
             if($process instanceof AbstractProcess) {
                 $swooleProcess = $process->getSwooleProcess();
                 \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+                    $msg = $swooleProcess->read(64 * 1024);
+                    if(is_string($msg)) {
+                        $message = json_decode($msg, true);
+                        list($msg, $process_worker_id) = $message;
+                    }
+                    if($msg && $process_worker_id) {
+                        try {
+                            $this->onPipeMsg($msg, $process_worker_id);
+                        }catch(\Throwable $t) {
 
+                        }
+                    }
                 });
             }else {
                 throw new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
@@ -187,7 +213,9 @@ class ProcessManager {
         $key = md5($process_name);
         if(isset($this->process_wokers[$key][$process_worker_id])){
             return $this->process_wokers[$key][$process_worker_id];
-        }else{
+        }else if($process_worker_id == -1) {
+            return $this->process_wokers[$key];
+        }else {
             return null;
         }
     }
@@ -227,4 +255,53 @@ class ProcessManager {
             throw new \Exception(get_class($process)."::getPid() method is not exist");
         }
     }
+
+    /**
+     * getMasterWorkerId
+     * @return int
+     */
+    public function getProcessWorkerId() {
+        return $this->master_worker_id;
+    }
+
+    /**
+     * getMasterWorkerName
+     * @return string
+     */
+    public function getMasterWorkerName() {
+        return $this->master_worker_name;
+    }
+
+    /**
+     * writeByProcessName 向某个进程写数据
+     * @param  string $name
+     * @param  string $data
+     * @return boolean
+     */
+    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
+        if($process_name == $this->master_worker_name) {
+            return false;
+        }
+        $process_workers = [];
+        $process = $this->getProcessByName($process_name, $process_worker_id);
+        if(is_object($process) && $process instanceof AbstractProcess) {
+            $process_workers = [$process];
+        }else if(is_array($process)) {
+            $process_workers = $process;
+        }
+
+        $message = json_encode([$data, $this->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
+        foreach($process_workers as $process_worker_id => $process) {
+            $process->getSwooleProcess->write($message);
+        }
+    }
+
+    /**
+     * onPipeMsg
+     * @return void
+     */
+    public function onPipeMsg(string $msg, int $process_worker_id) {
+        var_dump("from children:".$msg);
+    }
+
 }

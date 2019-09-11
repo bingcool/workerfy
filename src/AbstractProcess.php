@@ -35,7 +35,7 @@ abstract class AbstractProcess {
      * @param null   $extend_data
      * @param bool   $enable_coroutine
      */
-    public function __construct(string $process_name, bool $async = true, array $args = [], $extend_data = null, bool $enable_coroutine = false) {
+    public function __construct(string $process_name, bool $async = true, array $args = [], $extend_data = null, bool $enable_coroutine = true) {
         $this->async = $async;
         $this->args = $args;
         $this->extend_data = $extend_data;
@@ -62,19 +62,28 @@ abstract class AbstractProcess {
      * @return void
      */
     public function __start(Process $swooleProcess) {
+        \Swoole\Runtime::enableCoroutine(true);
+
         $this->pid = $this->swooleProcess->pid;
+
         if($this->async){
             Event::add($this->swooleProcess->pipe, function() {
                 $msg = $this->swooleProcess->read(64 * 1024);
-                try{
-                    if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
-                        $this->reboot();
-                        return;
-                    }else {
-                        $this->onReceive($msg);
+                if(is_string($msg)) {
+                    $message = json_decode($msg, true);
+                    list($msg, $process_worker_id) = $message;
+                }
+                if($msg && $process_worker_id) {
+                    try{
+                        if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
+                            $this->reboot();
+                            return;
+                        }else {
+                            $this->onPipeMsg($msg, $process_worker_id);
+                        }
+                    }catch(\Throwable $t) {
+                        throw new \Exception($t->getMessage());
                     }
-                }catch(\Throwable $t) {
-                    throw new \Exception($t->getMessage());
                 }
             });
         }
@@ -190,6 +199,31 @@ abstract class AbstractProcess {
     }
 
     /**
+     * writeByProcessName 向某个进程写数据
+     * @param  string $name
+     * @param  string $data
+     * @return boolean
+     */
+    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
+        $processManager = \Workerfy\processManager::getInstance();
+        if($process_name == $processManager->getMasterWorkerName()) {
+            $process_worker_id = $processManager->getProcessWorkerId();
+        }
+        $process_workers = [];
+        $process = \Workerfy\processManager::getInstance()->getProcessByName($process_name, $process_worker_id);
+        if(is_object($process) && $process instanceof AbstractProcess) {
+            $process_workers = [$process];
+        }else if(is_array($process)) {
+            $process_workers = $process;
+        }
+
+        foreach($process_workers as $process_worker_id => $process) {
+            $message = json_encode([$data, $process->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
+            $process->getSwooleProcess->write($message);
+        }
+    }
+
+    /**
      * reboot
      * @return
      */
@@ -217,7 +251,7 @@ abstract class AbstractProcess {
      * @param mixed ...$args
      * @return mixed
      */
-    public function onReceive($str, ...$args) {}
+    public function onPipeMsg(string $msg, int $process_worker_id) {}
 
 
 }
