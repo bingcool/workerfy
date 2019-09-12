@@ -39,6 +39,7 @@ $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_w
         $to_process_name,
         $to_process_worker_id
     ];
+    $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
     var_dump($array);
 };
 
@@ -46,7 +47,7 @@ $processManager->onExit = function() use($config_file_path) {
     var_dump("master exit",$config_file_path);
 };
 
-$processManager->start(true);
+$processManager->start();
 
 
 

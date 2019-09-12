@@ -116,9 +116,8 @@ abstract class AbstractProcess {
      * @param  string $data
      * @return boolean
      */
-    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
         $processManager = \Workerfy\processManager::getInstance();
-
         $isMaster = $processManager->isMaster(md5($process_name));
         $from_process_name = $this->getProcessName();
         $from_process_worker_id = $this->getProcessWorkerId();
@@ -131,18 +130,22 @@ abstract class AbstractProcess {
         }
 
         $process_workers = [];
-        $process = $processManager->getProcessByName($process_name, $process_worker_id);
-        if(is_object($process) && $process instanceof AbstractProcess) {
-            $process_workers = [$process_worker_id => $process];
-        }else if(is_array($process)) {
-            $process_workers = $process;
+        $to_process = $processManager->getProcessByName($process_name, $process_worker_id);
+        if(is_object($to_process) && $to_process instanceof AbstractProcess) {
+            $process_workers = [$process_worker_id => $to_process];
+        }else if(is_array($to_process)) {
+            $process_workers = $to_process;
         }
 
         foreach($process_workers as $process_worker_id => $process) {
             $to_process_name = $process->getProcessName();
             $to_process_worker_id = $process->getProcessWorkerId();
             $message = json_encode([$data, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id], JSON_UNESCAPED_UNICODE);
-            $process->getSwooleProcess()->write($message);
+            if($is_use_master_proxy) {
+                $this->getSwooleProcess()->write($message);
+            }else {
+                $process->getSwooleProcess()->write($message);
+            }
         }
     }
 

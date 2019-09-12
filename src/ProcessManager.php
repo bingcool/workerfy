@@ -109,13 +109,17 @@ class ProcessManager {
                         if(!isset($this->process_wokers[$key][$i])) {
                             $this->process_wokers[$key][$i] = $process;
                         }
-		    			$process->start();
-                        sleep(1);
+                        usleep(50000);
 	    			}catch(\Throwable $t) {
 	    				throw new \Exception($t->getMessage());
 	    			}
     			}
     		}
+    		foreach($this->process_wokers as $key => $process_woker) {
+    		    foreach($process_woker as $worker_id => $process) {
+                    $process->start();
+                }
+            }
             $this->signal();
     		$this->swooleEventAdd();
     	}
@@ -361,6 +365,24 @@ class ProcessManager {
         }
 
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
+        foreach($process_workers as $process_worker_id => $process) {
+            $process->getSwooleProcess()->write($message);
+        }
+    }
+
+    public function writeByMasterProxy(string $data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
+        if($this->isMaster(md5($to_process_name))) {
+            return false;
+        }
+        $process_workers = [];
+        $process = $this->getProcessByName($to_process_name, $to_process_worker_id);
+        if(is_object($process) && $process instanceof AbstractProcess) {
+            $process_workers = [$to_process_worker_id => $process];
+        }else if(is_array($process)) {
+            $process_workers = $process;
+        }
+
+        $message = json_encode([$data, $from_process_name, $from_process_worker_id], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }

@@ -24,8 +24,8 @@ class Worker1 extends \Workerfy\AbstractProcess {
         }
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
-        if($this->getProcessWorkerId() == 0) {
-            $this->writeByProcessName('worker', 'hello hhhhhhhh');
+        if($this->getProcessWorkerId() == 1) {
+            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,false);
         }
 
         //$this->exit();
@@ -39,7 +39,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
     }
 
     public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id) {
-	    var_dump($msg);
+	    var_dump('worker_id-'.$this->getProcessWorkerId().'-from-worker_id:'.$from_process_worker_id);
     }
 
 }
