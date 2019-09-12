@@ -30,7 +30,7 @@ class Config {
 				$this->config = array_merge_recursive($this->config, $config);
 			}else {
 				$msg = $this->color->getColoredString("{$config_file_path} load is not return array", "red", "black");
-				each($msg). "\n\n";
+				echo($msg). "\n\n";
 				exit;
 			}
 		}

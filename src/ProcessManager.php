@@ -25,14 +25,36 @@ class ProcessManager {
 
 	private $master_pid;
 
-    private $master_worker_id;
+    private $master_worker_id = 0;
 
-    private $master_worker_name = 'master_worker';
+    public $onPipeMsg;
+    public $onProxyMsg;
+    public $onExit;
 
+    const MASTER_WORKER_NAME = 'master_worker';
+
+    /**
+     * ProcessManager constructor.
+     * @param mixed ...$args
+     */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
+        if(!isset($this->master_pid)) {
+            $this->master_pid = posix_getpid();
+        }
     }
 
+    /**
+     * addProcess
+     * @param string $process_name
+     * @param string $process_class
+     * @param int $process_worker_num
+     * @param bool $async
+     * @param array $args
+     * @param null $extend_data
+     * @param bool $enable_coroutine
+     * @throws \Exception
+     */
 	public function addProcess(
 	    string $process_name,
         string $process_class,
@@ -49,9 +71,9 @@ class ProcessManager {
         if(!$enable_coroutine) {
             $enable_coroutine = true;
         }
-
-        $this->master_worker_id = $process_worker_num;
-
+        if(!$async) {
+            $async = true;
+        }
         $this->process_lists[$key] = [
             'process_name' => $process_name,
             'process_class' => $process_class,
@@ -61,12 +83,6 @@ class ProcessManager {
             'extend_data' => $extend_data,
             'enable_coroutine' => $enable_coroutine
         ];
-
-        $key = md5($this->master_worker_name);
-        $i = $this->master_worker_id;
-        if(!isset($this->process_wokers[$key][$i])) {
-            $this->process_wokers[$key][$i] = $this;
-        }
     }
 
     /**
@@ -77,7 +93,7 @@ class ProcessManager {
     	if(!empty($this->process_lists)) {
             if($is_daemon) {
                 $this->daemon();
-            }            
+            }
     		foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
     			for($i = 0; $i < $process_worker_num; $i++) {
@@ -107,42 +123,67 @@ class ProcessManager {
 
     /**
      * signal
-     * @return void
      */
     private function signal() {
         \Swoole\Process::signal(SIGCHLD, function($signo) {
   			//必须为false，非阻塞模式
-		  	while($ret = Process::wait(false)) {
+		  	while($ret = \Swoole\Process::wait(false)) {
 		      	$pid = $ret['pid'];
-		      	var_dump($ret);
-		      	if(!(\Swoole\Process::kill($pid, 0))) {
-		      	    $process = $this->getProcessByPid($pid);
-		      	    $process_name = $process->getProcessName();
-		      	    $process_worker_id = $process->getProcessWorkerId();
-		      	    $key = md5($process_name);
-		      	    $list = $this->process_lists[$key];
-		      	    \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                    unset($this->process_wokers[$key][$process_worker_id]);
+                $signal = $ret['signal'];
+                switch ($signal) {
+                    case 0  :
+                    case 15 :
+                        if(!(\Swoole\Process::kill($pid, 0))) {
+                            $process = $this->getProcessByPid($pid);
+                            $process_name = $process->getProcessName();
+                            $process_worker_id = $process->getProcessWorkerId();
+                            $key = md5($process_name);
+                            $list = $this->process_lists[$key];
+                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
+                            unset($this->process_wokers[$key][$process_worker_id]);
 
-		      	    if(is_array($list)) {
-                        try {
-                            $process_name = $list['process_name'];
-                            $process_class = $list['process_class'];
-                            $async = $list['async'] ?? true;
-                            $args = $list['args'] ?? [];
-                            $extend_data = $list['extend_data'] ?? null;
-                            $enable_coroutine = $list['enable_coroutine'] ?? false;
-                            $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-                            $process->setProcessWorkerId($process_worker_id);
-                            if(!isset($this->process_wokers[$key][$process_worker_id])) {
-                                $this->process_wokers[$key][$process_worker_id] = $process;
+                            if(is_array($list)) {
+                                try {
+                                    $process_name = $list['process_name'];
+                                    $process_class = $list['process_class'];
+                                    $async = $list['async'] ?? true;
+                                    $args = $list['args'] ?? [];
+                                    $extend_data = $list['extend_data'] ?? null;
+                                    $enable_coroutine = $list['enable_coroutine'] ?? false;
+                                    $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                                    $process->setProcessWorkerId($process_worker_id);
+                                    if(!isset($this->process_wokers[$key][$process_worker_id])) {
+                                        $this->process_wokers[$key][$process_worker_id] = $process;
+                                    }
+                                    $process->start();
+                                }catch(\Throwable $t) {
+                                    throw new \Exception($t->getMessage());
+                                }
+                                $this->swooleEventAdd($process);
                             }
-                            $process->start();
-                        }catch(\Throwable $t) {
-                            throw new \Exception($t->getMessage());
                         }
-                        $this->swooleEventAdd($process);
-                    }
+                        break;
+                    case 9 :
+                        $process = $this->getProcessByPid($pid);
+                        $process_name = $process->getProcessName();
+                        $process_worker_id = $process->getProcessWorkerId();
+                        $key = md5($process_name);
+                        if(isset($this->process_wokers[$key][$process_worker_id])) {
+                            unset($this->process_wokers[$key][$process_worker_id]);
+                            if(count($this->process_wokers[$key]) == 0) {
+                                unset($this->process_wokers[$key]);
+                            }
+                        }
+                        if(count($this->process_wokers) == 0) {
+                            try{
+                                $this->onExit->call($this);
+                            }catch (\Throwable $t) {
+                                throw new \Exception($t->getMessage());
+                            }finally {
+                                exit;
+                            }
+                        }
+                        break;
                 }
 		  	}
 		});
@@ -159,11 +200,15 @@ class ProcessManager {
                     $msg = $swooleProcess->read(64 * 1024);
                     if(is_string($msg)) {
                         $message = json_decode($msg, true);
-                        list($msg, $process_worker_id) = $message;
+                        list($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) = $message;
                     }
-                    if($msg && $process_worker_id) {
+                    if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
                         try {
-                            $this->onPipeMsg($msg, $process_worker_id);
+                            if($to_process_name == $this->getMasterWorkerName()) {
+                                $this->onProxyMsg->call($this, $msg, $from_process_name, $to_process_worker_id = 0);
+                            }else {
+                                $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                            }
                         }catch(\Throwable $t) {
 
                         }
@@ -175,10 +220,27 @@ class ProcessManager {
         }else {
             foreach($this->process_wokers as $key => $processes) {
                 foreach($processes as $worker_id => $process) {
-                    $swooleProcess = $process->getSwooleProcess();
-                    \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+                    if(!$this->isMaster($key)) {
+                        $swooleProcess = $process->getSwooleProcess();
+                        \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+                            $msg = $swooleProcess->read(64 * 1024);
+                            if(is_string($msg)) {
+                                $message = json_decode($msg, true);
+                                list($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) = $message;
+                            }
+                            if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
+                                try {
+                                    if($to_process_name == $this->getMasterWorkerName()) {
+                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $to_process_worker_id = 0);
+                                    }else {
+                                        $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                    }
+                                }catch(\Throwable $t) {
 
-                    });
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -198,10 +260,18 @@ class ProcessManager {
      * @return int
      */
     public function getMasterPid() {
-        if(!isset($this->master_pid)) {
-            $this->master_pid = posix_getpid();
-        }
         return $this->master_pid;
+    }
+
+    /**
+     * @param string $key
+     * @return bool
+     */
+    public function isMaster(string $key) {
+        if($key == md5($this->getMasterWorkerName())) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -269,7 +339,7 @@ class ProcessManager {
      * @return string
      */
     public function getMasterWorkerName() {
-        return $this->master_worker_name;
+        return ProcessManager::MASTER_WORKER_NAME;
     }
 
     /**
@@ -279,29 +349,21 @@ class ProcessManager {
      * @return boolean
      */
     public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
-        if($process_name == $this->master_worker_name) {
+        if($this->isMaster(md5($process_name))) {
             return false;
         }
         $process_workers = [];
         $process = $this->getProcessByName($process_name, $process_worker_id);
         if(is_object($process) && $process instanceof AbstractProcess) {
-            $process_workers = [$process];
+            $process_workers = [$process_worker_id => $process];
         }else if(is_array($process)) {
             $process_workers = $process;
         }
 
-        $message = json_encode([$data, $this->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
+        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
-            $process->getSwooleProcess->write($message);
+            $process->getSwooleProcess()->write($message);
         }
-    }
-
-    /**
-     * onPipeMsg
-     * @return void
-     */
-    public function onPipeMsg(string $msg, int $process_worker_id) {
-        var_dump("from children:".$msg);
     }
 
 }

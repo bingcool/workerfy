@@ -11,8 +11,8 @@
 
 namespace Workerfy;
 
-use Swoole\Process;
 use Swoole\Event;
+use Swoole\Process;
 
 abstract class AbstractProcess {
 
@@ -24,6 +24,7 @@ abstract class AbstractProcess {
     private $enable_coroutine = false;
     private $pid;
     private $process_worker_id = 0;
+    private $is_reboot = false;
 
     const SWOOLEFY_PROCESS_KILL_FLAG = "process::worker::action::restart";
 
@@ -71,15 +72,15 @@ abstract class AbstractProcess {
                 $msg = $this->swooleProcess->read(64 * 1024);
                 if(is_string($msg)) {
                     $message = json_decode($msg, true);
-                    list($msg, $process_worker_id) = $message;
+                    list($msg, $from_process_name, $from_process_worker_id) = $message;
                 }
-                if($msg && $process_worker_id) {
-                    try{
+                if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
+                    try {
                         if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
                             $this->reboot();
                             return;
                         }else {
-                            $this->onPipeMsg($msg, $process_worker_id);
+                            $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id);
                         }
                     }catch(\Throwable $t) {
                         throw new \Exception($t->getMessage());
@@ -88,26 +89,60 @@ abstract class AbstractProcess {
             });
         }
 
-        defer(function () {
+        Process::signal(SIGTERM, function ($signo) {
             try{
                 $this->onShutDown();
             }catch (\Throwable $t){
                 throw new \Exception($t->getMessage());
+            }finally {
+                Event::del($this->swooleProcess->pipe);
+                Process::signal(SIGTERM, null);
+                Event::exit();
             }
-        });
-
-        Process::signal(SIGTERM, function ($signo) {
-            Event::del($this->swooleProcess->pipe);
-            Process::signal(SIGTERM, null);
-            Event::exit();
         });
 
         $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
 
-        try {
+        try{
             $this->run();
         }catch(\Throwable $t) {
             throw new \Exception($t->getMessage());
+        }
+    }
+
+    /**
+     * writeByProcessName 向某个进程写数据
+     * @param  string $name
+     * @param  string $data
+     * @return boolean
+     */
+    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
+        $processManager = \Workerfy\processManager::getInstance();
+
+        $isMaster = $processManager->isMaster(md5($process_name));
+        $from_process_name = $this->getProcessName();
+        $from_process_worker_id = $this->getProcessWorkerId();
+
+        if($isMaster) {
+            $process_worker_id = 0;
+            $message = json_encode([$data, $from_process_name, $from_process_worker_id, $processManager->getMasterWorkerName(), $process_worker_id], JSON_UNESCAPED_UNICODE);
+            $this->getSwooleProcess()->write($message);
+            return true;
+        }
+
+        $process_workers = [];
+        $process = $processManager->getProcessByName($process_name, $process_worker_id);
+        if(is_object($process) && $process instanceof AbstractProcess) {
+            $process_workers = [$process_worker_id => $process];
+        }else if(is_array($process)) {
+            $process_workers = $process;
+        }
+
+        foreach($process_workers as $process_worker_id => $process) {
+            $to_process_name = $process->getProcessName();
+            $to_process_worker_id = $process->getProcessWorkerId();
+            $message = json_encode([$data, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id], JSON_UNESCAPED_UNICODE);
+            $process->getSwooleProcess()->write($message);
         }
     }
 
@@ -199,38 +234,29 @@ abstract class AbstractProcess {
     }
 
     /**
-     * writeByProcessName 向某个进程写数据
-     * @param  string $name
-     * @param  string $data
-     * @return boolean
-     */
-    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
-        $processManager = \Workerfy\processManager::getInstance();
-        if($process_name == $processManager->getMasterWorkerName()) {
-            $process_worker_id = $processManager->getProcessWorkerId();
-        }
-        $process_workers = [];
-        $process = \Workerfy\processManager::getInstance()->getProcessByName($process_name, $process_worker_id);
-        if(is_object($process) && $process instanceof AbstractProcess) {
-            $process_workers = [$process];
-        }else if(is_array($process)) {
-            $process_workers = $process;
-        }
-
-        foreach($process_workers as $process_worker_id => $process) {
-            $message = json_encode([$data, $process->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
-            $process->getSwooleProcess->write($message);
-        }
-    }
-
-    /**
-     * reboot
+     * reboot 自动重启
      * @return
      */
     public function reboot() {
         $pid = $this->getPid();
-        if(\Swoole\Process::kill($pid, 0)) {
-            \Swoole\Process::kill($pid, SIGTERM);
+        if(Process::kill($pid, 0)) {
+            $this->is_reboot = true;
+            Process::kill($pid, SIGTERM);
+        }
+    }
+
+    /**
+     * 直接退出进程
+     */
+    public function exit(int $pid = null) {
+        if(!$pid) {
+            $pid = $this->getPid();
+        }
+        if(Process::kill($pid, 0)) {
+            if(!$this->is_reboot) {
+                $this->onShutDown();
+            }
+            Process::kill($pid, SIGKILL);
         }
     }
 
@@ -251,7 +277,7 @@ abstract class AbstractProcess {
      * @param mixed ...$args
      * @return mixed
      */
-    public function onPipeMsg(string $msg, int $process_worker_id) {}
+    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id) {}
 
 
 }
