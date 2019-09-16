@@ -25,7 +25,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
         if($this->getProcessWorkerId() == 1) {
-            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,false);
+            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,true);
         }
 
         //$this->exit();
@@ -38,7 +38,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
         //var_dump("children-process shutdown,pid={$this->getPid()}, peocess_name={$this->getProcessName()}.'@'.{$this->getProcessWorkerId()}");
     }
 
-    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id) {
+    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {
 	    var_dump('worker_id-'.$this->getProcessWorkerId().'-from-worker_id:'.$from_process_worker_id);
     }
 

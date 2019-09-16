@@ -382,7 +382,7 @@ class ProcessManager {
             $process_workers = $process;
         }
 
-        $message = json_encode([$data, $from_process_name, $from_process_worker_id], JSON_UNESCAPED_UNICODE);
+        $message = json_encode([$data, $from_process_name, $from_process_worker_id, true], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }

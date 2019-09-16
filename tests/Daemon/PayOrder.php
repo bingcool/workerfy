@@ -22,7 +22,7 @@ $extend_data = null;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
-$processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id) {
+$processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
     $array = [
         $msg,
         $from_process_name,

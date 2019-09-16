@@ -72,7 +72,12 @@ abstract class AbstractProcess {
                 $msg = $this->swooleProcess->read(64 * 1024);
                 if(is_string($msg)) {
                     $message = json_decode($msg, true);
-                    list($msg, $from_process_name, $from_process_worker_id) = $message;
+                    list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
+                    if(is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
+                        $is_proxy_by_master = false;
+                    }else {
+                        $is_proxy_by_master = true;
+                    }
                 }
                 if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
                     try {
@@ -80,7 +85,7 @@ abstract class AbstractProcess {
                             $this->reboot();
                             return;
                         }else {
-                            $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id);
+                            $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
                         }
                     }catch(\Throwable $t) {
                         throw new \Exception($t->getMessage());
@@ -144,9 +149,31 @@ abstract class AbstractProcess {
             if($is_use_master_proxy) {
                 $this->getSwooleProcess()->write($message);
             }else {
+                $message = json_encode([$data, $from_process_name, $from_process_worker_id]);
                 $process->getSwooleProcess()->write($message);
             }
         }
+    }
+
+    /**
+     * @param string $process_name
+     * @param string $data
+     * @param int $process_worker_id
+     * @return bool
+     */
+    public function writeMasterProcess(string $process_name, string $data, int $process_worker_id = 0) {
+        $is_use_master_proxy = false;
+        return $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
+    }
+
+    /**
+     * @param string $process_name
+     * @param string $data
+     * @param int $process_worker_id
+     */
+    public function writeWorkerProcessByMasterProxy(string $process_name, string $data, int $process_worker_id = 0) {
+        $is_use_master_proxy = true;
+        $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }
 
     /**
@@ -276,11 +303,12 @@ abstract class AbstractProcess {
     public function onShutDown() {}
 
     /**
-     * @param       $str
-     * @param mixed ...$args
-     * @return mixed
+     * @param string $msg
+     * @param string $from_process_name
+     * @param int $from_process_worker_id
+     * @param bool $is_proxy_by_master
      */
-    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id) {}
+    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {}
 
 
 }
