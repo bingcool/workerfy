@@ -321,7 +321,7 @@ class ProcessManager {
      * @return mixed
      * @throws \Exception
      */
-    public function getPidByName(string $process_name, int $process_worker_id = 0) {
+    public function getPidByName(string $process_name, int $process_worker_id) {
         $process = $this->getProcessByName($process_name, $process_worker_id);
         if(method_exists($process, 'getPid')) {
             return $process->getPid();
@@ -331,10 +331,10 @@ class ProcessManager {
     }
 
     /**
-     * getMasterWorkerId
+     * getProcessWorkerId
      * @return int
      */
-    public function getProcessWorkerId() {
+    public function getMasterWorkerId() {
         return $this->master_worker_id;
     }
 
@@ -363,8 +363,7 @@ class ProcessManager {
         }else if(is_array($process)) {
             $process_workers = $process;
         }
-
-        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getProcessWorkerId()], JSON_UNESCAPED_UNICODE);
+        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }

@@ -53,4 +53,4 @@ $processManager->start();
 
 
 
-//$processManager->writeByProcessName('worker1', 'this message from master worker');
+//$processManager->writeByProcessName('worker', 'this message from master worker');
