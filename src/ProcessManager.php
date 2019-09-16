@@ -27,6 +27,7 @@ class ProcessManager {
 
     private $master_worker_id = 0;
 
+    public $onStart;
     public $onPipeMsg;
     public $onProxyMsg;
     public $onExit;
@@ -123,6 +124,11 @@ class ProcessManager {
             $this->signal();
     		$this->swooleEventAdd();
     	}
+    	$master_pid = $this->getMasterPid();
+        if(is_callable($this->onStart)) {
+            $this->onStart && $this->onStart->call($this, $master_pid);
+        }
+    	return $master_pid;
     }
 
     /**
@@ -279,10 +285,11 @@ class ProcessManager {
     }
 
     /**
-	 * getProcessByName 通过名称获取一个进程
-	 * @param  string $process_name
-	 * @return mixed
-	 */
+     * getProcessByName 通过名称获取一个进程
+     * @param string $process_name
+     * @param int $process_worker_id
+     * @return mixed|null
+     */
 	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
         $key = md5($process_name);
         if(isset($this->process_wokers[$key][$process_worker_id])){
@@ -347,10 +354,10 @@ class ProcessManager {
     }
 
     /**
-     * writeByProcessName 向某个进程写数据
-     * @param  string $name
-     * @param  string $data
-     * @return boolean
+     * @param string $process_name
+     * @param string $data
+     * @param int $process_worker_id
+     * @return bool
      */
     public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
         if($this->isMaster(md5($process_name))) {
@@ -369,6 +376,15 @@ class ProcessManager {
         }
     }
 
+    /**
+     * master代理转发
+     * @param string $data
+     * @param string $from_process_name
+     * @param int $from_process_worker_id
+     * @param string $to_process_name
+     * @param int $to_process_worker_id
+     * @return bool
+     */
     public function writeByMasterProxy(string $data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
         if($this->isMaster(md5($to_process_name))) {
             return false;
@@ -384,6 +400,26 @@ class ProcessManager {
         $message = json_encode([$data, $from_process_name, $from_process_worker_id, true], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
+        }
+    }
+
+    /**
+     * 广播消息至worker
+     * @param string $data
+     * @param string|null $process_name
+     */
+    public function broadcastProcessWorker(string $data, string $process_name = null) {
+        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
+        if($process_name) {
+            $key = md5($process_name);
+            if(isset($this->process_wokers[$key])) {
+                $process_workers = $this->process_wokers[$key];
+                foreach($process_workers as $process_worker_id => $process) {
+                    $process->getSwooleProcess()->write($message);
+                }
+            }
+        }else {
+            throw new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
         }
     }
 

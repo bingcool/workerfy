@@ -22,6 +22,11 @@ $extend_data = null;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
+$processManager->onStart = function ($pid) {
+    $pid_file = pathinfo(__FILE__)['filename'].'.pid';
+    file_put_contents($pid_file, $pid);
+};
+
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
     $array = [
         $msg,
@@ -47,9 +52,8 @@ $processManager->onExit = function() use($config_file_path) {
     var_dump("master exit",$config_file_path);
 };
 
-$processManager->start();
 
-
+$master_pid = $processManager->start();
 
 
 

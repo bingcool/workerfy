@@ -17,9 +17,9 @@ class Worker1 extends \Workerfy\AbstractProcess {
             $pid = ProcessManager::getInstance()->getPidByName($this->getProcessName(), $this->getProcessWorkerId());
 		    \Co::sleep(2);
             //var_dump(date("Y-m-d H:i:s"));
-		    if(time() -$start_time > 1) {
-                break;
-            }
+//		    if(time() -$start_time > 1) {
+//                break;
+//            }
             //var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }
 
