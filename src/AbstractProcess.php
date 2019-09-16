@@ -66,53 +66,57 @@ abstract class AbstractProcess {
         \Swoole\Runtime::enableCoroutine(true);
 
         $this->pid = $this->swooleProcess->pid;
-
-        if($this->async){
-            Event::add($this->swooleProcess->pipe, function() {
-                $msg = $this->swooleProcess->read(64 * 1024);
-                if(is_string($msg)) {
-                    $message = json_decode($msg, true);
-                    list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
-                    if(is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
-                        $is_proxy_by_master = false;
-                    }else {
-                        $is_proxy_by_master = true;
-                    }
-                }
-                if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
-                    try {
-                        if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
-                            $this->reboot();
-                            return;
+        try {
+            if($this->async){
+                Event::add($this->swooleProcess->pipe, function() {
+                    $msg = $this->swooleProcess->read(64 * 1024);
+                    if(is_string($msg)) {
+                        $message = json_decode($msg, true);
+                        list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
+                        if(is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
+                            $is_proxy_by_master = false;
                         }else {
-                            $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
+                            $is_proxy_by_master = true;
                         }
-                    }catch(\Throwable $t) {
-                        throw new \Exception($t->getMessage());
                     }
+                    if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
+                        try {
+                            if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
+                                $this->reboot();
+                                return;
+                            }else {
+                                $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
+                            }
+                        }catch(\Throwable $t) {
+                            throw new \Exception($t->getMessage());
+                        }
+                    }
+                });
+            }
+            Process::signal(SIGTERM, function ($signo) {
+                try{
+                    $this->onShutDown();
+                }catch (\Throwable $t){
+                    throw new \Exception($t->getMessage());
+                }finally {
+                    Event::del($this->swooleProcess->pipe);
+                    Process::signal(SIGTERM, null);
+                    Event::exit();
                 }
             });
-        }
 
-        Process::signal(SIGTERM, function ($signo) {
+            $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
+
             try{
-                $this->onShutDown();
-            }catch (\Throwable $t){
+                $this->run();
+            }catch(\Throwable $t) {
                 throw new \Exception($t->getMessage());
-            }finally {
-                Event::del($this->swooleProcess->pipe);
-                Process::signal(SIGTERM, null);
-                Event::exit();
             }
-        });
 
-        $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
-
-        try{
-            $this->run();
         }catch(\Throwable $t) {
-            throw new \Exception($t->getMessage());
+            $this->handleException($t);
         }
+        
     }
 
     /**
@@ -161,7 +165,7 @@ abstract class AbstractProcess {
      * @param int $process_worker_id
      * @return bool
      */
-    public function writeMasterProcess(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeToMasterProcess(string $process_name, string $data, int $process_worker_id = 0) {
         $is_use_master_proxy = false;
         return $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }
@@ -171,7 +175,7 @@ abstract class AbstractProcess {
      * @param string $data
      * @param int $process_worker_id
      */
-    public function writeWorkerProcessByMasterProxy(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeToWorkerByMasterProxy(string $process_name, string $data, int $process_worker_id = 0) {
         $is_use_master_proxy = true;
         $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }
@@ -298,11 +302,6 @@ abstract class AbstractProcess {
     public abstract function run();
 
     /**
-     * @return mixed
-     */
-    public function onShutDown() {}
-
-    /**
      * @param string $msg
      * @param string $from_process_name
      * @param int $from_process_worker_id
@@ -310,5 +309,17 @@ abstract class AbstractProcess {
      */
     public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {}
 
+    /**
+     * onShutDown
+     * @return mixed
+     */
+    public function onShutDown() {}
+
+    /**
+     * handleException
+     * @param  $throwable
+     * @return mixed
+     */
+    public function handleException($throwable) {}
 
 }
