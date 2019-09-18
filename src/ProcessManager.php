@@ -40,9 +40,6 @@ class ProcessManager {
      */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
-        if(!isset($this->master_pid)) {
-            $this->master_pid = posix_getpid();
-        }
     }
 
     /**
@@ -95,6 +92,10 @@ class ProcessManager {
             if($is_daemon) {
                 $this->daemon();
             }
+            if(!isset($this->master_pid)) {
+                $this->master_pid = posix_getpid();
+            }
+
     		foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
     			for($i = 0; $i < $process_worker_num; $i++) {
@@ -125,7 +126,7 @@ class ProcessManager {
     		$this->swooleEventAdd();
     	}
     	$master_pid = $this->getMasterPid();
-        if(is_callable($this->onStart)) {
+        if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
         }
     	return $master_pid;

@@ -17,9 +17,9 @@ class Worker1 extends \Workerfy\AbstractProcess {
             $pid = ProcessManager::getInstance()->getPidByName($this->getProcessName(), $this->getProcessWorkerId());
 		    \Co::sleep(2);
             //var_dump(date("Y-m-d H:i:s"));
-//		    if(time() -$start_time > 1) {
-//                break;
-//            }
+		    if(time() -$start_time > 1) {
+                break;
+            }
             //var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }
 
@@ -40,6 +40,10 @@ class Worker1 extends \Workerfy\AbstractProcess {
 
     public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {
 	    var_dump('msg-'.$msg.'----worker_id-'.$this->getProcessWorkerId().'-from-worker_id:'.$from_process_worker_id);
+    }
+
+    public function handleException($throwable) {
+	    var_dump($throwable->getMessage());
     }
 
 }

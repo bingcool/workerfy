@@ -26,7 +26,7 @@ abstract class AbstractProcess {
     private $process_worker_id = 0;
     private $is_reboot = false;
 
-    const SWOOLEFY_PROCESS_KILL_FLAG = "process::worker::action::restart";
+    const SWOOLEFY_PROCESS_REBOOT_FLAG = "process::worker::action::restart";
 
     /**
      * AbstractProcess constructor.
@@ -81,7 +81,7 @@ abstract class AbstractProcess {
                     }
                     if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
                         try {
-                            if($msg == self::SWOOLEFY_PROCESS_KILL_FLAG) {
+                            if($msg == self::SWOOLEFY_PROCESS_REBOOT_FLAG) {
                                 $this->reboot();
                                 return;
                             }else {

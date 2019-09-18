@@ -1,16 +1,8 @@
 <?php
-############### 停止 ##################
-$pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
-define("PID_FILE", $pid_file);
-var_dump(PID_FILE);
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
 
-include $root_path.'/src/Ctrl.php';
-
-
-############### 启动 ###################
 include $root_path."/vendor/autoload.php";
 
 $config_file_path = $dir_config."/Config/config.php";
@@ -18,12 +10,10 @@ $config_file_path = $dir_config."/Config/config.php";
 $Config = \Workerfy\Config::getInstance();
 $Config->loadConfig($config_file_path);
 
-var_dump(spl_object_id($Config));
-
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'worker';
-$process_class = \Workerfy\Tests\Daemon\Worker1::class;
+$process_name = 'timer';
+$process_class = \Workerfy\Tests\Crontab\Timer::class;
 $process_worker_num = 1;
 $async = true;
 $args = [];
@@ -33,7 +23,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) {
-    file_put_contents(PID_FILE, $pid);
+    //file_put_contents(PID_FILE, $pid);
 };
 
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
@@ -62,8 +52,3 @@ $processManager->onExit = function() use($config_file_path) {
 };
 
 $master_pid = $processManager->start();
-
-
-
-
-//$processManager->writeByProcessName('worker', 'this message from master worker');

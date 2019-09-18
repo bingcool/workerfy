@@ -21,7 +21,9 @@
   "require": {
     "php" : ">=7.1.0",
     "ext-swoole" : ">=4.2.13",
+    "dragonmantank/cron-expression" : "2.3.0",
     "ext-pcntl" : "*",
+    "ext-posix" : "*",
     "ext-json": "*"
   },
   "autoload": {
