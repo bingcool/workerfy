@@ -17,6 +17,7 @@ $config_file_path = $dir_config."/Config/config.php";
 
 $Config = \Workerfy\Config::getInstance();
 $Config->loadConfig($config_file_path);
+$Config->setTest();
 
 var_dump(spl_object_id($Config));
 
@@ -24,7 +25,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'worker';
 $process_class = \Workerfy\Tests\Daemon\Worker1::class;
-$process_worker_num = 1;
+$process_worker_num = 2;
 $async = true;
 $args = [];
 $extend_data = null;
@@ -36,13 +37,13 @@ $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };
 
-$processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
+$processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id) use($Config) {
     $array = [
         $msg,
         $from_process_name,
         $from_process_worker_id,
     ];
-    var_dump($array);
+    var_dump($Config->getTest());
 };
 
 $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) {
@@ -66,4 +67,7 @@ $master_pid = $processManager->start();
 
 
 
-//$processManager->writeByProcessName('worker', 'this message from master worker');
+$processManager->writeByProcessName('worker', 'this message from master worker');
+
+$processManager->broadcastProcessWorker('worker', 'this message from master worker');
+

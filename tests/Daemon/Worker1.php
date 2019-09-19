@@ -25,7 +25,9 @@ class Worker1 extends \Workerfy\AbstractProcess {
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
         if($this->getProcessWorkerId() == 1) {
-            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,true);
+            $Config = \Workerfy\Config::getInstance();
+            $Config->setTest('bingcool');
+            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
         }
 
         //$this->exit();

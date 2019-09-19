@@ -72,8 +72,8 @@ abstract class AbstractProcess {
                     $msg = $this->swooleProcess->read(64 * 1024);
                     if(is_string($msg)) {
                         $message = json_decode($msg, true);
-                        list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
-                        if(is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
+                        @list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
+                        if(!isset($is_proxy_by_master) || is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
                             $is_proxy_by_master = false;
                         }else {
                             $is_proxy_by_master = true;
@@ -127,13 +127,13 @@ abstract class AbstractProcess {
      */
     public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
         $processManager = \Workerfy\processManager::getInstance();
-        $isMaster = $processManager->isMaster(md5($process_name));
+        $isMaster = $processManager->isMaster($process_name);
         $from_process_name = $this->getProcessName();
         $from_process_worker_id = $this->getProcessWorkerId();
 
         if($isMaster) {
-            $process_worker_id = 0;
-            $message = json_encode([$data, $from_process_name, $from_process_worker_id, $processManager->getMasterWorkerName(), $process_worker_id], JSON_UNESCAPED_UNICODE);
+            $to_process_worker_id = 0;
+            $message = json_encode([$data, $from_process_name, $from_process_worker_id, $processManager->getMasterWorkerName(), $to_process_worker_id], JSON_UNESCAPED_UNICODE);
             $this->getSwooleProcess()->write($message);
             return true;
         }
@@ -153,7 +153,8 @@ abstract class AbstractProcess {
             if($is_use_master_proxy) {
                 $this->getSwooleProcess()->write($message);
             }else {
-                $message = json_encode([$data, $from_process_name, $from_process_worker_id]);
+                $is_proxy = false;
+                $message = json_encode([$data, $from_process_name, $from_process_worker_id, $is_proxy], JSON_UNESCAPED_UNICODE);
                 $process->getSwooleProcess()->write($message);
             }
         }

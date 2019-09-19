@@ -231,27 +231,25 @@ class ProcessManager {
         }else {
             foreach($this->process_wokers as $key => $processes) {
                 foreach($processes as $worker_id => $process) {
-                    if(!$this->isMaster($key)) {
-                        $swooleProcess = $process->getSwooleProcess();
-                        \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
-                            $msg = $swooleProcess->read(64 * 1024);
-                            if(is_string($msg)) {
-                                $message = json_decode($msg, true);
-                                list($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) = $message;
-                            }
-                            if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
-                                try {
-                                    if($to_process_name == $this->getMasterWorkerName()) {
-                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $to_process_worker_id = 0);
-                                    }else {
-                                        $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
-                                    }
-                                }catch(\Throwable $t) {
-
+                    $swooleProcess = $process->getSwooleProcess();
+                    \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
+                        $msg = $swooleProcess->read(64 * 1024);
+                        if(is_string($msg)) {
+                            $message = json_decode($msg, true);
+                            list($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) = $message;
+                        }
+                        if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
+                            try {
+                                if($to_process_name == $this->getMasterWorkerName()) {
+                                    $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                }else {
+                                    $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
                                 }
+                            }catch(\Throwable $t) {
+
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             }
         }
@@ -278,8 +276,8 @@ class ProcessManager {
      * @param string $key
      * @return bool
      */
-    public function isMaster(string $key) {
-        if($key == md5($this->getMasterWorkerName())) {
+    public function isMaster(string $process_name) {
+        if($process_name == $this->getMasterWorkerName()) {
             return true;
         }
         return false;
@@ -361,7 +359,7 @@ class ProcessManager {
      * @return bool
      */
     public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
-        if($this->isMaster(md5($process_name))) {
+        if($this->isMaster($process_name)) {
             return false;
         }
         $process_workers = [];
@@ -371,7 +369,8 @@ class ProcessManager {
         }else if(is_array($process)) {
             $process_workers = $process;
         }
-        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
+        $is_proxy = false;
+        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId(), $is_proxy], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }
@@ -387,7 +386,7 @@ class ProcessManager {
      * @return bool
      */
     public function writeByMasterProxy(string $data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
-        if($this->isMaster(md5($to_process_name))) {
+        if($this->isMaster($to_process_name)) {
             return false;
         }
         $process_workers = [];
@@ -397,8 +396,8 @@ class ProcessManager {
         }else if(is_array($process)) {
             $process_workers = $process;
         }
-
-        $message = json_encode([$data, $from_process_name, $from_process_worker_id, true], JSON_UNESCAPED_UNICODE);
+        $proxy = true;
+        $message = json_encode([$data, $from_process_name, $from_process_worker_id, $proxy], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }
@@ -409,7 +408,7 @@ class ProcessManager {
      * @param string $data
      * @param string|null $process_name
      */
-    public function broadcastProcessWorker(string $data, string $process_name = null) {
+    public function broadcastProcessWorker(string $process_name = null, string $data = '') {
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
         if($process_name) {
             $key = md5($process_name);
