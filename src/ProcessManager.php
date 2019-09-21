@@ -287,24 +287,23 @@ class ProcessManager {
      */
     public function dynamicCreateProcess(string $process_name, int $process_num = 2) {
         $key = md5($process_name);
+        $process_worker_num = $this->process_lists[$key]['process_worker_num'];
+        if(count($this->process_wokers[$key]) > $process_worker_num) {
+            return;
+        }
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
-        $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         $total_process_num = $process_worker_num + $process_num;
         $async = $this->process_lists[$key]['async'];
         $args = $this->process_lists[$key]['args'];
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
-
-        if(count($this->process_wokers[$key]) > $process_worker_num) {
-            return;
-        }
         for($worker_id = $process_worker_num; $worker_id <  $total_process_num; $worker_id++) {
             try {
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
                 $process->setProcessType(2);// 动态进程类型=2
-                if (!isset($this->process_wokers[$key][$worker_id])) {
+                if(!isset($this->process_wokers[$key][$worker_id])) {
                     $this->process_wokers[$key][$worker_id] = $process;
                 }
                 $process->start();
@@ -321,11 +320,9 @@ class ProcessManager {
      */
     public function destroyDynamicProcess(string $process_name) {
         $process_workers = $this->getProcessByName($process_name, -1);
-        $dynamicProcess = [];
         foreach($process_workers as $worker_id=>$process) {
             if($process->isDynamicProcess()) {
-                //$this->writeByProcessName($process_name, AbstractProcess::SWOOLEFY_PROCESS_EXIT_FLAG, $worker_id);
-                $process->exit();
+                $this->writeByProcessName($process_name, AbstractProcess::SWOOLEFY_PROCESS_EXIT_FLAG, $worker_id);
             }
         }
     }

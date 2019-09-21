@@ -2,12 +2,16 @@
 namespace Workerfy\Tests\Daemon;
 
 use Workerfy\ProcessManager;
+use PDO;
 
 class Worker1 extends \Workerfy\AbstractProcess {
 
 	public function run() {
 	    $start_time = time();
 		while(true) {
+		    if($this->isRebooting() || $this->isExiting()) {
+                return;
+            }
 			// var_dump(date("Y-m-d H:i:s"));
 			// go(function() {
 			// 	sleep(3);
@@ -16,9 +20,22 @@ class Worker1 extends \Workerfy\AbstractProcess {
 		    //var_dump("jjjjj");
             $pid = ProcessManager::getInstance()->getPidByName($this->getProcessName(), $this->getProcessWorkerId());
 		    \Co::sleep(2);
+
+		    var_dump("worker_id:".$this->getProcessWorkerId());
+
+		    sleep(1);
             //var_dump(date("Y-m-d H:i:s"));
-		    if(time() -$start_time > 1) {
-                break;
+//		    if(time() -$start_time > 1) {
+//                break;
+//            }
+            if($this->getProcessWorkerId() == 1) {
+                sleep(2);
+                //$this->exit();
+                //$this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
+                $db = \Workerfy\Tests\Db::getMasterMysql();
+                $query = $db->query("select * from users limit 100");
+                $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+                var_dump($res);
             }
             //var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }
@@ -28,8 +45,8 @@ class Worker1 extends \Workerfy\AbstractProcess {
             $Config = \Workerfy\Config::getInstance();
             $Config->setTest('bingcool');
             $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
-        }
 
+        }
         //$this->exit();
         //$this->reboot();
 	}

@@ -15,7 +15,6 @@ use Swoole\Event;
 use Swoole\Process;
 
 abstract class AbstractProcess {
-
     private $swooleProcess;
     private $process_name;
     private $async = null;
@@ -27,8 +26,9 @@ abstract class AbstractProcess {
     private $is_reboot = false;
     private $is_exit = false;
     private $process_type = 1;
+    private $wait_time = 30;
 
-    const SWOOLEFY_PROCESS_REBOOT_FLAG = "process::worker::action::restart";
+    const SWOOLEFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
     const SWOOLEFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
     /**
@@ -45,6 +45,9 @@ abstract class AbstractProcess {
         $this->extend_data = $extend_data;
         $this->process_name = $process_name;
         $this->enable_coroutine = $enable_coroutine;
+        if(isset($args['wait_time']) && is_numeric($args['wait_time'])) {
+            $this->wait_time = $args['wait_time'];
+        }
         if(version_compare(swoole_version(),'4.3.0','>=')) {
             $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
         }else {
@@ -124,7 +127,6 @@ abstract class AbstractProcess {
         }catch(\Throwable $t) {
             $this->handleException($t);
         }
-        
     }
 
     /**
@@ -191,12 +193,16 @@ abstract class AbstractProcess {
 
     /**
      * 通知master进程动态创建进程
+     * notifyMasterDynamicCreateProcess
      */
     public function notifyMasterDynamicCreateProcess() {
-        $is_use_master_proxy = false;
         $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::AUTO_CREATE_WORKER);
     }
 
+    /**
+     * 通知master销毁动态创建的进程
+     * notifyMasterDestroyDynamicProcess
+     */
     public function notifyMasterDestroyDynamicProcess() {
         $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::DESTROY_DYNAMIC_PROCESS);
     }
@@ -229,6 +235,36 @@ abstract class AbstractProcess {
      */
     public function getProcessType() {
         return $this->process_type;
+    }
+
+    /**
+     * @param int $wait_time
+     */
+    public function setWaitTime(int $wait_time = 30) {
+        $this->wait_time = $wait_time;
+    }
+
+    /**
+     * getWaitTime
+     */
+    public function getWaitTime() {
+        return $this->wait_time;
+    }
+
+    /**
+     * isRebooting
+     * @return bool
+     */
+    public function isRebooting() {
+        return $this->is_reboot;
+    }
+
+    /**
+     * isExiting
+     * @return bool
+     */
+    public function isExiting() {
+        return $this->is_exit;
     }
 
     /**
@@ -328,9 +364,11 @@ abstract class AbstractProcess {
     public function reboot() {
         if($this->isStaticProcess()) {
             $pid = $this->getPid();
-            if(Process::kill($pid, 0)) {
+            if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
-                Process::kill($pid, SIGTERM);
+                \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+                    $this->kill($pid, SIGTERM);
+                });
             }
         }else {
             throw new \Exception("DynamicProcess can not reboot");
@@ -340,18 +378,28 @@ abstract class AbstractProcess {
     /**
      * 直接退出进程
      */
-    public function exit(int $pid = null, int $wait_time = 30) {
+    public function exit(int $pid = null) {
         if(!$pid) {
             $pid = $this->getPid();
         }
-        if(Process::kill($pid, 0)) {
-            if(!$this->is_reboot) {
-                $this->onShutDown();
-            }
+        if(Process::kill($pid, 0) && $this->is_exit === false && $this->is_reboot === false) {
             $this->is_exit = true;
-            // 延迟30s
-            sleep($wait_time);
-            Process::kill($pid, SIGKILL);
+            \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+                if(!$this->is_reboot) {
+                    $this->onShutDown();
+                }
+                $this->kill($pid, SIGKILL);
+            });
+        }
+    }
+
+    /**
+     * @param $pid
+     * @param $signal
+     */
+    public function kill($pid, $signal) {
+        if(Process::kill($pid, 0)){
+            Process::kill($pid, $signal);
         }
     }
 

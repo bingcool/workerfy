@@ -42,12 +42,12 @@ class CrontabManager {
 					if(is_array($func)) {
 						if(!isset($this->cron_tasks[$cron_name_key])) {	
 							$this->cron_tasks[$cron_name_key] = [$expression, $func];
-                            $timer_id = swoole_timer_tick($msec, $func, $expression);
+                            $timer_id = \Swoole\Timer::tick($msec, $func, $expression);
 						}
 					}else {
 						if(!isset($this->cron_tasks[$cron_name_key])) {
 							$this->cron_tasks[$cron_name_key] = [$expression, $func];
-                            $timer_id = swoole_timer_tick($msec, function($timer_id, $expression) use($func) {
+                            $timer_id = \Swoole\Timer::tick($msec, function($timer_id, $expression) use($func) {
                                 $expression_key = md5($expression);
                                 $cron = CronExpression::factory($expression);
                                 $now_time = time();
