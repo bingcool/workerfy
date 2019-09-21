@@ -9,7 +9,7 @@ class Timer extends \Workerfy\AbstractProcess {
     public function run() {
         CrontabManager::getInstance()->addRule("tick", "* * * * *" , function() {
             //var_dump("this is a tick test");
-            //$this->time();
+            $this->time();
         });
 
         $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
