@@ -23,6 +23,11 @@ class Config {
 		$this->color = new \Workerfy\EachColor();
 	}
 
+	/**
+	 * 加载配置文件
+	 * @param  string|null $config_file_path
+	 * @return mixed
+	 */
 	public function loadConfig(string $config_file_path = null) {
 		if(is_file($config_file_path)) {
 			$config = require $config_file_path;
@@ -36,10 +41,18 @@ class Config {
 		}
 	}
 
+	/**
+	 * setConfig
+	 * @param array $config
+	 */
 	public function setConfig(array $config = []) {
 		$this->config = array_merge_recursive($this->config, $config);
 	}
 
+	/**
+	 * getConfig
+	 * @return array
+	 */
 	public function getConfig() {
 		return $this->config;
 	}
