@@ -33,7 +33,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
                 //$this->exit();
                 //$this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
                 $db = \Workerfy\Tests\Db::getMasterMysql();
-                $query = $db->query("select * from users limit 100");
+                $query = $db->query("select * from user limit 100");
                 $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
                 var_dump($res);
             }

@@ -37,8 +37,8 @@ class ProcessManager {
     public $onExit;
 
     const MASTER_WORKER_NAME = 'master_worker';
-    const AUTO_CREATE_WORKER = 'auto_create_worker';
-    const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process';
+    const AUTO_CREATE_WORKER = 'create_dynamic_process_worker';
+    const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
 
     /**
      * ProcessManager constructor.

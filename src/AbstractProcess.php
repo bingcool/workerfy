@@ -25,7 +25,7 @@ abstract class AbstractProcess {
     private $process_worker_id = 0;
     private $is_reboot = false;
     private $is_exit = false;
-    private $process_type = 1;
+    private $process_type = 1;// 1-静态进程，2-动态进程
     private $wait_time = 30;
 
     const SWOOLEFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
