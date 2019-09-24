@@ -25,6 +25,7 @@ abstract class AbstractProcess {
     private $process_worker_id = 0;
     private $is_reboot = false;
     private $is_exit = false;
+    private $is_force_exit = false;
     private $process_type = 1;// 1-静态进程，2-动态进程
     private $wait_time = 30;
     private $reboot_timer_id;
@@ -367,10 +368,14 @@ abstract class AbstractProcess {
 
     /**
      * reboot 自动重启
-     * @return
+     * @return bool
      */
     public function reboot() {
         if($this->isStaticProcess()) {
+            // 设置强制退出后，不能再设置reboot
+            if($this->is_force_exit) {
+                return false;
+            }
             $pid = $this->getPid();
             if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
@@ -379,6 +384,7 @@ abstract class AbstractProcess {
                 });
                 $this->reboot_timer_id = $timer_id;
             }
+            return true;
         }else {
             throw new \Exception("DynamicProcess can not reboot");
         }
@@ -387,6 +393,7 @@ abstract class AbstractProcess {
     /**
      * 直接退出进程
      * @param bool $is_force 是否强制退出
+     * @return bool
      */
     public function exit(bool $is_force = false) {
         $pid = $this->getPid();
@@ -394,18 +401,18 @@ abstract class AbstractProcess {
 
         if($is_process_exist && $is_force) {
             $this->is_exit = true;
+            $this->is_force_exit = true;
             // 强制退出时，如果设置了reboot的定时器，需要清除
-            if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id)) {
-                \Swoole\Timer::clear($this->reboot_timer_id);
-            }
+            $this->clearRebootTimer();
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 if(!$this->is_reboot) {
+                    write_info($this->getProcessName().'-'.$this->getProcessWorkerId().' exit');
                     $this->onShutDown();
                 }
                 $this->kill($pid, SIGKILL);
             });
             $this->exit_timer_id = $timer_id;
-            return;
+            return true;
         }
 
         if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
@@ -417,7 +424,28 @@ abstract class AbstractProcess {
                 $this->kill($pid, SIGKILL);
             });
             $this->exit_timer_id = $timer_id;
+            return true;
         }
+    }
+
+    /**
+     * 强制退出时，需要清理reboot的定时器
+     * clearRebootTimer
+     * @return void
+     */
+    public function clearRebootTimer() {
+        if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id)) {
+            \Swoole\Timer::clear($this->reboot_timer_id);
+            $this->is_reboot = false;
+        }
+    }
+
+    /**
+     * isForceExit
+     * @return boolean
+     */
+    public function isForceExit() {
+        return $this->is_force_exit;
     }
 
     /**

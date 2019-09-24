@@ -28,16 +28,12 @@ if(isset($argv[1]) && $argv[1] == STOP)  {
             write_info("-----------master start to stop, please wait a time-----------");
         }
         $start_stop_time = time();
-        while (1) {
-            if(\Swoole\Process::kill($master_pid, 0)) {
-                // 超过60s
-                if(time() - $start_stop_time > 60) {
-                    break;
-                }
-                sleep(5);
-            }else {
+        while(\Swoole\Process::kill($master_pid, 0)) {
+            // 超过20s
+            if(time() - $start_stop_time > 20) {
                 break;
             }
+            sleep(5);
         }
         write_info("-----------master has stopped-----------");
     }

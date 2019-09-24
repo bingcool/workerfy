@@ -220,7 +220,7 @@ class ProcessManager {
                             }catch (\Throwable $t) {
                                 throw new \Exception($t->getMessage());
                             }finally {
-                                exit;
+                                exit(0);
                             }
                         }
                         break;
@@ -320,7 +320,7 @@ class ProcessManager {
         $args = $this->process_lists[$key]['args'];
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
-        for($worker_id = $process_worker_num; $worker_id <  $total_process_num; $worker_id++) {
+        for($worker_id = $process_worker_num; $worker_id < $total_process_num; $worker_id++) {
             try {
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
