@@ -29,15 +29,19 @@ class ProcessManager {
 
     private $signal = [];
 
+    private $is_daemon = false;
+
+    private $is_exit = false;
+
     public $onStart;
     public $onPipeMsg;
     public $onProxyMsg;
-    public $onDynamicCreateProcess;
+    public $onCreateDynamicProcess;
     public $onDestroyDynamicProcess;
     public $onExit;
 
     const MASTER_WORKER_NAME = 'master_worker';
-    const AUTO_CREATE_WORKER = 'create_dynamic_process_worker';
+    const CREATE_DYNAMIC_WORKER = 'create_dynamic_process_worker';
     const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
 
     /**
@@ -97,14 +101,14 @@ class ProcessManager {
     	if(!empty($this->process_lists)) {
             if($is_daemon) {
                 $this->daemon();
+                $this->is_daemon = $is_daemon;
             }
             if(!isset($this->master_pid)) {
                 $this->master_pid = posix_getpid();
             }
-
-    		foreach($this->process_lists as $key => $list) {
+            foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
-    			for($i = 0; $i < $process_worker_num; $i++) {
+    			for($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
     				try {
 	    				$process_name = $list['process_name'];
 			        	$process_class = $list['process_class'];
@@ -113,9 +117,9 @@ class ProcessManager {
 			        	$extend_data = $list['extend_data'] ?? null;
 			        	$enable_coroutine = $list['enable_coroutine'] ?? true;
 		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-		    			$process->setProcessWorkerId($i);
-                        if(!isset($this->process_wokers[$key][$i])) {
-                            $this->process_wokers[$key][$i] = $process;
+		    			$process->setProcessWorkerId($worker_id);
+                        if(!isset($this->process_wokers[$key][$worker_id])) {
+                            $this->process_wokers[$key][$worker_id] = $process;
                         }
                         usleep(50000);
 	    			}catch(\Throwable $t) {
@@ -129,7 +133,8 @@ class ProcessManager {
                 }
             }
             $this->signal();
-    		$this->registerSignal();
+            $this->installMasterSigterm();
+            $this->registerSignal();
     		$this->swooleEventAdd();
     	}
     	$master_pid = $this->getMasterPid();
@@ -137,6 +142,23 @@ class ProcessManager {
             $this->onStart && $this->onStart->call($this, $master_pid);
         }
     	return $master_pid;
+    }
+
+    /**
+     * 主进程注册监听退出信号,逐步发送退出指令至子进程退出，子进程完全退出后，master进程最后退出
+     * 每个子进程收到退出指令后，等待wait_time后正式退出，那么在这个wait_time过程
+     * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在退出状态中，这个状态中不能再处理新的任务数据
+     */
+    private function installMasterSigterm() {
+        \Swoole\Process::signal(SIGTERM, function($signo) {
+            foreach($this->process_wokers as $key => $processes) {
+                foreach($processes as $worker_id => $process) {
+                    $process_name = $process->getProcessName();
+                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                }
+            }
+            $this->is_exit = true;
+        });
     }
 
     /**
@@ -224,8 +246,8 @@ class ProcessManager {
                         try {
                             if($to_process_name == $this->getMasterWorkerName()) {
                                 switch ($msg) {
-                                    case ProcessManager::AUTO_CREATE_WORKER :
-                                        $this->onDynamicCreateProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                    case ProcessManager::CREATE_DYNAMIC_WORKER :
+                                        $this->onCreateDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
                                         break;
                                     case ProcessManager::DESTROY_DYNAMIC_PROCESS:
                                         $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
@@ -259,8 +281,8 @@ class ProcessManager {
                             try {
                                 if($to_process_name == $this->getMasterWorkerName()) {
                                     switch ($msg) {
-                                        case ProcessManager::AUTO_CREATE_WORKER :
-                                            $this->onDynamicCreateProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                        case ProcessManager::CREATE_DYNAMIC_WORKER :
+                                            $this->onCreateDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS:
                                             $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
@@ -285,10 +307,10 @@ class ProcessManager {
     /**
      * dynamicCreateProcess 动态创建临时进程
      */
-    public function dynamicCreateProcess(string $process_name, int $process_num = 2) {
+    public function createDynamicProcess(string $process_name, int $process_num = 2) {
         $key = md5($process_name);
         $process_worker_num = $this->process_lists[$key]['process_worker_num'];
-        if(count($this->process_wokers[$key]) > $process_worker_num) {
+        if(count($this->process_wokers[$key]) > $process_worker_num || $this->isMasterExiting()) {
             return;
         }
         $process_name = $this->process_lists[$key]['process_name'];
@@ -302,7 +324,7 @@ class ProcessManager {
             try {
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
-                $process->setProcessType(2);// 动态进程类型=2
+                $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
                 if(!isset($this->process_wokers[$key][$worker_id])) {
                     $this->process_wokers[$key][$worker_id] = $process;
                 }
@@ -322,7 +344,7 @@ class ProcessManager {
         $process_workers = $this->getProcessByName($process_name, -1);
         foreach($process_workers as $worker_id=>$process) {
             if($process->isDynamicProcess()) {
-                $this->writeByProcessName($process_name, AbstractProcess::SWOOLEFY_PROCESS_EXIT_FLAG, $worker_id);
+                $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
             }
         }
     }
@@ -422,6 +444,14 @@ class ProcessManager {
      */
     public function getMasterWorkerName() {
         return ProcessManager::MASTER_WORKER_NAME;
+    }
+
+    /**
+     * master是否正在退出状态中，这个状态中，不再接受处理动态创建进程
+     * @return bool
+     */
+    public function isMasterExiting() {
+        return $this->is_exit;
     }
 
     /**

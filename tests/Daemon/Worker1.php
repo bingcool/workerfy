@@ -29,13 +29,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
 //                break;
 //            }
             if($this->getProcessWorkerId() == 1) {
-                sleep(2);
-                //$this->exit();
-                //$this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
-                $db = \Workerfy\Tests\Db::getMasterMysql();
-                $query = $db->query("select * from user limit 100");
-                $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-                var_dump($res);
+                $this->reboot();
             }
             //var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }

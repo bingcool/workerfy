@@ -27,9 +27,13 @@ abstract class AbstractProcess {
     private $is_exit = false;
     private $process_type = 1;// 1-静态进程，2-动态进程
     private $wait_time = 30;
+    private $reboot_timer_id;
+    private $exit_timer_id;
 
-    const SWOOLEFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
-    const SWOOLEFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
+    const PROCESS_STATIC_TYPE = 1; //静态进程
+    const PROCESS_DYNAMIC_TYPE = 2; //动态进程
+    const WORKERFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
+    const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
     /**
      * AbstractProcess constructor.
@@ -88,11 +92,15 @@ abstract class AbstractProcess {
                     if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
                         try {
                             switch ($msg) {
-                                case self::SWOOLEFY_PROCESS_REBOOT_FLAG :
+                                case self::WORKERFY_PROCESS_REBOOT_FLAG :
                                     $this->reboot();
                                     break;
-                                case self::SWOOLEFY_PROCESS_EXIT_FLAG :
-                                    $this->exit();
+                                case self::WORKERFY_PROCESS_EXIT_FLAG :
+                                    if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
+                                        $this->exit(true);
+                                    }else {
+                                        $this->exit();
+                                    }
                                     break;
                                 default :
                                     $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
@@ -195,8 +203,8 @@ abstract class AbstractProcess {
      * 通知master进程动态创建进程
      * notifyMasterDynamicCreateProcess
      */
-    public function notifyMasterDynamicCreateProcess() {
-        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::AUTO_CREATE_WORKER);
+    public function notifyMasterCreateDynamicProcess() {
+        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::CREATE_DYNAMIC_WORKER);
     }
 
     /**
@@ -366,9 +374,10 @@ abstract class AbstractProcess {
             $pid = $this->getPid();
             if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
-                \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+                $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                     $this->kill($pid, SIGTERM);
                 });
+                $this->reboot_timer_id = $timer_id;
             }
         }else {
             throw new \Exception("DynamicProcess can not reboot");
@@ -377,19 +386,37 @@ abstract class AbstractProcess {
 
     /**
      * 直接退出进程
+     * @param bool $is_force 是否强制退出
      */
-    public function exit(int $pid = null) {
-        if(!$pid) {
-            $pid = $this->getPid();
-        }
-        if(Process::kill($pid, 0) && $this->is_exit === false && $this->is_reboot === false) {
+    public function exit(bool $is_force = false) {
+        $pid = $this->getPid();
+        $is_process_exist = Process::kill($pid, 0);
+
+        if($is_process_exist && $is_force) {
             $this->is_exit = true;
-            \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+            // 强制退出时，如果设置了reboot的定时器，需要清除
+            if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id)) {
+                \Swoole\Timer::clear($this->reboot_timer_id);
+            }
+            $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 if(!$this->is_reboot) {
                     $this->onShutDown();
                 }
                 $this->kill($pid, SIGKILL);
             });
+            $this->exit_timer_id = $timer_id;
+            return;
+        }
+
+        if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
+            $this->is_exit = true;
+            $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+                if(!$this->is_reboot) {
+                    $this->onShutDown();
+                }
+                $this->kill($pid, SIGKILL);
+            });
+            $this->exit_timer_id = $timer_id;
         }
     }
 
