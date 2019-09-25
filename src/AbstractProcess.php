@@ -126,7 +126,6 @@ abstract class AbstractProcess {
             });
 
             $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
-
             try{
                 $this->run();
             }catch(\Throwable $t) {
@@ -139,7 +138,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * writeByProcessName 向某个进程写数据
+     * writeByProcessName worker进程向某个进程写数据
      * @param  string $name
      * @param  string $data
      * @return boolean
@@ -168,6 +167,10 @@ abstract class AbstractProcess {
         foreach($process_workers as $process_worker_id => $process) {
             $to_process_name = $process->getProcessName();
             $to_process_worker_id = $process->getProcessWorkerId();
+            // 进程处于rebooting|Exiting时，不再发msg
+            if($process->isRebooting() || $process->isExiting()) {
+                continue;
+            }
             $message = json_encode([$data, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id], JSON_UNESCAPED_UNICODE);
             if($is_use_master_proxy) {
                 $this->getSwooleProcess()->write($message);
@@ -180,6 +183,7 @@ abstract class AbstractProcess {
     }
 
     /**
+     * writeToMasterProcess 直接向master进程写数据
      * @param string $process_name
      * @param string $data
      * @param int $process_worker_id
@@ -191,6 +195,7 @@ abstract class AbstractProcess {
     }
 
     /**
+     * writeToWorkerByMasterProxy 向master进程写代理数据，master在代理转发worker进程
      * @param string $process_name
      * @param string $data
      * @param int $process_worker_id
@@ -201,7 +206,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * 通知master进程动态创建进程
+     * notifyMasterCreateDynamicProcess 通知master进程动态创建进程
      * notifyMasterDynamicCreateProcess
      */
     public function notifyMasterCreateDynamicProcess() {
@@ -209,7 +214,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * 通知master销毁动态创建的进程
+     * notifyMasterDestroyDynamicProcess 通知master销毁动态创建的进程
      * notifyMasterDestroyDynamicProcess
      */
     public function notifyMasterDestroyDynamicProcess() {
@@ -367,15 +372,34 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @return mixed
+     */
+    public function getRebootTimerId() {
+        return $this->reboot_timer_id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getExitTimerId() {
+        return $this->exit_timer_id;
+    }
+
+    /**
      * reboot 自动重启
      * @return bool
      */
-    public function reboot() {
+    public function reboot(int $wait_time = null) {
         if($this->isStaticProcess()) {
             // 设置强制退出后，不能再设置reboot
             if($this->is_force_exit) {
                 return false;
             }
+            // 自定义等待重启时间
+            if($wait_time) {
+                $this->wait_time = $wait_time;
+            }
+
             $pid = $this->getPid();
             if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
@@ -393,12 +417,14 @@ abstract class AbstractProcess {
     /**
      * 直接退出进程
      * @param bool $is_force 是否强制退出
+     * @param int  $wait_time
      * @return bool
      */
-    public function exit(bool $is_force = false) {
+    public function exit(bool $is_force = false, int $wait_time = null) {
         $pid = $this->getPid();
         $is_process_exist = Process::kill($pid, 0);
-
+        // 自定义退出等待时间
+        $wait_time && $this->wait_time = $wait_time;
         if($is_process_exist && $is_force) {
             $this->is_exit = true;
             $this->is_force_exit = true;
@@ -455,6 +481,28 @@ abstract class AbstractProcess {
     public function kill($pid, $signal) {
         if(Process::kill($pid, 0)){
             Process::kill($pid, $signal);
+        }
+    }
+
+    /**
+     * getCurrentRunCoroutineNum 获取当前进程中正在运行的协程数量，可以通过这个值判断比较，防止协程过多创建，可以设置sleep等待
+     * @return int
+     */
+    public function getCurrentRunCoroutineNum() {
+        $coroutine_info = \Swoole\Coroutine::stats();
+        if(isset($coroutine_info['coroutine_num'])) {
+            return $coroutine_info['coroutine_num'];
+        }
+    }
+
+    /**
+     * getCurrentCcoroutineLastCid 获取当前进程的协程cid已分配到哪个值，可以根据这个值设置进程reboot,防止cid超出最大数
+     * @return int
+     */
+    public function getCurrentCcoroutineLastCid() {
+        $coroutine_info = \Swoole\Coroutine::stats();
+        if(isset($coroutine_info['coroutine_last_cid'])) {
+            return $coroutine_info['coroutine_last_cid'];
         }
     }
 

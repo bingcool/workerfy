@@ -7,7 +7,7 @@ class Monitor extends \Workerfy\AbstractProcess {
 
     public function run() {
         sleep(5);
-        $this->notifyMasterCreateDynamicProcess();
+        //$this->notifyMasterCreateDynamicProcess();
 
         //sleep(10);
 

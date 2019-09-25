@@ -7,10 +7,19 @@ use PDO;
 class Worker1 extends \Workerfy\AbstractProcess {
 
 	public function run() {
+	    \Swoole\Coroutine::set([
+	        'max_coroutine' => 3000
+        ]);
 	    $start_time = time();
 		while(true) {
 		    if($this->isRebooting() || $this->isExiting()) {
                 return;
+            }
+
+            if($this->getCurrentRunCoroutineNum() >= 2) {
+                var_dump("max CurrentRunCoroutineNum");
+                sleep(3);
+                continue;
             }
 			// var_dump(date("Y-m-d H:i:s"));
 			// go(function() {
@@ -24,23 +33,44 @@ class Worker1 extends \Workerfy\AbstractProcess {
 		    var_dump("worker_id:".$this->getProcessWorkerId());
 
 		    sleep(1);
+		    go(function () {
+
+		        sleep(2);
+		        var_dump("coroutine");
+            });
+
+            go(function () {
+                sleep(3);
+                var_dump("coroutine2");
+            });
             //var_dump(date("Y-m-d H:i:s"));
 //		    if(time() -$start_time > 1) {
 //                break;
 //            }
-            if($this->getProcessWorkerId() == 1) {
-                $this->reboot();
+            if($this->getProcessWorkerId() == 0) {
+                $this->getCurrentRunCoroutineNum();
+                $this->test = 2;
+                $processManager = \Workerfy\processManager::getInstance();
+                $to_process = $processManager->getProcessByName('worker', 0);
+                $test = $to_process->test;
+                var_dump($test);
             }
+//            if($this->getProcessWorkerId() == 1) {
+//                $this->reboot();
+//            }
             //var_dump("run start-".rand(1,1000),'cid-'.\Co::getCid());
         }
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
-        if($this->getProcessWorkerId() == 1) {
+        if($this->getProcessWorkerId() == 0) {
             $Config = \Workerfy\Config::getInstance();
             $Config->setTest('bingcool');
             $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
 
+
         }
+
+
         //$this->exit();
         //$this->reboot();
 	}
