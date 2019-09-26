@@ -7,6 +7,9 @@ use PDO;
 class Worker1 extends \Workerfy\AbstractProcess {
 
 	public function run() {
+        defer(function() {
+            var_dump("expression");
+        });
 	    \Swoole\Coroutine::set([
 	        'max_coroutine' => 3000
         ]);
@@ -44,9 +47,9 @@ class Worker1 extends \Workerfy\AbstractProcess {
                 var_dump("coroutine2");
             });
             //var_dump(date("Y-m-d H:i:s"));
-//		    if(time() -$start_time > 1) {
-//                break;
-//            }
+		    if(time() -$start_time > 1) {
+               break;
+           }
             if($this->getProcessWorkerId() == 0) {
                 $this->getCurrentRunCoroutineNum();
                 $this->test = 2;
@@ -63,10 +66,7 @@ class Worker1 extends \Workerfy\AbstractProcess {
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
         if($this->getProcessWorkerId() == 0) {
-            $Config = \Workerfy\Config::getInstance();
-            $Config->setTest('bingcool');
-            $this->writeByProcessName('worker', 'hello hhhhhhhh', 0,0);
-
+            $this->writeByProcessName('worker', 'hello hhhhhhhh', 1, false);
 
         }
 

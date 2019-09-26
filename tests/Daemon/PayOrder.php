@@ -21,7 +21,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $woker_process_name = 'worker';
 $process_class = \Workerfy\Tests\Daemon\Worker1::class;
-$process_worker_num = 1;
+$process_worker_num = 2;
 $async = true;
 $args = [
     'wait_time' => 10
@@ -49,6 +49,8 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
         $from_process_name,
         $from_process_worker_id,
     ];
+
+    var_dump($array);
 };
 
 $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) {

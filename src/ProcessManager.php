@@ -169,10 +169,10 @@ class ProcessManager {
   			//必须为false，非阻塞模式
 		  	while($ret = \Swoole\Process::wait(false)) {
 		      	$pid = $ret['pid'];
-                $signal = $ret['signal'];
-                switch ($signal) {
-                    case 0  :
-                    case 15 :
+                $code = $ret['code'];
+                switch ($code) {
+                    // reboot 信号
+                    case SIGUSR1  :
                         if(!(\Swoole\Process::kill($pid, 0))) {
                             $process = $this->getProcessByPid($pid);
                             $process_name = $process->getProcessName();
@@ -203,7 +203,10 @@ class ProcessManager {
                             }
                         }
                         break;
-                    case 9 :
+                    // exit 信号
+                    case 0       :
+                    case SIGTERM :
+                    case SIGKILL :
                         $process = $this->getProcessByPid($pid);
                         $process_name = $process->getProcessName();
                         $process_worker_id = $process->getProcessWorkerId();
@@ -253,11 +256,11 @@ class ProcessManager {
                                         $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
                                         break;
                                     default:
-                                        $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                         break;
                                 }
                             }else {
-                                $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
                             }
                         }catch(\Throwable $t) {
 
@@ -288,7 +291,7 @@ class ProcessManager {
                                             $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
                                             break;
                                         default:
-                                            $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                            $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                             break;
                                     }
                                 }else {

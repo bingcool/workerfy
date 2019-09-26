@@ -113,15 +113,28 @@ abstract class AbstractProcess {
                     }
                 });
             }
+
+            // reboot
+            Process::signal(SIGUSR1, function ($signo) {
+                try{
+                    $this->onShutDown();
+                }catch (\Throwable $t){
+                    throw new \Exception($t->getMessage());
+                }finally {
+                    \Swoole\Event::del($this->swooleProcess->pipe);
+                    $this->swooleProcess->exit(SIGUSR1);
+                }
+            });
+
+            // exit
             Process::signal(SIGTERM, function ($signo) {
                 try{
                     $this->onShutDown();
                 }catch (\Throwable $t){
                     throw new \Exception($t->getMessage());
                 }finally {
-                    Event::del($this->swooleProcess->pipe);
-                    Process::signal(SIGTERM, null);
-                    Event::exit();
+                    \Swoole\Event::del($this->swooleProcess->pipe);
+                   $this->swooleProcess->exit(SIGTERM);
                 }
             });
 
@@ -148,6 +161,12 @@ abstract class AbstractProcess {
         $isMaster = $processManager->isMaster($process_name);
         $from_process_name = $this->getProcessName();
         $from_process_worker_id = $this->getProcessWorkerId();
+        
+        if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id) {
+            $error = "Error:write message to self worker";
+            write_info($error);
+            throw new \Exception($error);
+        }
 
         if($isMaster) {
             $to_process_worker_id = 0;
@@ -387,9 +406,10 @@ abstract class AbstractProcess {
 
     /**
      * reboot 自动重启
+     * @param float $wait_time
      * @return bool
      */
-    public function reboot(int $wait_time = null) {
+    public function reboot(float $wait_time = null) {
         if($this->isStaticProcess()) {
             // 设置强制退出后，不能再设置reboot
             if($this->is_force_exit) {
@@ -404,7 +424,7 @@ abstract class AbstractProcess {
             if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
                 $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                    $this->kill($pid, SIGTERM);
+                    $this->kill($pid, SIGUSR1);
                 });
                 $this->reboot_timer_id = $timer_id;
             }
@@ -417,10 +437,10 @@ abstract class AbstractProcess {
     /**
      * 直接退出进程
      * @param bool $is_force 是否强制退出
-     * @param int  $wait_time
+     * @param float  $wait_time
      * @return bool
      */
-    public function exit(bool $is_force = false, int $wait_time = null) {
+    public function exit(bool $is_force = false, float $wait_time = null) {
         $pid = $this->getPid();
         $is_process_exist = Process::kill($pid, 0);
         // 自定义退出等待时间
