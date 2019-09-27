@@ -4,5 +4,6 @@
 *.pid
 /tests/Db.php
 /tests/Redis.php
+/tests/Test.php
 
 

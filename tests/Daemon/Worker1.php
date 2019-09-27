@@ -47,9 +47,9 @@ class Worker1 extends \Workerfy\AbstractProcess {
                 var_dump("coroutine2");
             });
             //var_dump(date("Y-m-d H:i:s"));
-		    if(time() -$start_time > 1) {
-               break;
-           }
+//		    if(time() -$start_time > 1) {
+//               break;
+//            }
             if($this->getProcessWorkerId() == 0) {
                 $this->getCurrentRunCoroutineNum();
                 $this->test = 2;

@@ -21,7 +21,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $woker_process_name = 'worker';
 $process_class = \Workerfy\Tests\Daemon\Worker1::class;
-$process_worker_num = 2;
+$process_worker_num = 10;
 $async = true;
 $args = [
     'wait_time' => 10

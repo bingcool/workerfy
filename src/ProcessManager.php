@@ -99,10 +99,7 @@ class ProcessManager {
      */
     public function start(bool $is_daemon = false) {
     	if(!empty($this->process_lists)) {
-            if($is_daemon) {
-                $this->daemon();
-                $this->is_daemon = $is_daemon;
-            }
+            $this->daemon($is_daemon);
             if(!isset($this->master_pid)) {
                 $this->master_pid = posix_getpid();
             }
@@ -133,7 +130,8 @@ class ProcessManager {
                 }
             }
             $this->signal();
-            $this->installMasterSigterm();
+            $this->installMasterStopSignal();
+            $this->installMasterReloadSignal();
             $this->registerSignal();
     		$this->swooleEventAdd();
     	}
@@ -149,13 +147,32 @@ class ProcessManager {
      * 每个子进程收到退出指令后，等待wait_time后正式退出，那么在这个wait_time过程
      * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在退出状态中，这个状态中不能再处理新的任务数据
      */
-    private function installMasterSigterm() {
+    private function installMasterStopSignal() {
         \Swoole\Process::signal(SIGTERM, function($signo) {
             foreach($this->process_wokers as $key => $processes) {
                 foreach($processes as $worker_id => $process) {
                     $process_name = $process->getProcessName();
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                 }
+                usleep(1000000);
+            }
+            $this->is_exit = true;
+        });
+    }
+
+    /**
+     * 主进程注册监听自定义的SIGUSR2作为通知子进程重启的信号
+     * 每个子进程收到重启指令后，等待wait_time后正式退出，那么在这个wait_time过程
+     * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在重启状态中，这个状态中不能再处理新的任务数据
+     */
+    private function installMasterReloadSignal() {
+        \Swoole\Process::signal(SIGUSR2, function($signo) {
+            foreach($this->process_wokers as $key => $processes) {
+                foreach($processes as $worker_id => $process) {
+                    $process_name = $process->getProcessName();
+                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_REBOOT_FLAG, $worker_id);
+                }
+                usleep(1000000);
             }
             $this->is_exit = true;
         });
@@ -355,10 +372,19 @@ class ProcessManager {
     /**
      * daemon
      */
-    public function daemon() {
-        if(!isset($this->start_daemon)) {
-            \Swoole\Process::daemon();
-            $this->start_daemon = true;
+    public function daemon($is_daemon) {
+        if($is_daemon) {
+            $this->is_daemon = $is_daemon;
+        }else {
+            if(IS_DAEMON == true) {
+                $this->is_daemon = IS_DAEMON;
+            }
+        }
+        if($this->is_daemon) {
+            if(!isset($this->start_daemon)) {
+                \Swoole\Process::daemon();
+                $this->start_daemon = true;
+            }
         }
     }
 

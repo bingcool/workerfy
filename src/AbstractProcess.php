@@ -13,6 +13,7 @@ namespace Workerfy;
 
 use Swoole\Event;
 use Swoole\Process;
+use Workerfy\ProcessManager;
 
 abstract class AbstractProcess {
     private $swooleProcess;
@@ -30,6 +31,7 @@ abstract class AbstractProcess {
     private $wait_time = 30;
     private $reboot_timer_id;
     private $exit_timer_id;
+    private $coroutine_id;//当前进程的主协程id
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
@@ -69,14 +71,21 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @return mixed
+     */
+    public function getCoroutineId() {
+        return $this->coroutine_id;
+    }
+
+    /**
      * __start 创建process的成功回调处理
      * @param  Process $swooleProcess
      * @return void
      */
     public function __start(Process $swooleProcess) {
         \Swoole\Runtime::enableCoroutine(true);
-
         $this->pid = $this->swooleProcess->pid;
+        $this->coroutine_id = \Co::getCid();
         try {
             if($this->async){
                 Event::add($this->swooleProcess->pipe, function() {
@@ -116,26 +125,16 @@ abstract class AbstractProcess {
 
             // reboot
             Process::signal(SIGUSR1, function ($signo) {
-                try{
-                    $this->onShutDown();
-                }catch (\Throwable $t){
-                    throw new \Exception($t->getMessage());
-                }finally {
-                    \Swoole\Event::del($this->swooleProcess->pipe);
-                    $this->swooleProcess->exit(SIGUSR1);
-                }
+                Event::del($this->swooleProcess->pipe);
+                Event::exit();
+                $this->swooleProcess->exit(SIGUSR1);
             });
 
             // exit
             Process::signal(SIGTERM, function ($signo) {
-                try{
-                    $this->onShutDown();
-                }catch (\Throwable $t){
-                    throw new \Exception($t->getMessage());
-                }finally {
-                    \Swoole\Event::del($this->swooleProcess->pipe);
-                   $this->swooleProcess->exit(SIGTERM);
-                }
+                Event::del($this->swooleProcess->pipe);
+                Event::exit();
+                $this->swooleProcess->exit(SIGTERM);
             });
 
             $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
@@ -273,7 +272,7 @@ abstract class AbstractProcess {
     /**
      * @param int $wait_time
      */
-    public function setWaitTime(int $wait_time = 30) {
+    public function setWaitTime(float $wait_time = 30) {
         $this->wait_time = $wait_time;
     }
 
@@ -424,7 +423,13 @@ abstract class AbstractProcess {
             if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
                 $this->is_reboot = true;
                 $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                    $this->kill($pid, SIGUSR1);
+                    try {
+                        $this->onShutDown();
+                    }catch (\Throwable $throwable) {
+                        throw new \Exception($throwable->getMessage());
+                    }finally {
+                        $this->kill($pid, SIGUSR1);
+                    }
                 });
                 $this->reboot_timer_id = $timer_id;
             }
@@ -451,11 +456,16 @@ abstract class AbstractProcess {
             // 强制退出时，如果设置了reboot的定时器，需要清除
             $this->clearRebootTimer();
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                if(!$this->is_reboot) {
-                    write_info($this->getProcessName().'-'.$this->getProcessWorkerId().' exit');
-                    $this->onShutDown();
+                try {
+                    if(!$this->is_reboot) {
+                        write_info($this->getProcessName().'@'.$this->getProcessWorkerId().' exit');
+                        $this->onShutDown();
+                    }
+                }catch (\Throwable $throwable) {
+                    throw new \Exception($throwable->getMessage());
+                }finally {
+                    $this->kill($pid, SIGTERM);
                 }
-                $this->kill($pid, SIGKILL);
             });
             $this->exit_timer_id = $timer_id;
             return true;
@@ -464,10 +474,13 @@ abstract class AbstractProcess {
         if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
             $this->is_exit = true;
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                if(!$this->is_reboot) {
+                try {
                     $this->onShutDown();
+                }catch (\Throwable $throwable) {
+                    throw new \Exception($throwable->getMessage());
+                }finally {
+                    $this->kill($pid, SIGTERM);
                 }
-                $this->kill($pid, SIGKILL);
             });
             $this->exit_timer_id = $timer_id;
             return true;
