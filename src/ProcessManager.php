@@ -38,6 +38,7 @@ class ProcessManager {
     public $onProxyMsg;
     public $onCreateDynamicProcess;
     public $onDestroyDynamicProcess;
+    public $onHandleException;
     public $onExit;
 
     const MASTER_WORKER_NAME = 'master_worker';
@@ -50,6 +51,7 @@ class ProcessManager {
      */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
+        $this->onHandleException = function (\Exception $e) {};
     }
 
     /**
@@ -120,7 +122,7 @@ class ProcessManager {
                         }
                         usleep(50000);
 	    			}catch(\Throwable $t) {
-	    				throw new \Exception($t->getMessage());
+                        $this->onHandleException->call($this, $t);
 	    			}
     			}
     		}
@@ -214,7 +216,7 @@ class ProcessManager {
                                     }
                                     $process->start();
                                 }catch(\Throwable $t) {
-                                    throw new \Exception($t->getMessage());
+                                    $this->onHandleException->call($this, $t);
                                 }
                                 $this->swooleEventAdd($process);
                             }
@@ -238,7 +240,7 @@ class ProcessManager {
                             try{
                                 $this->onExit->call($this);
                             }catch (\Throwable $t) {
-                                throw new \Exception($t->getMessage());
+                                $this->onHandleException->call($this, $t);
                             }finally {
                                 exit(0);
                             }
@@ -280,12 +282,13 @@ class ProcessManager {
                                 $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
                             }
                         }catch(\Throwable $t) {
-
+                            $this->onHandleException->call($this, $t);
                         }
                     }
                 });
             }else {
-                throw new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
+                $e =  new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
+                $this->onHandleException->call($this, $e);
             }
         }else {
             foreach($this->process_wokers as $key => $processes) {
@@ -315,7 +318,7 @@ class ProcessManager {
                                     $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
                                 }
                             }catch(\Throwable $t) {
-
+                                $this->onHandleException->call($this, $t);
                             }
                         }
                     });
@@ -350,7 +353,7 @@ class ProcessManager {
                 }
                 $process->start();
             }catch(\Throwable $t) {
-                throw new \Exception($t->getMessage());
+                $this->onHandleException->call($this, $t);
             }
             $this->swooleEventAdd($process);
             usleep(50000);
@@ -550,7 +553,8 @@ class ProcessManager {
                 }
             }
         }else {
-            throw new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
+            $e = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
+            $this->onHandleException->call($this, $e);
         }
     }
 
@@ -572,7 +576,7 @@ class ProcessManager {
                 try {
                     \Swoole\Process::signal($signal, $function);
                 }catch (\Exception $e) {
-                    throw new \Exception($e->getMessage());
+                    $this->onHandleException->call($this, $e);
                 }
             }
         }

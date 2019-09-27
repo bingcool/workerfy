@@ -73,6 +73,10 @@ $processManager->onDestroyDynamicProcess = function () use($woker_process_name) 
     $this->destroyDynamicProcess($woker_process_name);
 };
 
+$processManager->onHandleException = function (\Exception $e) {
+    var_dump($e->getMessage());
+};
+
 $processManager->onExit = function() use($config_file_path) {
     var_dump("master exit",$config_file_path);
 };

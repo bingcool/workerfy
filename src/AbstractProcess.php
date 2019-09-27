@@ -145,7 +145,7 @@ abstract class AbstractProcess {
             }
 
         }catch(\Throwable $t) {
-            $this->handleException($t);
+            $this->onHandleException($t);
         }
     }
 
@@ -561,10 +561,10 @@ abstract class AbstractProcess {
     public function onShutDown() {}
 
     /**
-     * handleException
+     * onHandleException
      * @param  $throwable
      * @return mixed
      */
-    public function handleException($throwable) {}
+    public function onHandleException($throwable) {}
 
 }
