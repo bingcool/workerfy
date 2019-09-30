@@ -137,7 +137,9 @@ abstract class AbstractProcess {
                 $this->swooleProcess->exit(SIGTERM);
             });
 
-            $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
+            if(PHP_OS != 'Darwin') {
+                $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
+            }
             try{
                 $this->run();
             }catch(\Throwable $t) {

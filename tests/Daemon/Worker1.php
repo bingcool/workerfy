@@ -7,9 +7,11 @@ use PDO;
 class Worker1 extends \Workerfy\AbstractProcess {
 
 	public function run() {
+
         defer(function() {
             var_dump("expression");
         });
+
 	    \Swoole\Coroutine::set([
 	        'max_coroutine' => 3000
         ]);

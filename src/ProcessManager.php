@@ -131,7 +131,7 @@ class ProcessManager {
                     $process->start();
                 }
             }
-            $this->signal();
+            $this->installSigchldsignal();
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
             $this->registerSignal();
@@ -181,9 +181,9 @@ class ProcessManager {
     }
 
     /**
-     * signal
+     * installSigchldsignal 注册回收子进程信号
      */
-    private function signal() {
+    private function installSigchldsignal() {
         \Swoole\Process::signal(SIGCHLD, function($signo) {
   			//必须为false，非阻塞模式
 		  	while($ret = \Swoole\Process::wait(false)) {
@@ -567,7 +567,7 @@ class ProcessManager {
     }
 
     /**
-     * @throws \Exception
+     * registerSignal
      */
     private function registerSignal() {
         if(!empty($this->signal)) {
