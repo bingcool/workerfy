@@ -1,0 +1,24 @@
+<?php
+namespace Workerfy\Tests\Crontab;
+
+use Workerfy\Crontab\CrontabManager;
+use Workerfy\ProcessManager;
+
+class Worker extends \Workerfy\AbstractProcess {
+
+    public function run() {
+        // 每分钟执行一次，时间格式类似于linux的crontab
+        CrontabManager::getInstance()->addRule("tick", "* * * * *" , function() {
+            var_dump('exec-datetime:'.date('Y-m-d H:i:s', time()));
+            var_dump('Cid-'.\Co::getCid());
+        });
+
+        $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
+
+        var_dump('创建了一个定时器timer_id='.$timer_id);
+    }
+
+    public function time() {
+
+    }
+}

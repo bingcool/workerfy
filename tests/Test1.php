@@ -1,15 +1,21 @@
 <?php
-$start_time = time();
+Swoole\Runtime::enableCoroutine();
 
-$res = \Swoole\Process::daemon();
+go(function () {
+    sleep(2);// 相当于休息2s,让出控制权
+    var_dump("go1休息完毕，已唤醒");
+});
 
-while(1) {
-   sleep(2);
+go(function () {
+    sleep(1);// 相当于休息1s,让出控制权
+    var_dump("go2休息完毕，已唤醒");
+});
 
-   if(time() - $start_time > 10) {
-       var_dump("rand_num:".rand(1,1000));
-       return;
-   }
-}
+go(function () {
+    sleep(3);// 相当于休息3s，让出控制权
+    var_dump("go3休息完毕，已唤醒");
+});
 
-var_dump($res);
+var_dump('三个go目前正在休息中');
+
+// 主进程将等待协程唤醒

@@ -20,7 +20,7 @@ $Config->loadConfig($config_file_path);
 $processManager = \Workerfy\processManager::getInstance();
 
 $woker_process_name = 'worker';
-$process_class = \Workerfy\Tests\Daemon\Worker1::class;
+$process_class = \Workerfy\Tests\Daemon\Worker::class;
 $process_worker_num = 10;
 $async = true;
 $args = [

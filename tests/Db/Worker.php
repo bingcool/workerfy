@@ -4,7 +4,7 @@ namespace Workerfy\Tests\Db;
 use Workerfy\ProcessManager;
 use PDO;
 
-class worker extends \Workerfy\AbstractProcess {
+class Worker extends \Workerfy\AbstractProcess {
 
 	public function run() {
 		

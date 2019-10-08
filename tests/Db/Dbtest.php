@@ -1,7 +1,12 @@
 <?php
 
+$pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
+
+define("PID_FILE", $pid_file);
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
+
+include $root_path.'/src/Ctrl.php';
 
 include $root_path."/vendor/autoload.php";
 
@@ -13,7 +18,7 @@ $Config->loadConfig($config_file_path);
 $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'Dbtest';
-$process_class = \Workerfy\Tests\Db\worker::class;
+$process_class = \Workerfy\Tests\Db\Worker::class;
 $process_worker_num = 1;
 $async = true;
 $args = [];
@@ -23,7 +28,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) {
-    //file_put_contents(PID_FILE, $pid);
+    file_put_contents(PID_FILE, $pid);
 };
 
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
