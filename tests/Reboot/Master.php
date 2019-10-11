@@ -17,8 +17,8 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-redis';
-$process_class = \Workerfy\Tests\Redis\Worker::class;
+$process_name = 'test-reboot';
+$process_class = \Workerfy\Tests\Reboot\Worker::class;
 $process_worker_num = 1;
 $async = true;
 $args = [

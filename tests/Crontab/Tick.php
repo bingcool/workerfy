@@ -21,7 +21,9 @@ $process_name = 'timer';
 $process_class = \Workerfy\Tests\Crontab\Worker::class;
 $process_worker_num = 1;
 $async = true;
-$args = [];
+$args = [
+    'wait_time' => 1
+];
 $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);

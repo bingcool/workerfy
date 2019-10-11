@@ -127,6 +127,9 @@ abstract class AbstractProcess {
             Process::signal(SIGUSR1, function ($signo) {
                 Event::del($this->swooleProcess->pipe);
                 Event::exit();
+                if(method_exists($this,'__destruct')) {
+                    $this->__destruct();
+                }
                 $this->swooleProcess->exit(SIGUSR1);
             });
 
@@ -134,6 +137,9 @@ abstract class AbstractProcess {
             Process::signal(SIGTERM, function ($signo) {
                 Event::del($this->swooleProcess->pipe);
                 Event::exit();
+                if(method_exists($this,'__destruct')) {
+                    $this->__destruct();
+                }
                 $this->swooleProcess->exit(SIGTERM);
             });
 
@@ -141,6 +147,7 @@ abstract class AbstractProcess {
                 $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
             }
             try{
+                $this->init();
                 $this->run();
             }catch(\Throwable $t) {
                 throw new \Exception($t->getMessage());
@@ -426,6 +433,7 @@ abstract class AbstractProcess {
                 $this->is_reboot = true;
                 $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                     try {
+                        $this->runtimeCoroutineWait();
                         $this->onShutDown();
                     }catch (\Throwable $throwable) {
                         throw new \Exception($throwable->getMessage());
@@ -460,6 +468,7 @@ abstract class AbstractProcess {
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     if(!$this->is_reboot) {
+                        $this->runtimeCoroutineWait();
                         write_info($this->getProcessName().'@'.$this->getProcessWorkerId().' exit');
                         $this->onShutDown();
                     }
@@ -477,6 +486,7 @@ abstract class AbstractProcess {
             $this->is_exit = true;
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
+                    $this->runtimeCoroutineWait();
                     $this->onShutDown();
                 }catch (\Throwable $throwable) {
                     throw new \Exception($throwable->getMessage());
@@ -540,6 +550,27 @@ abstract class AbstractProcess {
             return $coroutine_info['coroutine_last_cid'];
         }
     }
+
+    /**
+     * 对于运行态的协程，还没有执行完的，设置一个再等待时间$re_wait_time
+     * @param int $re_wait_time
+     */
+    private function runtimeCoroutineWait($re_wait_time = 8) {
+        // 当前运行的coroutine
+        $runCoroutineNum = $this->getCurrentRunCoroutineNum();
+        // 除了主协程，还有其他协程没唤醒，则再等待
+        if($runCoroutineNum > 1) {
+            if($this->wait_time < 5)  {
+                $re_wait_time = 5;
+            }
+            \Swoole\Coroutine::sleep($re_wait_time);
+        }
+    }
+
+    /**
+     * 初始化函数
+     */
+    public function init() {}
 
     /**
      * run 进程创建后的run方法

@@ -9,8 +9,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         // 每分钟执行一次，时间格式类似于linux的crontab
         CrontabManager::getInstance()->addRule("tick", "* * * * *" , function() {
-            var_dump('exec-datetime:'.date('Y-m-d H:i:s', time()));
-            var_dump('Cid-'.\Co::getCid());
+            var_dump('一分钟时间到了，执行任务:'.date('Y-m-d H:i:s', time()));
         });
 
         $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');

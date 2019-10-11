@@ -6,15 +6,16 @@ use PDO;
 
 class Worker extends \Workerfy\AbstractProcess {
 
-	public function run() {
-
+    public function init() {
         defer(function() {
             var_dump("expression");
         });
-
-	    \Swoole\Coroutine::set([
-	        'max_coroutine' => 3000
+        \Swoole\Coroutine::set([
+            'max_coroutine' => 3000
         ]);
+    }
+
+	public function run() {
 	    $start_time = time();
 		while(true) {
 		    if($this->isRebooting() || $this->isExiting()) {
@@ -23,7 +24,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
             if($this->getCurrentRunCoroutineNum() >= 2) {
                 var_dump("max CurrentRunCoroutineNum");
-                sleep(3);
+                //sleep(3);
                 continue;
             }
 			// var_dump(date("Y-m-d H:i:s"));
