@@ -137,6 +137,7 @@ class ProcessManager {
             $this->registerSignal();
     		$this->swooleEventAdd();
     	}
+    	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
         if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
