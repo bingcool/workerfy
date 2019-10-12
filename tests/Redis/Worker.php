@@ -5,7 +5,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function init() {
         defer(function() {
-            var_dump("coroutine_destruct");
+            //var_dump("coroutine_destruct");
         });
     }
 
