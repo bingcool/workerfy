@@ -16,7 +16,7 @@ use Cron\CronExpression;
 class TableManager {
     use \Workerfy\Traits\SingletonTrait;
 
-    public $swoole_tables = [];
+    private $swoole_tables = [];
 
     /**
      * @param string $table_name
@@ -32,9 +32,8 @@ class TableManager {
      ]
      */
     public function addTable(string $table_name, array $setting) {
-        $table_key = md5($table_name);
-        if(isset($this->swoole_tables[$table_key]) && $this->swoole_tables[$table_key] instanceof \Swoole\Table) {
-            return $this->swoole_tables[$table_key];
+        if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
+            return $this->swoole_tables[$table_name];
         }
 
         $size = $setting['size'] ?? 1024;
@@ -52,7 +51,7 @@ class TableManager {
 
         $table->create();
 
-        $this->swoole_tables[$table_key] = $table;
+        $this->swoole_tables[$table_name] = $table;
         return $table;
     }
 
@@ -86,11 +85,22 @@ class TableManager {
      * @return mixed
      */
     public function getTable(string $table_name) {
-        $table_key = md5($table_name);
-        if(isset($this->swoole_tables[$table_key]) && $this->swoole_tables[$table_key] instanceof \Swoole\Table) {
-            return $this->swoole_tables[$table_key];
+        if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
+            return $this->swoole_tables[$table_name];
         }else {
             throw new \Exception("{$table_name} table is not create, please create before using");
         }
+    }
+
+    /**
+     * 获取管理定义的table_name
+     * @return array
+     */
+    public function getAllTableName() {
+        $table_name = [];
+        if(isset($this->swoole_tables) && !empty($this->swoole_tables)) {
+            $table_name = array_keys($this->swoole_tables);
+        }
+        return $table_name;
     }
 }

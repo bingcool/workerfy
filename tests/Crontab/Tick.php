@@ -17,7 +17,7 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'timer';
+$process_name = 'test-timer';
 $process_class = \Workerfy\Tests\Crontab\Worker::class;
 $process_worker_num = 1;
 $async = true;
