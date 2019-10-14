@@ -12,8 +12,6 @@ define('STRAER', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
 
-include __DIR__.'/Function.php';
-
 $command = $argv[1] ?? STRAER;
 $is_daemon = (isset($argv[2]) && in_array($argv[2], ['-d', '-D'])) ? true : false;
 

@@ -10,6 +10,7 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
+        var_dump("start redis test");
         // 模拟处理业务
         sleep(1);
         $redis = \Workerfy\Tests\Redis::getMasterRedis();
