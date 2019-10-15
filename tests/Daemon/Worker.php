@@ -84,7 +84,7 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("children-process shutdown,pid={$this->getPid()}, peocess_name={$this->getProcessName()}.'@'.{$this->getProcessWorkerId()}");
     }
 
-    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {
+    public function onPipeMsg($msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {
 	    var_dump('msg-'.$msg.'----worker_id-'.$this->getProcessWorkerId().'-from-worker_id:'.$from_process_worker_id);
     }
 

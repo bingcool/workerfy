@@ -107,4 +107,14 @@ function reload() {
 
 }
 
+function write_info($msg, $foreground = "red", $background = "black") {
+    include_once __DIR__.'/EachColor.php';
+    // Create new Colors class
+    static $colors;
+    if(!isset($colors)) {
+        $colors = new \Workerfy\EachColor();
+    }
+    echo $colors->getColoredString($msg, $foreground, $background) . "\n\n";
+}
+
 

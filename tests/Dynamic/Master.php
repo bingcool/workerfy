@@ -36,7 +36,8 @@ $monitor_process_class = \Workerfy\Tests\Dynamic\Monitor_Worker::class;
 $monitor_process_worker_num = 1;
 $monitor_async = true;
 $monitor_args = [
-    'wait_time' => 1
+    'wait_time' => 20,
+    'monitor_process_name' => $process_name //监听的关联的动态进程名称
 ];
 $monitor_extend_data = null;
 
@@ -48,13 +49,14 @@ $processManager->onStart = function ($pid) {
 };
 
 // 父进程收到监控进程的动态创建业务进程指令
-$processManager->onCreateDynamicProcess = function() use($process_name) {
-    $this->createDynamicProcess($process_name);
+$processManager->onCreateDynamicProcess = function($dynamic_process_name, $dynamic_process_num) {
+    var_dump('master receive :'. $dynamic_process_name);
+    $this->createDynamicProcess($dynamic_process_name);
 };
 
 // 父进程收到监控进程的动态销毁进程命令
-$processManager->onDestroyDynamicProcess = function () use($process_name) {
-    $this->destroyDynamicProcess($process_name);
+$processManager->onDestroyDynamicProcess = function ($dynamic_process_name, $dynamic_process_num) {
+    $this->destroyDynamicProcess($dynamic_process_name);
 };
 
 // 父进程退出，只有子进程全部退出后，父进程才会退出

@@ -20,7 +20,7 @@ class Worker extends \Workerfy\AbstractProcess {
      * @param int $from_process_worker_id
      * @param bool $is_proxy_by_master
      */
-    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master)
+    public function onPipeMsg($msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master)
     {
         var_dump('子进程 '.$this->getProcessName().'@'.$this->getProcessWorkerId().' 收到父进程 '.$from_process_name.'@'.$from_process_worker_id.' 回复的msg : '.$msg);
     }

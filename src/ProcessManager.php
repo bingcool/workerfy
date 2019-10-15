@@ -51,7 +51,7 @@ class ProcessManager {
      */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
-        $this->onHandleException = function (\Exception $e) {};
+        $this->onHandleException = function (\Throwable $e) {};
     }
 
     /**
@@ -268,16 +268,22 @@ class ProcessManager {
                     if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
                         try {
                             if($to_process_name == $this->getMasterWorkerName()) {
-                                switch ($msg) {
-                                    case ProcessManager::CREATE_DYNAMIC_WORKER :
-                                        $this->onCreateDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                        break;
-                                    case ProcessManager::DESTROY_DYNAMIC_PROCESS:
-                                        $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                        break;
-                                    default:
-                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                        break;
+                                $is_call_dynamic = false;
+                                if(is_array($msg) && count($msg) == 3) {
+                                    list($action, $dynamic_process_name, $dynamic_process_num) = $msg;
+                                    switch ($action) {
+                                        case ProcessManager::CREATE_DYNAMIC_WORKER :
+                                            $is_call_dynamic = true;
+                                            $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            break;
+                                        case ProcessManager::DESTROY_DYNAMIC_PROCESS:
+                                            $is_call_dynamic = true;
+                                            $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            break;
+                                    }
+                                }
+                                if($is_call_dynamic === false) {
+                                    $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                 }
                             }else {
                                 $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
@@ -304,16 +310,22 @@ class ProcessManager {
                         if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
                             try {
                                 if($to_process_name == $this->getMasterWorkerName()) {
-                                    switch ($msg) {
-                                        case ProcessManager::CREATE_DYNAMIC_WORKER :
-                                            $this->onCreateDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                            break;
-                                        case ProcessManager::DESTROY_DYNAMIC_PROCESS:
-                                            $this->onDestroyDynamicProcess->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                            break;
-                                        default:
-                                            $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                            break;
+                                    $is_call_dynamic = false;
+                                    if(is_array($msg) && count($msg) == 3) {
+                                        list($action, $dynamic_process_name, $dynamic_process_num) = $msg;
+                                        switch ($action) {
+                                            case ProcessManager::CREATE_DYNAMIC_WORKER :
+                                                $is_call_dynamic = true;
+                                                $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                break;
+                                            case ProcessManager::DESTROY_DYNAMIC_PROCESS:
+                                                $is_call_dynamic = true;
+                                                $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                break;
+                                        }
+                                    }
+                                    if($is_call_dynamic === false) {
+                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                     }
                                 }else {
                                     $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
@@ -334,18 +346,26 @@ class ProcessManager {
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
         $key = md5($process_name);
         $process_worker_num = $this->process_lists[$key]['process_worker_num'];
-        if(count($this->process_wokers[$key]) > $process_worker_num || $this->isMasterExiting()) {
+        if($this->isMasterExiting()) {
             return;
         }
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
-        $total_process_num = $process_worker_num + $process_num;
+        if(isset($this->process_lists[$key]['dynamic_process_worker_num']) && $this->process_lists[$key]['dynamic_process_worker_num'] > 0) {
+            $total_process_num = $process_worker_num + $this->process_lists[$key]['dynamic_process_worker_num'] + $process_num;
+        }else {
+            $total_process_num = $process_worker_num + $process_num;
+            $this->process_lists[$key]['dynamic_process_worker_num'] = 0;
+        }
+        $running_process_worker_num = $process_worker_num + $this->process_lists[$key]['dynamic_process_worker_num'];
         $async = $this->process_lists[$key]['async'];
         $args = $this->process_lists[$key]['args'];
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
-        for($worker_id = $process_worker_num; $worker_id < $total_process_num; $worker_id++) {
+        for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
             try {
+                // 动态创建成功，需要自加
+                $this->process_lists[$key]['dynamic_process_worker_num']++;
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
@@ -354,7 +374,11 @@ class ProcessManager {
                 }
                 $process->start();
             }catch(\Throwable $t) {
+                unset($this->process_wokers[$key][$worker_id]);
+                // 发生异常，需要自减
+                $this->process_lists[$key]['dynamic_process_worker_num']--;
                 $this->onHandleException->call($this, $t);
+
             }
             $this->swooleEventAdd($process);
             usleep(50000);
@@ -364,11 +388,15 @@ class ProcessManager {
     /**
      * destroyDynamicProcess 销毁动态创建的进程
      */
-    public function destroyDynamicProcess(string $process_name) {
+    public function destroyDynamicProcess(string $process_name, $process_num = -1) {
         $process_workers = $this->getProcessByName($process_name, -1);
+        $key = md5($process_name);
         foreach($process_workers as $worker_id=>$process) {
             if($process->isDynamicProcess()) {
                 $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                // 动态进程销毁，需要自减
+                $this->process_lists[$key]['dynamic_process_worker_num']--;
+                sleep(1);
             }
         }
     }
@@ -489,11 +517,11 @@ class ProcessManager {
 
     /**
      * @param string $process_name
-     * @param string $data
+     * @param mixed $data
      * @param int $process_worker_id
      * @return bool
      */
-    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0) {
         if($this->isMaster($process_name)) {
             return false;
         }
@@ -513,14 +541,14 @@ class ProcessManager {
 
     /**
      * master代理转发
-     * @param string $data
+     * @param mixed $data
      * @param string $from_process_name
      * @param int $from_process_worker_id
      * @param string $to_process_name
      * @param int $to_process_worker_id
      * @return bool
      */
-    public function writeByMasterProxy(string $data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
+    public function writeByMasterProxy($data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
         if($this->isMaster($to_process_name)) {
             return false;
         }
@@ -540,10 +568,10 @@ class ProcessManager {
 
     /**
      * 广播消息至worker
-     * @param string $data
      * @param string|null $process_name
+     * @param mixed $data
      */
-    public function broadcastProcessWorker(string $process_name = null, string $data = '') {
+    public function broadcastProcessWorker(string $process_name = null, $data = '') {
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
         if($process_name) {
             $key = md5($process_name);

@@ -51,9 +51,10 @@ $processManager->onStart = function ($pid) {
 
 // 父进程读取子进程重新设置的值，看是否能读到
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id) {
-    go(function() {
-        var_dump("master coroutine");
-    });
+    var_dump($msg);
+//    go(function() {
+//        var_dump("master coroutine");
+//    });
     $table = \Workerfy\Memory\TableManager::getInstance()->getTable('redis-table');
     $value = $table->get('redis_test_data','tick_tasks');
     var_dump($this->getMasterWorkerName().'@'.$this->getMasterWorkerId().' : '.$value);

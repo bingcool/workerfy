@@ -7,7 +7,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         // 模拟处理业务
         sleep(1);
-        var_dump("reboot start");
+        var_dump("子进程 开始 reboot start");
         go(function () {
             sleep(3);
             var_dump("children coroutine");

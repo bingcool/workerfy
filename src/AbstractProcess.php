@@ -32,6 +32,7 @@ abstract class AbstractProcess {
     private $reboot_timer_id;
     private $exit_timer_id;
     private $coroutine_id;//当前进程的主协程id
+    private $is_dynamic_destroy = false; // 动态进程正在销毁时，原则上在一定时间内不能动态创建进程
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
@@ -101,23 +102,30 @@ abstract class AbstractProcess {
                     }
                     if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
                         try {
-                            switch ($msg) {
-                                case self::WORKERFY_PROCESS_REBOOT_FLAG :
-                                    $this->reboot();
-                                    break;
-                                case self::WORKERFY_PROCESS_EXIT_FLAG :
-                                    if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
-                                        $this->exit(true);
-                                    }else {
-                                        $this->exit();
-                                    }
-                                    break;
-                                default :
-                                    $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
-                                    break;
+                            $is_call_pipe = true;
+                            if(is_string($msg)) {
+                                switch($msg) {
+                                    case self::WORKERFY_PROCESS_REBOOT_FLAG :
+                                        $is_call_pipe = false;
+                                        $this->reboot();
+                                        break;
+                                    case self::WORKERFY_PROCESS_EXIT_FLAG :
+                                        $is_call_pipe = false;
+                                        if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
+                                            $this->exit(true);
+                                        }else {
+                                            $this->exit();
+                                        }
+                                        break;
+                                }
                             }
-                        }catch(\Throwable $t) {
-                            throw new \Exception($t->getMessage());
+
+                            if($is_call_pipe === true) {
+                                $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
+                            }
+
+                        }catch(\Throwable $throwable) {
+                            throw $throwable;
                         }
                     }
                 });
@@ -149,8 +157,8 @@ abstract class AbstractProcess {
             try{
                 $this->init();
                 $this->run();
-            }catch(\Throwable $t) {
-                throw new \Exception($t->getMessage());
+            }catch(\Throwable $throwable) {
+                throw $throwable;
             }
 
         }catch(\Throwable $t) {
@@ -161,10 +169,11 @@ abstract class AbstractProcess {
     /**
      * writeByProcessName worker进程向某个进程写数据
      * @param  string $name
-     * @param  string $data
+     * @param  mixed $data
+     * @param  int    $process_worker_id
      * @return boolean
      */
-    public function writeByProcessName(string $process_name, string $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
+    public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
         $processManager = \Workerfy\processManager::getInstance();
         $isMaster = $processManager->isMaster($process_name);
         $from_process_name = $this->getProcessName();
@@ -172,7 +181,6 @@ abstract class AbstractProcess {
         
         if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id) {
             $error = "Error:write message to self worker";
-            write_info($error);
             throw new \Exception($error);
         }
 
@@ -212,11 +220,11 @@ abstract class AbstractProcess {
     /**
      * writeToMasterProcess 直接向master进程写数据
      * @param string $process_name
-     * @param string $data
+     * @param mixed $data
      * @param int $process_worker_id
      * @return bool
      */
-    public function writeToMasterProcess(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeToMasterProcess(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = false;
         return $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }
@@ -224,28 +232,64 @@ abstract class AbstractProcess {
     /**
      * writeToWorkerByMasterProxy 向master进程写代理数据，master在代理转发worker进程
      * @param string $process_name
-     * @param string $data
+     * @param mixed $data
      * @param int $process_worker_id
      */
-    public function writeToWorkerByMasterProxy(string $process_name, string $data, int $process_worker_id = 0) {
+    public function writeToWorkerByMasterProxy(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = true;
         $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }
 
     /**
      * notifyMasterCreateDynamicProcess 通知master进程动态创建进程
-     * notifyMasterDynamicCreateProcess
+     * @param string $dynamic_process_name
+     * @param int $dynamic_process_num
      */
-    public function notifyMasterCreateDynamicProcess() {
-        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::CREATE_DYNAMIC_WORKER);
+    public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
+        if(!$this->is_dynamic_destroy) {
+            $data = [
+                ProcessManager::CREATE_DYNAMIC_WORKER,
+                $dynamic_process_name,
+                $dynamic_process_num
+            ];
+            $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+        }
     }
 
     /**
      * notifyMasterDestroyDynamicProcess 通知master销毁动态创建的进程
-     * notifyMasterDestroyDynamicProcess
+     * @param string $dynamic_process_name
+     * @param int $dynamic_process_num
      */
-    public function notifyMasterDestroyDynamicProcess() {
-        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, ProcessManager::DESTROY_DYNAMIC_PROCESS);
+    public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1) {
+        if(!$this->is_dynamic_destroy) {
+            // 销毁默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
+            $dynamic_process_num = -1;
+            $data = [
+                ProcessManager::DESTROY_DYNAMIC_PROCESS,
+                $dynamic_process_name,
+                $dynamic_process_num
+            ];
+            $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+
+            // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
+            $this->is_dynamic_destroy = true;
+            if(isset($this->getArgs()['dynamic_destroy_process_time'])) {
+                $dynamic_destroy_process_time = $this->getArgs()['dynamic_destroy_process_time'];
+                // 最大时间不能太长
+                if($dynamic_destroy_process_time > 1800) {
+                    $dynamic_destroy_process_time = 1800;
+                }else {
+                    $dynamic_destroy_process_time = $this->wait_time + 5;
+                }
+            }else {
+                $dynamic_destroy_process_time = $this->wait_time;
+            }
+            // 等待
+            \Swoole\Coroutine::sleep($dynamic_destroy_process_time);
+            $this->is_dynamic_destroy = false;
+
+        }
     }
 
     /**
@@ -445,7 +489,7 @@ abstract class AbstractProcess {
             }
             return true;
         }else {
-            throw new \Exception("DynamicProcess can not reboot");
+            throw new \Exception("Dynamic Process can not reboot");
         }
     }
 
@@ -473,7 +517,7 @@ abstract class AbstractProcess {
                         $this->onShutDown();
                     }
                 }catch (\Throwable $throwable) {
-                    throw new \Exception($throwable->getMessage());
+                    throw $throwable;
                 }finally {
                     $this->kill($pid, SIGTERM);
                 }
@@ -489,7 +533,7 @@ abstract class AbstractProcess {
                     $this->runtimeCoroutineWait();
                     $this->onShutDown();
                 }catch (\Throwable $throwable) {
-                    throw new \Exception($throwable->getMessage());
+                    throw $throwable;
                 }finally {
                     $this->kill($pid, SIGTERM);
                 }
@@ -580,12 +624,12 @@ abstract class AbstractProcess {
     public abstract function run();
 
     /**
-     * @param string $msg
+     * @param mixed $msg
      * @param string $from_process_name
      * @param int $from_process_worker_id
      * @param bool $is_proxy_by_master
      */
-    public function onPipeMsg(string $msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {}
+    public function onPipeMsg($msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master) {}
 
     /**
      * onShutDown
