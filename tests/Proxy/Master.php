@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('Asia/Shanghai');
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);

@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('Asia/Shanghai');
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);
@@ -35,7 +35,7 @@ $processManager->onStart = function ($pid) {
 
 
 $processManager->onExit = function() use($config_file_path) {
-    var_dump("master exit");
+    //var_dump("master exit");
 };
 
 $master_pid = $processManager->start();

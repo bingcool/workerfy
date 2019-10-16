@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('Asia/Shanghai');
+
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);
@@ -19,7 +21,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-proxy';
 $process_class = \Workerfy\Tests\Pipe\Worker::class;
-$process_worker_num = 1;
+$process_worker_num = 4;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -48,7 +50,7 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
 };
 
 $processManager->onExit = function() use($config_file_path) {
-    var_dump("master exit",$config_file_path);
+    //var_dump("master exit",$config_file_path);
 };
 
 $master_pid = $processManager->start();

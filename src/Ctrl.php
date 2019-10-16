@@ -8,18 +8,34 @@
 | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
 +----------------------------------------------------------------------
  */
-define('STRAER', 'start');
+define('START', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
+define('STATUS', 'status');
 
-$command = $argv[1] ?? STRAER;
-$is_daemon = (isset($argv[2]) && in_array($argv[2], ['-d', '-D'])) ? true : false;
+$command = $argv[1] ?? START;
+
+$new_argv = $argv;
+
+$argv_arr = array_splice($new_argv, 2);
+unset($new_argv);
+
+array_reduce($argv_arr, function($result, $item) {
+    if(in_array($item, ['-d', '-D'])) {
+        putenv('daemon=1');
+    }else {
+        $item = ltrim($item, '-');
+        putenv($item);
+    }
+});
+
+$is_daemon = getenv('daemon') ? true : false;
 
 // 定义是否守护进程模式
 defined('IS_DAEMON') or define('IS_DAEMON', $is_daemon);
 
 switch($command) {
-    case STRAER :
+    case START :
         start();
         break;
     case STOP :
@@ -27,6 +43,9 @@ switch($command) {
         break;
     case RELOAD :
         reload();
+        break;
+    case STATUS :
+        status();
         break;
     default :
         write_info("you must use command");
@@ -74,6 +93,8 @@ function stop() {
             sleep(1);
         }
         write_info("-----------master has stopped-----------");
+    }else {
+        write_info("-----------pid={$master_pid} 的进程不存在");
     }
     exit(0);
 }
@@ -102,9 +123,29 @@ function reload() {
             sleep(1);
         }
         write_info("-----------master has reload-----------");
+    }else {
+        write_info("-----------pid={$master_pid} 的进程不存在，没法自动reload子进程");
     }
     exit(0);
 
+}
+
+function status() {
+    if(is_file(PID_FILE)) {
+        $master_pid = file_get_contents(PID_FILE);
+        if(is_numeric($master_pid)) {
+            $master_pid = (int) $master_pid;
+        }else {
+            write_info("master pid is invalid");
+            exit(0);
+        }
+    }
+    if(\Swoole\Process::kill($master_pid, 0)) {
+        $res = \Swoole\Process::kill($master_pid, SIGUSR1);
+    }else {
+        write_info("-----------pid={$master_pid} 的进程不存在，无法获取进程状态");
+    }
+    exit(0);
 }
 
 function write_info($msg, $foreground = "red", $background = "black") {

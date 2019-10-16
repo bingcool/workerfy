@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('Asia/Shanghai');
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);
@@ -53,7 +53,7 @@ $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_w
 };
 
 $processManager->onExit = function() use($config_file_path) {
-    var_dump("master exit",$config_file_path);
+    //var_dump("master exit",$config_file_path);
 };
 
 $master_pid = $processManager->start();

@@ -12,6 +12,7 @@
 namespace Workerfy;
 
 use Swoole\Process;
+use Workerfy\Memory\AtomicManager;
 
 class ProcessManager {
 
@@ -32,6 +33,9 @@ class ProcessManager {
     private $is_daemon = false;
 
     private $is_exit = false;
+
+    private $start_time;
+
 
     public $onStart;
     public $onPipeMsg;
@@ -117,6 +121,7 @@ class ProcessManager {
 			        	$enable_coroutine = $list['enable_coroutine'] ?? true;
 		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
 		    			$process->setProcessWorkerId($worker_id);
+                        $process->setStartTime();
                         if(!isset($this->process_wokers[$key][$worker_id])) {
                             $this->process_wokers[$key][$worker_id] = $process;
                         }
@@ -134,8 +139,10 @@ class ProcessManager {
             $this->installSigchldsignal();
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
+            $this->installMasterStatusSignal();
             $this->registerSignal();
     		$this->swooleEventAdd();
+    		$this->setStartTime();
     	}
     	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
@@ -160,6 +167,46 @@ class ProcessManager {
                 usleep(1000000);
             }
             $this->is_exit = true;
+        });
+    }
+
+    /**
+     * 父进程的status指令监听SIGUSR1信号
+     */
+    public function installMasterStatusSignal() {
+        \Swoole\Process::signal(SIGUSR1, function($signo) {
+            $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
+            write_info($master_info, 'green');
+            foreach($this->process_wokers as $key => $processes) {
+                ksort($processes);
+                foreach($processes as $process_worker_id => $process) {
+                    $process_name = $process->getProcessName();
+                    $worker_id = $process->getProcessWorkerId();
+                    $pid = $process->getPid();
+                    $start_time = $process->getStartTime();
+                    $reboot_count = $process->getRebootCount();
+                    $process_type = $process->getProcessType();
+                    if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
+                        $process_type = 'static';
+                    }else {
+                        $process_type = 'dynamic';
+                    }
+
+                    if(\Swoole\Process::kill($pid, 0)) {
+                        $status = 'running';
+                    }else {
+                        $status = 'stoped';
+                    }
+                    $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
+                    if($status == 'stoped') {
+                        write_info($info);
+                    }else {
+                        write_info($info,'green');
+                    }
+                }
+                unset($processes);
+                usleep(100000);
+            }
         });
     }
 
@@ -191,38 +238,6 @@ class ProcessManager {
 		      	$pid = $ret['pid'];
                 $code = $ret['code'];
                 switch ($code) {
-                    // reboot 信号
-                    case SIGUSR1  :
-                        if(!(\Swoole\Process::kill($pid, 0))) {
-                            $process = $this->getProcessByPid($pid);
-                            $process_name = $process->getProcessName();
-                            $process_worker_id = $process->getProcessWorkerId();
-                            $key = md5($process_name);
-                            $list = $this->process_lists[$key];
-                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                            unset($this->process_wokers[$key][$process_worker_id]);
-
-                            if(is_array($list)) {
-                                try {
-                                    $process_name = $list['process_name'];
-                                    $process_class = $list['process_class'];
-                                    $async = $list['async'] ?? true;
-                                    $args = $list['args'] ?? [];
-                                    $extend_data = $list['extend_data'] ?? null;
-                                    $enable_coroutine = $list['enable_coroutine'] ?? false;
-                                    $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-                                    $process->setProcessWorkerId($process_worker_id);
-                                    if(!isset($this->process_wokers[$key][$process_worker_id])) {
-                                        $this->process_wokers[$key][$process_worker_id] = $process;
-                                    }
-                                    $process->start();
-                                }catch(\Throwable $t) {
-                                    $this->onHandleException->call($this, $t);
-                                }
-                                $this->swooleEventAdd($process);
-                            }
-                        }
-                        break;
                     // exit 信号
                     case 0       :
                     case SIGTERM :
@@ -244,6 +259,41 @@ class ProcessManager {
                                 $this->onHandleException->call($this, $t);
                             }finally {
                                 exit(0);
+                            }
+                        }
+                        break;
+                    // reboot 信号
+                    case SIGUSR1  :
+                    default  :
+                        if(!(\Swoole\Process::kill($pid, 0))) {
+                            $process = $this->getProcessByPid($pid);
+                            $process_name = $process->getProcessName();
+                            $process_worker_id = $process->getProcessWorkerId();
+                            $process_reboot_count = $process->getRebootCount() + 1;
+                            $key = md5($process_name);
+                            $list = $this->process_lists[$key];
+                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
+                            unset($this->process_wokers[$key][$process_worker_id]);
+                            if(is_array($list)) {
+                                try {
+                                    $process_name = $list['process_name'];
+                                    $process_class = $list['process_class'];
+                                    $async = $list['async'] ?? true;
+                                    $args = $list['args'] ?? [];
+                                    $extend_data = $list['extend_data'] ?? null;
+                                    $enable_coroutine = $list['enable_coroutine'] ?? false;
+                                    $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                                    $new_process->setProcessWorkerId($process_worker_id);
+                                    $new_process->setRebootCount($process_reboot_count);
+                                    $new_process->setStartTime();
+                                    if(!isset($this->process_wokers[$key][$process_worker_id])) {
+                                        $this->process_wokers[$key][$process_worker_id] = $new_process;
+                                    }
+                                    $new_process->start();
+                                }catch(\Throwable $t) {
+                                    $this->onHandleException->call($this, $t);
+                                }
+                                $this->swooleEventAdd($new_process);
                             }
                         }
                         break;
@@ -369,6 +419,7 @@ class ProcessManager {
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
+                $process->setStartTime();
                 if(!isset($this->process_wokers[$key][$worker_id])) {
                     $this->process_wokers[$key][$worker_id] = $process;
                 }
@@ -611,4 +662,41 @@ class ProcessManager {
         }
     }
 
+    /**
+     * setStartTime 设置启动时间
+     */
+    private function setStartTime() {
+        $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
+    }
+
+    /**
+     * statusInfoFormat
+     * @param $process_name
+     * @param $worker_id
+     * @param $pid
+     * @param $status
+     * @param null $start_time
+     * @param int $reboot_count
+     * @return string
+     */
+    private function statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time = null, $reboot_count = 0, $process_type = '') {
+        if($process_name == $this->getMasterWorkerName()) {
+            $info =
+<<<EOF
+ 主进程status:
+        |
+        master_process: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
+ 
+ 子进程status:
+EOF;
+        }else {
+            $info =
+<<<EOF
+        |
+        children_process【{$process_type}】: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
+EOF;
+
+        }
+        return $info;
+    }
 }

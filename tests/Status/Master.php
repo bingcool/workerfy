@@ -1,5 +1,6 @@
 <?php
 date_default_timezone_set('Asia/Shanghai');
+
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);
@@ -15,11 +16,11 @@ $config_file_path = $dir_config."/Config/config.php";
 $Config = \Workerfy\Config::getInstance();
 $Config->loadConfig($config_file_path);
 
-$processManager = \Workerfy\ProcessManager::getInstance();
+$processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-redis';
-$process_class = \Workerfy\Tests\Redis\Worker::class;
-$process_worker_num = 2;
+$process_name = 'test-status';
+$process_class = \Workerfy\Tests\Status\Worker::class;
+$process_worker_num = 3;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -33,6 +34,9 @@ $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };
 
+$processManager->onCreateDynamicProcess = function ($process_name, $process_num) use($processManager) {
+    $this->createDynamicProcess($process_name, $process_num);
+};
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);

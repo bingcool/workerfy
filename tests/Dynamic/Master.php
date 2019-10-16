@@ -1,5 +1,5 @@
 <?php
-
+date_default_timezone_set('Asia/Shanghai');
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 
 define("PID_FILE", $pid_file);
@@ -61,7 +61,7 @@ $processManager->onDestroyDynamicProcess = function ($dynamic_process_name, $dyn
 
 // 父进程退出，只有子进程全部退出后，父进程才会退出
 $processManager->onExit = function() use($config_file_path) {
-    var_dump("master exit",$config_file_path);
+    //var_dump("master exit",$config_file_path);
 };
 
 $master_pid = $processManager->start();

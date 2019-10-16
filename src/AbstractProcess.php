@@ -33,6 +33,8 @@ abstract class AbstractProcess {
     private $exit_timer_id;
     private $coroutine_id;//当前进程的主协程id
     private $is_dynamic_destroy = false; // 动态进程正在销毁时，原则上在一定时间内不能动态创建进程
+    private $reboot_count = 0; //自动重启次数
+    private $start_time; // 启动(重启)时间
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
@@ -131,16 +133,6 @@ abstract class AbstractProcess {
                 });
             }
 
-            // reboot
-            Process::signal(SIGUSR1, function ($signo) {
-                Event::del($this->swooleProcess->pipe);
-                Event::exit();
-                if(method_exists($this,'__destruct')) {
-                    $this->__destruct();
-                }
-                $this->swooleProcess->exit(SIGUSR1);
-            });
-
             // exit
             Process::signal(SIGTERM, function ($signo) {
                 Event::del($this->swooleProcess->pipe);
@@ -149,6 +141,16 @@ abstract class AbstractProcess {
                     $this->__destruct();
                 }
                 $this->swooleProcess->exit(SIGTERM);
+            });
+
+            // reboot
+            Process::signal(SIGUSR1, function ($signo) {
+                Event::del($this->swooleProcess->pipe);
+                Event::exit();
+                if(method_exists($this,'__destruct')) {
+                    $this->__destruct();
+                }
+                $this->swooleProcess->exit(SIGUSR1);
             });
 
             if(PHP_OS != 'Darwin') {
@@ -271,9 +273,8 @@ abstract class AbstractProcess {
                 $dynamic_process_num
             ];
             $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
-
             // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
-            $this->is_dynamic_destroy = true;
+            $this->isDynamicDestroy(true);
             if(isset($this->getArgs()['dynamic_destroy_process_time'])) {
                 $dynamic_destroy_process_time = $this->getArgs()['dynamic_destroy_process_time'];
                 // 最大时间不能太长
@@ -283,13 +284,20 @@ abstract class AbstractProcess {
                     $dynamic_destroy_process_time = $this->wait_time + 5;
                 }
             }else {
-                $dynamic_destroy_process_time = $this->wait_time;
+                $dynamic_destroy_process_time = $this->wait_time + 5;
             }
             // 等待
             \Swoole\Coroutine::sleep($dynamic_destroy_process_time);
-            $this->is_dynamic_destroy = false;
-
+            $this->isDynamicDestroy(false);
         }
+    }
+
+    /**
+     * 是否正在动态进程销毁中状态
+     * @param bool $is_destroy
+     */
+    public function isDynamicDestroy(bool $is_destroy) {
+        $this->is_dynamic_destroy = $is_destroy;
     }
 
     /**
@@ -450,10 +458,38 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @param int $count
+     */
+    public function setRebootCount(int $count) {
+        $this->reboot_count = $count;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRebootCount() {
+        return $this->reboot_count;
+    }
+
+    /**
      * @return mixed
      */
     public function getExitTimerId() {
         return $this->exit_timer_id;
+    }
+
+    /**
+     * setStartTime
+     */
+    public function setStartTime() {
+        $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStartTime() {
+        return $this->start_time;
     }
 
     /**
