@@ -140,6 +140,7 @@ abstract class AbstractProcess {
                 if(method_exists($this,'__destruct')) {
                     $this->__destruct();
                 }
+                $this->writeStopFormatInfo();
                 $this->swooleProcess->exit(SIGTERM);
             });
 
@@ -156,6 +157,7 @@ abstract class AbstractProcess {
             if(PHP_OS != 'Darwin') {
                 $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
             }
+            $this->writeStartFormatInfo();
             try{
                 $this->init();
                 $this->run();
@@ -525,7 +527,7 @@ abstract class AbstractProcess {
             }
             return true;
         }else {
-            throw new \Exception("Dynamic Process can not reboot");
+            $this->writeReloadFormatInfo();
         }
     }
 
@@ -549,7 +551,6 @@ abstract class AbstractProcess {
                 try {
                     if(!$this->is_reboot) {
                         $this->runtimeCoroutineWait();
-                        write_info($this->getProcessName().'@'.$this->getProcessWorkerId().' exit');
                         $this->onShutDown();
                     }
                 }catch (\Throwable $throwable) {
@@ -644,6 +645,69 @@ abstract class AbstractProcess {
                 $re_wait_time = 5;
             }
             \Swoole\Coroutine::sleep($re_wait_time);
+        }
+    }
+
+    /**
+     * writeStartFormatInfo
+     */
+    private function writeStartFormatInfo() {
+        $process_name = $this->getProcessName();
+        $worker_id = $this->getProcessWorkerId();
+        if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
+            if($this->getRebootCount() > 0) {
+                $process_type = 'static-reboot';
+            }else {
+                $process_type = 'static';
+            }
+        }else  {
+            $process_type = 'dynamic';
+        }
+        $pid = $this->getPid();
+
+        $info =
+<<<EOF
+    start children_process【{$process_type}】: $process_name@$worker_id started, Pid=$pid
+EOF;
+        write_info($info,'green');
+
+    }
+
+    /**
+     * writeStopFormatInfo
+     */
+    private function writeStopFormatInfo() {
+        $process_name = $this->getProcessName();
+        $worker_id = $this->getProcessWorkerId();
+        if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
+            $process_type = 'static';
+        }else {
+            $process_type = 'dynamic';
+        }
+        $pid = $this->getPid();
+
+        $info =
+<<<EOF
+    stop children_process【{$process_type}】: $process_name@$worker_id stoped, Pid=$pid
+EOF;
+        write_info($info,'red');
+    }
+
+    /**
+     * writeReloadFormatInfo
+     */
+    private function writeReloadFormatInfo() {
+        if($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE) {
+            $process_name = $this->getProcessName();
+            $worker_id = $this->getProcessWorkerId();
+            $process_type = 'dynamic';
+            $pid = $this->getPid();
+            $info =
+<<<EOF
+Tips:
+    start children_process【{$process_type}】: $process_name@$worker_id start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid=$pid
+EOF;
+            write_info($info,'red');
         }
     }
 

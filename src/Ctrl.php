@@ -48,7 +48,7 @@ switch($command) {
         status();
         break;
     default :
-        write_info("you must use command");
+        write_info("--------------【Warning】you must use command --------------");
         exit(0);
 }
 function start() {
@@ -57,12 +57,12 @@ function start() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("master pid is invalid");
+            write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }
         // 已经启动了，不再重新启动
         if(\Swoole\Process::kill($master_pid, 0)) {
-            write_info("master has started, you can not start again");
+            write_info("--------------【Warning】master process has started, you can not start again --------------");
             exit(0);
         }
     }
@@ -75,7 +75,7 @@ function stop() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("master pid is invalid");
+            write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }
     }
@@ -83,7 +83,7 @@ function stop() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGTERM);
         if($res) {
-            write_info("-----------master start to stop, please wait a time-----------");
+            write_info("--------------【Info】master start to stop, please wait a time --------------",'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
@@ -92,9 +92,9 @@ function stop() {
             }
             sleep(1);
         }
-        write_info("-----------master has stopped-----------");
+        write_info("--------------【Info】master has stopped --------------",'green');
     }else {
-        write_info("-----------pid={$master_pid} 的进程不存在");
+        write_info("--------------【Warning】pid={$master_pid} 的进程不存在 --------------");
     }
     exit(0);
 }
@@ -105,7 +105,7 @@ function reload() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("master pid is invalid");
+            write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }
     }
@@ -113,18 +113,18 @@ function reload() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGUSR2);
         if($res) {
-            write_info("-----------master start to reload, please wait a time-----------");
+            write_info("--------------【Info】children process start to reload, please wait a time --------------", 'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
-            if(time() - $start_stop_time > 30) {
+            if(time() - $start_stop_time > 10) {
                 break;
             }
             sleep(1);
         }
-        write_info("-----------master has reload-----------");
+        write_info("--------------【Info】children process has reloaded --------------", 'green');
     }else {
-        write_info("-----------pid={$master_pid} 的进程不存在，没法自动reload子进程");
+        write_info("--------------【Warning】pid={$master_pid} 的进程不存在，没法自动reload子进程 --------------");
     }
     exit(0);
 
@@ -136,14 +136,14 @@ function status() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("master pid is invalid");
+            write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }
     }
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGUSR1);
     }else {
-        write_info("-----------pid={$master_pid} 的进程不存在，无法获取进程状态");
+        write_info("--------------【Warning】pid={$master_pid} 的进程不存在，无法获取进程状态 --------------");
     }
     exit(0);
 }

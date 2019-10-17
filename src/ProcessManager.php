@@ -197,6 +197,7 @@ class ProcessManager {
                     }else {
                         $status = 'stoped';
                     }
+
                     $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
                     if($status == 'stoped') {
                         write_info($info);
@@ -268,6 +269,7 @@ class ProcessManager {
                         if(!(\Swoole\Process::kill($pid, 0))) {
                             $process = $this->getProcessByPid($pid);
                             $process_name = $process->getProcessName();
+                            $process_type = $process->getProcessType();
                             $process_worker_id = $process->getProcessWorkerId();
                             $process_reboot_count = $process->getRebootCount() + 1;
                             $key = md5($process_name);
@@ -284,6 +286,7 @@ class ProcessManager {
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
                                     $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                                     $new_process->setProcessWorkerId($process_worker_id);
+                                    $new_process->setProcessType($process_type);
                                     $new_process->setRebootCount($process_reboot_count);
                                     $new_process->setStartTime();
                                     if(!isset($this->process_wokers[$key][$process_worker_id])) {
@@ -318,21 +321,21 @@ class ProcessManager {
                     if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
                         try {
                             if($to_process_name == $this->getMasterWorkerName()) {
-                                $is_call_dynamic = false;
+                                $is_call_pipe = true;
                                 if(is_array($msg) && count($msg) == 3) {
                                     list($action, $dynamic_process_name, $dynamic_process_num) = $msg;
                                     switch ($action) {
                                         case ProcessManager::CREATE_DYNAMIC_WORKER :
-                                            $is_call_dynamic = true;
+                                            $is_call_pipe = false;
                                             $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS:
-                                            $is_call_dynamic = true;
+                                            $is_call_pipe = false;
                                             $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
                                             break;
                                     }
                                 }
-                                if($is_call_dynamic === false) {
+                                if($is_call_pipe === true) {
                                     $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                 }
                             }else {
@@ -681,11 +684,23 @@ class ProcessManager {
      */
     private function statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time = null, $reboot_count = 0, $process_type = '') {
         if($process_name == $this->getMasterWorkerName()) {
+            $children_num = 0;
+            foreach($this->process_wokers as $key=>$processes) {
+                $children_num += count($processes);
+            }
+            $cpu_num = swoole_cpu_num();
+            $php_version = PHP_VERSION;
+            $swoole_version = swoole_version();
             $info =
 <<<EOF
  主进程status:
         |
-        master_process: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
+        master_process: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
+        children_num: $children_num
+        cpu_num: $cpu_num
+        php_version: $php_version
+        swoole_version: $swoole_version
+        
  
  子进程status:
 EOF;
@@ -693,7 +708,7 @@ EOF;
             $info =
 <<<EOF
         |
-        children_process【{$process_type}】: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
+        【{$process_name}@{$worker_id}】children_process【{$process_type}】: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
 EOF;
 
         }
