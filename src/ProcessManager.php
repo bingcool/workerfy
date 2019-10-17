@@ -187,15 +187,16 @@ class ProcessManager {
                     $reboot_count = $process->getRebootCount();
                     $process_type = $process->getProcessType();
                     if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
-                        $process_type = 'static';
+                        $process_type = AbstractProcess::PROCESS_STATIC_TYPE_NAME;
                     }else {
-                        $process_type = 'dynamic';
+                        $process_type = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
                     }
 
                     if(\Swoole\Process::kill($pid, 0)) {
                         $status = 'running';
                     }else {
                         $status = 'stoped';
+                        unset($this->process_wokers[$key][$process_worker_id]);
                     }
 
                     $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
@@ -395,6 +396,8 @@ class ProcessManager {
 
     /**
      * dynamicCreateProcess 动态创建临时进程
+     * @param string $process_name
+     * @param int $process_num
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
         $key = md5($process_name);
@@ -441,6 +444,8 @@ class ProcessManager {
 
     /**
      * destroyDynamicProcess 销毁动态创建的进程
+     * @param string $process_name
+     * @param int $process_num
      */
     public function destroyDynamicProcess(string $process_name, $process_num = -1) {
         $process_workers = $this->getProcessByName($process_name, -1);
@@ -457,6 +462,7 @@ class ProcessManager {
 
     /**
      * daemon
+     * @param bool $is_daemon
      */
     public function daemon($is_daemon) {
         if($is_daemon) {

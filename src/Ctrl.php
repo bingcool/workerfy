@@ -8,10 +8,16 @@
 | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
 +----------------------------------------------------------------------
  */
+
 define('START', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
 define('STATUS', 'status');
+
+if(!defined('PID_FILE')) {
+    write_info("--------------【Warning】Please define Constans PID_FILE --------------");
+    exit(0);
+}
 
 $command = $argv[1] ?? START;
 
@@ -83,7 +89,7 @@ function stop() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGTERM);
         if($res) {
-            write_info("--------------【Info】master start to stop, please wait a time --------------",'green');
+            write_info("--------------【Info】master and children process start to stop, please wait a time --------------",'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
@@ -92,7 +98,7 @@ function stop() {
             }
             sleep(1);
         }
-        write_info("--------------【Info】master has stopped --------------",'green');
+        write_info("--------------【Info】master and children process has stopped --------------",'green');
     }else {
         write_info("--------------【Warning】pid={$master_pid} 的进程不存在 --------------");
     }

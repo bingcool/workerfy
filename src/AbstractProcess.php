@@ -38,6 +38,8 @@ abstract class AbstractProcess {
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
+    const PROCESS_STATIC_TYPE_NAME = 'static';
+    const PROCESS_DYNAMIC_TYPE_NAME = 'dynamic';
     const WORKERFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
     const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
@@ -155,7 +157,8 @@ abstract class AbstractProcess {
             });
 
             if(PHP_OS != 'Darwin') {
-                $this->swooleProcess->name('php-process-worker:'.$this->getProcessName().'@'.$this->getProcessWorkerId());
+                $process_type_name = $this->getProcessTypeName();
+                $this->swooleProcess->name("php-process-worker[{$process_type_name}]:".$this->getProcessName().'@'.$this->getProcessWorkerId());
             }
             $this->writeStartFormatInfo();
             try{
@@ -423,6 +426,19 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @return string
+     */
+    public function getProcessTypeName() {
+        if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
+            $process_type_name = self::PROCESS_STATIC_TYPE_NAME;
+        }else {
+            $process_type_name = self::PROCESS_DYNAMIC_TYPE_NAME;
+        }
+
+        return $process_type_name;
+    }
+
+    /**
      * getArgs 获取变量参数
      * @return mixed
      */
@@ -658,10 +674,10 @@ abstract class AbstractProcess {
             if($this->getRebootCount() > 0) {
                 $process_type = 'static-reboot';
             }else {
-                $process_type = 'static';
+                $process_type = self::PROCESS_STATIC_TYPE_NAME;
             }
         }else  {
-            $process_type = 'dynamic';
+            $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
 
@@ -680,9 +696,9 @@ EOF;
         $process_name = $this->getProcessName();
         $worker_id = $this->getProcessWorkerId();
         if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
-            $process_type = 'static';
+            $process_type = self::PROCESS_STATIC_TYPE_NAME;
         }else {
-            $process_type = 'dynamic';
+            $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
 
@@ -700,7 +716,7 @@ EOF;
         if($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE) {
             $process_name = $this->getProcessName();
             $worker_id = $this->getProcessWorkerId();
-            $process_type = 'dynamic';
+            $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
             $pid = $this->getPid();
             $info =
 <<<EOF

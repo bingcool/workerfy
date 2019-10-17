@@ -81,11 +81,11 @@ class AtomicManager {
      */
     public function getAllAtomicName(int $type = self::ATOMIC_SHORT) {
         $atomic_name = [];
-        if($type === 1) {
+        if($type === self::ATOMIC_SHORT) {
             if(isset($this->swoole_atomic) && !empty($this->swoole_atomic)) {
                 $atomic_name = array_keys($this->swoole_atomic);
             }
-        }else if($type === 2) {
+        }else if($type === self::ATOMIC_LONG) {
             if(isset($this->swoole_atomic_long) && !empty($this->swoole_atomic_long)) {
                 $atomic_name = array_keys($this->swoole_atomic_long);
             }
