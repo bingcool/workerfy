@@ -14,7 +14,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
 
-        var_dump('创建了一个定时器timer_id='.$timer_id);
+        var_dump('创建了一个Crontable 每隔一分钟执行的任务，timer_id='.$timer_id);
     }
 
     public function time() {

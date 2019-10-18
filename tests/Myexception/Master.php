@@ -19,7 +19,7 @@ $processManager = \Workerfy\ProcessManager::getInstance();
 
 $process_name = 'test-exception';
 $process_class = \Workerfy\Tests\Myexception\Worker::class;
-$process_worker_num = 2;
+$process_worker_num = 1;
 $async = true;
 $args = [
     'wait_time' => 1

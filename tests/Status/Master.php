@@ -32,6 +32,12 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
+    // todo
+    go(function() {
+        \Swoole\Timer::tick(3000, function ($timer_id) {
+             //var_dump("master - tick");
+        });
+    });
 };
 
 $processManager->onCreateDynamicProcess = function ($process_name, $process_num) use($processManager) {

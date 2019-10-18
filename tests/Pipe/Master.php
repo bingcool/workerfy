@@ -21,7 +21,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-proxy';
 $process_class = \Workerfy\Tests\Pipe\Worker::class;
-$process_worker_num = 4;
+$process_worker_num = 1;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -42,7 +42,7 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
         $from_process_name,
         $from_process_worker_id,
     ];
-    var_dump("父进程收到 : ". $msg);
+    var_dump("父进程收到信息 : ". $msg);
 
     $processManager->writeByProcessName($from_process_name, '子进程'.$from_process_name.'@'.$from_process_worker_id. ' 你好，我已收到你的信息');
 

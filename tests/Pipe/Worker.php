@@ -6,9 +6,9 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         // 模拟处理业务
         sleep(1);
-
+        $process_name = $this->getProcessName().'@'.$this->getProcessWorkerId();
         // 向父进程发送消息
-        var_dump("子进程开始向父进程发信息.....");
+        var_dump($process_name."子进程开始向父进程发信息.....");
         $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME, '您好，父进程，我是子进程：'.$this->getProcessName().'@'.$this->getProcessWorkerId());
 
     }

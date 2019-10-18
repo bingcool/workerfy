@@ -50,12 +50,13 @@ $processManager->onStart = function ($pid) {
 
 // 父进程收到监控进程的动态创建业务进程指令
 $processManager->onCreateDynamicProcess = function($dynamic_process_name, $dynamic_process_num) {
-    var_dump('master receive :'. $dynamic_process_name);
+    var_dump('master receive :'. 'start create 动态进程');
     $this->createDynamicProcess($dynamic_process_name);
 };
 
 // 父进程收到监控进程的动态销毁进程命令
 $processManager->onDestroyDynamicProcess = function ($dynamic_process_name, $dynamic_process_num) {
+    var_dump("master receive :". 'start destroy 动态进程');
     $this->destroyDynamicProcess($dynamic_process_name);
 };
 

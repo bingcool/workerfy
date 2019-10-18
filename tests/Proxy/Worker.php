@@ -7,10 +7,13 @@ class Worker extends \Workerfy\AbstractProcess {
         // 模拟处理业务
         sleep(1);
 
+        $process_name = $this->getProcessName().'@'.$this->getProcessWorkerId();
+
         // 子进程worker_id = 0 向worker_id = 1 子进程发送代理信息，请求父进程代理
         if($this->getProcessWorkerId() == 0) {
-            var_dump("子进程开始向父进程发送代理转发信息.....");
-            $this->writeToWorkerByMasterProxy($this->getProcessName(), ['hello test-proxy@1, 我是子进程'.$this->getProcessName().'@'.$this->getProcessWorkerId()], 1);
+            var_dump($process_name."子进程要向子进程test-proxy@1发送信息");
+            var_dump($process_name."子进程开始向父进程发送代理转发信息.....");
+            $this->writeToWorkerByMasterProxy($this->getProcessName(), 'hello test-proxy@1, 我是子进程'.$this->getProcessName().'@'.$this->getProcessWorkerId(), 1);
         }
     }
 

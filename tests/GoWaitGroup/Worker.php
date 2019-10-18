@@ -11,12 +11,12 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
         // GoWaitGroup并发处理
-        if($this->getProcessWorkerId() == 0) {
+        if($this->getProcessWorkerId() == 1) {
             $this->waitGroup();
         }
 
         // 阻塞串行执行
-        if($this->getProcessWorkerId() == 1) {
+        if($this->getProcessWorkerId() == 0) {
             $this->blockRun();
         }
 
@@ -32,16 +32,16 @@ class Worker extends \Workerfy\AbstractProcess {
         $start_time = microtime(true);
 
         $wait_group->go(function () use($wait_group) {
-            $cli = new \Swoole\Coroutine\Http\Client('www.qq.com', 80);
+            $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
             $cli->set(['timeout' => 10]);
             $cli->setHeaders([
-                'Host' => "www.qq.com",
+                'Host' => "www.baidu.com",
                 "User-Agent" => 'Chrome/49.0.2587.3',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml',
                 'Accept-Encoding' => 'gzip',
             ]);
             $ret = $cli->get('/');
-            $wait_group->done('www.qq.com', 'g1-test-wait-group');
+            $wait_group->done('www.baidu.com', 'g1-test-wait-group');
         });
 
         $wait_group->go(function () use ($wait_group){
@@ -61,9 +61,7 @@ class Worker extends \Workerfy\AbstractProcess {
         $end_time = microtime(true);
 
         $last_time = $end_time - $start_time;
-        var_dump("wait-group-last-time:". $last_time);
-
-        var_dump($result);
+        var_dump("并发请求时长:". $last_time);
     }
 
     public function blockRun() {
@@ -75,20 +73,20 @@ class Worker extends \Workerfy\AbstractProcess {
         $result = [];
 
         // 当前是主协程，遇到IO,让出CPU控制权，在主协程是阻塞串行执行的
-        $cli = new \Swoole\Coroutine\Http\Client('www.qq.com', 80);
-        $cli->set(['timeout' => 1]);
+        $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
+        $cli->set(['timeout' => 10]);
         $cli->setHeaders([
-            'Host' => "www.qq.com",
+            'Host' => "www.baidu.com",
             "User-Agent" => 'Chrome/49.0.2587.3',
             'Accept' => 'text/html,application/xhtml+xml,application/xml',
             'Accept-Encoding' => 'gzip',
         ]);
         $ret = $cli->get('/');
 
-        $result['www.qq.com']= 'g1-test-block-run';
+        $result['www.baidu.com']= 'g1-test-block-run';
 
         $cli = new \Swoole\Coroutine\Http\Client('www.163.com', 80);
-        $cli->set(['timeout' => 1]);
+        $cli->set(['timeout' => 10]);
         $cli->setHeaders([
             'Host' => "www.163.com",
             "User-Agent" => 'Chrome/49.0.2587.3',
@@ -102,10 +100,7 @@ class Worker extends \Workerfy\AbstractProcess {
         $end_time = microtime(true);
 
         $last_time = $end_time - $start_time;
-        var_dump("block-last-time:". $last_time);
-
-        var_dump($result);
-
+        var_dump("阻塞串行请求时长:". $last_time);
 
     }
 }
