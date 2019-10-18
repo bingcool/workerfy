@@ -20,14 +20,15 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-status';
-$process_class = \Workerfy\Tests\Status\Worker::class;
+$process_name = 'test-cli-pipe';
+$process_class = \Workerfy\Tests\CliPipe\Worker::class;
 $process_worker_num = 3;
 $async = true;
 $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
+// 设置启用管道，默认不设置
 $processManager->createCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
@@ -37,10 +38,10 @@ $processManager->onStart = function ($pid) {
 
 };
 
-$processManager->onCreateDynamicProcess = function ($process_name, $process_num) use($processManager) {
-    $this->createDynamicProcess($process_name, $process_num);
+// 终端信息处理
+$processManager->onCliMsg = function($msg) {
+    var_dump("父进程收到来自于cli终端信息：".$msg);
 };
-
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);

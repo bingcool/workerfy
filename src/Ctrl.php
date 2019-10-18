@@ -13,6 +13,7 @@ define('START', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
 define('STATUS', 'status');
+define('PIPE', "pipe");
 
 if(!defined('PID_FILE')) {
     write_info("--------------【Warning】Please define Constans PID_FILE --------------");
@@ -53,10 +54,14 @@ switch($command) {
     case STATUS :
         status();
         break;
+    case PIPE :
+        pipe();
+        break;
     default :
-        write_info("--------------【Warning】you must use command --------------");
+        write_info("--------------【Warning】you must use 【start, stop, reload, status, pipe】command --------------");
         exit(0);
 }
+
 function start() {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
@@ -150,6 +155,18 @@ function status() {
         $res = \Swoole\Process::kill($master_pid, SIGUSR1);
     }else {
         write_info("--------------【Warning】pid={$master_pid} 的进程不存在，无法获取进程状态 --------------");
+    }
+    exit(0);
+}
+
+function pipe() {
+    $file = fopen(PIPE_FIFO,'w+');
+    $msg = getenv("msg");
+    if($msg) {
+        write_info("--------------【Info】start write mseesge to master --------------",'green');
+        fwrite($file, $msg);
+    }else {
+        write_info("--------------【Warning】please use pipe -msg=xxxxx --------------");
     }
     exit(0);
 }

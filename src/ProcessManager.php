@@ -36,10 +36,15 @@ class ProcessManager {
 
     private $start_time;
 
+    private $is_create_pipe = false;
+
+    private $cli_pipe_fd;
+
 
     public $onStart;
     public $onPipeMsg;
     public $onProxyMsg;
+    public $onCliMsg;
     public $onCreateDynamicProcess;
     public $onDestroyDynamicProcess;
     public $onHandleException;
@@ -140,16 +145,17 @@ class ProcessManager {
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
             $this->installMasterStatusSignal();
+            $this->installRegisterShutdownFunction();
             $this->registerSignal();
     		$this->swooleEventAdd();
-    		$this->setStartTime();
+            $this->installCliPipe();
+            $this->setStartTime();
     	}
     	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
         if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
         }
-        sleep(3);
     	return $master_pid;
     }
 
@@ -673,6 +679,54 @@ class ProcessManager {
     }
 
     /**
+     * @param bool $is_create_pipe
+     */
+    public function createCliPipe(bool $is_create_pipe = false) {
+        $this->is_create_pipe = $is_create_pipe;
+    }
+
+    /**
+     * 创建管道
+     */
+    private function installCliPipe() {
+        if($this->is_create_pipe) {
+            $path_info = pathinfo(PID_FILE);
+            $path_dir = $path_info['dirname'];
+            $file_name = $path_info['basename'];
+            $ext = $path_info['extension'];
+            $pipe_file_name = str_replace($ext,'pipe', $file_name);
+            $pipe_file = $path_dir.'/'.$pipe_file_name;
+            usleep(500000);
+            if(file_exists($pipe_file)) {
+                unlink($pipe_file);
+            }
+            if(posix_mkfifo($pipe_file, 0777)) {
+                try {
+                    $this->cli_pipe_fd = fopen($pipe_file, 'w+');
+                    is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
+                    \Swoole\Event::add($this->cli_pipe_fd, function() {
+                        $msg = fread($this->cli_pipe_fd, 8192);
+                        $this->onCliMsg->call($this, $msg);
+                    });
+                }catch (\Throwable $throwable) {
+                    throw $throwable;
+                }
+            }
+        }
+    }
+
+    /**
+     * installRegisterShutdownFunction
+     */
+    private function installRegisterShutdownFunction() {
+        register_shutdown_function(function() {
+            if(is_resource($this->cli_pipe_fd)) {
+                fclose($this->cli_pipe_fd);
+            }
+        });
+    }
+
+    /**
      * setStartTime 设置启动时间
      */
     private function setStartTime() {
@@ -721,4 +775,5 @@ EOF;
         }
         return $info;
     }
+
 }
