@@ -149,6 +149,7 @@ class ProcessManager {
         if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
         }
+        sleep(3);
     	return $master_pid;
     }
 

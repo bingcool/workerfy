@@ -93,7 +93,7 @@ function stop() {
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
-            if(time() - $start_stop_time > 60) {
+            if(time() - $start_stop_time > 30) {
                 break;
             }
             sleep(1);

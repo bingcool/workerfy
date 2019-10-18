@@ -156,6 +156,9 @@ abstract class AbstractProcess {
                 $this->swooleProcess->exit(SIGUSR1);
             });
 
+            // 子进程会复制父进程的信号注册，这里子进程不需要SIGUSR2，需要移除信号监听
+            @Process::signal(SIGUSR2, null);
+
             if(PHP_OS != 'Darwin') {
                 $process_type_name = $this->getProcessTypeName();
                 $this->swooleProcess->name("php-process-worker[{$process_type_name}]:".$this->getProcessName().'@'.$this->getProcessWorkerId());
