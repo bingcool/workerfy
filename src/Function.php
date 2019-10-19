@@ -1,6 +1,18 @@
 <?php
 include_once __DIR__.'/EachColor.php';
 
+/**
+ * @param string $str
+ * @return bool
+ */
+function json_validate(string $str) {
+    if (is_string($str)) {
+        @json_decode($str);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
+    return false;
+}
+
 // 随机获取一个监听的端口(php_socket模式)
 function get_one_free_port()
 {

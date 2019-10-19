@@ -2,6 +2,7 @@
 *.lock
 *.idea
 *.pid
+*.pipe
 *.log
 /tests/Db.php
 /tests/Redis.php

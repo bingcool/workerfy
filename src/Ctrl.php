@@ -13,7 +13,9 @@ define('START', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
 define('STATUS', 'status');
-define('PIPE', "pipe");
+define('PIPE', 'pipe');
+define('ADD','add');
+define('REMOVE', 'remove');
 
 if(!defined('PID_FILE')) {
     write_info("--------------【Warning】Please define Constans PID_FILE --------------");
@@ -56,6 +58,12 @@ switch($command) {
         break;
     case PIPE :
         pipe();
+        break;
+    case ADD :
+        add();
+        break;
+    case REMOVE :
+        remove();
         break;
     default :
         write_info("--------------【Warning】you must use 【start, stop, reload, status, pipe】command --------------");
@@ -160,14 +168,47 @@ function status() {
 }
 
 function pipe() {
-    $file = fopen(PIPE_FIFO,'w+');
+    $pipe = fopen(PIPE_FIFO,'w+');
     $msg = getenv("msg");
     if($msg) {
         write_info("--------------【Info】start write mseesge to master --------------",'green');
-        fwrite($file, $msg);
+        fwrite($pipe, $msg);
     }else {
         write_info("--------------【Warning】please use pipe -msg=xxxxx --------------");
     }
+    fclose($pipe);
+    exit(0);
+}
+
+function add() {
+    $pipe = fopen(PIPE_FIFO,'w+');
+    $name = getenv("name");
+    $num = getenv('num') ?? 1;
+    $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
+    if(isset($name)) {
+        write_info("--------------【Info】master process start to create dynamic process, please wait a time --------------",'green');
+        fwrite($pipe, $pipe_msg);
+    }else {
+        write_info("--------------【Warning】please use pipe -name=xxxxx -num=1 --------------");
+    }
+    fclose($pipe);
+    sleep(5);
+    exit(0);
+}
+
+function remove() {
+    $pipe = fopen(PIPE_FIFO,'w+');
+    $name = getenv("name");
+    $num = getenv('num') ?? 1;
+    $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
+    if(isset($name)) {
+        write_info("--------------【Info】master process start to remova all dynamic process, please wait a time --------------",'green');
+        fwrite($pipe, $pipe_msg);
+    }else {
+        write_info("--------------【Warning】please use pipe -name=xxxxx --------------");
+    }
+    fclose($pipe);
+    sleep(5);
     exit(0);
 }
 

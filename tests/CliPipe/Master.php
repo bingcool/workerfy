@@ -25,7 +25,7 @@ $process_class = \Workerfy\Tests\CliPipe\Worker::class;
 $process_worker_num = 3;
 $async = true;
 $args = [
-    'wait_time' => 1
+    'wait_time' => 1,
 ];
 $extend_data = null;
 // 设置启用管道，默认不设置
@@ -38,8 +38,12 @@ $processManager->onStart = function ($pid) {
 
 };
 
+$processManager->onCreateDynamicProcess = function ($process_name, $num) {
+  $this->createDynamicProcess($process_name, $num);
+};
 // 终端信息处理
 $processManager->onCliMsg = function($msg) {
+    var_dump(json_decode($msg, true));
     var_dump("父进程收到来自于cli终端信息：".$msg);
 };
 

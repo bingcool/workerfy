@@ -50,6 +50,7 @@ class ProcessManager {
     public $onHandleException;
     public $onExit;
 
+    const NUM_PEISHU = 8;
     const MASTER_WORKER_NAME = 'master_worker';
     const CREATE_DYNAMIC_WORKER = 'create_dynamic_process_worker';
     const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
@@ -93,6 +94,20 @@ class ProcessManager {
         if(!$async) {
             $async = true;
         }
+
+        if($process_worker_num > swoole_cpu_num() * (self::NUM_PEISHU)) {
+            write_info("--------------【Warning】Params process_worker_num 大于最大的子进程限制数量=cpu_num * ".(self::NUM_PEISHU)."--------------");
+            exit(0);
+        }
+
+        if(isset($args['max_process_num'])) {
+            if($args['max_process_num'] > swoole_cpu_num() * (self::NUM_PEISHU)) {
+                $args['max_process_num'] = swoole_cpu_num() * (self::NUM_PEISHU);
+            }
+        }else {
+            $args['max_process_num'] = swoole_cpu_num() * (self::NUM_PEISHU);
+        }
+
         $this->process_lists[$key] = [
             'process_name' => $process_name,
             'process_class' => $process_class,
@@ -410,7 +425,8 @@ class ProcessManager {
         $key = md5($process_name);
         $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         if($this->isMasterExiting()) {
-            return;
+            write_info("--------------【Warning】 master进程正在处于exiting退出状态，不能再动态创建子进程 --------------");
+            return false;
         }
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
@@ -420,11 +436,20 @@ class ProcessManager {
             $total_process_num = $process_worker_num + $process_num;
             $this->process_lists[$key]['dynamic_process_worker_num'] = 0;
         }
+        // 总的进程数，大于设置的进程数
+        if($total_process_num > $this->process_lists[$key]['args']['max_process_num']) {
+            $total_process_num = $this->process_lists[$key]['args']['max_process_num'];
+        }
         $running_process_worker_num = $process_worker_num + $this->process_lists[$key]['dynamic_process_worker_num'];
         $async = $this->process_lists[$key]['async'];
         $args = $this->process_lists[$key]['args'];
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
+        // 禁止动态创建
+        if($running_process_worker_num >= $total_process_num) {
+            write_info("--------------【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程 --------------");
+            return false;
+        }
         for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
             try {
                 // 动态创建成功，需要自加
@@ -690,13 +715,7 @@ class ProcessManager {
      */
     private function installCliPipe() {
         if($this->is_create_pipe) {
-            $path_info = pathinfo(PID_FILE);
-            $path_dir = $path_info['dirname'];
-            $file_name = $path_info['basename'];
-            $ext = $path_info['extension'];
-            $pipe_file_name = str_replace($ext,'pipe', $file_name);
-            $pipe_file = $path_dir.'/'.$pipe_file_name;
-            usleep(500000);
+            $pipe_file = $this->getCliPipeFile();
             if(file_exists($pipe_file)) {
                 unlink($pipe_file);
             }
@@ -706,13 +725,72 @@ class ProcessManager {
                     is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
                     \Swoole\Event::add($this->cli_pipe_fd, function() {
                         $msg = fread($this->cli_pipe_fd, 8192);
-                        $this->onCliMsg->call($this, $msg);
+                        $is_call_clipipe = true;
+                        if(json_validate($msg)) {
+                            $pipe_msg_arr = json_decode($msg, true);
+                            if(is_array($pipe_msg_arr) && count($pipe_msg_arr) == 3) {
+                                list($action, $process_name, $num) = $pipe_msg_arr;
+                                switch($action) {
+                                    case 'add' :
+                                        !isset($num) && $num = 1;
+                                        $is_call_clipipe = false;
+                                        $this->addProcessByCli($process_name, $num);
+                                        break;
+                                    case 'remove' :
+                                        $is_call_clipipe = false;
+                                        $this->removeProcessByCli($process_name, $num);
+                                        break;
+                                }
+                            }
+                        }
+                        if($is_call_clipipe === true) {
+                            $this->onCliMsg->call($this, $msg);
+                        }
                     });
                 }catch (\Throwable $throwable) {
                     throw $throwable;
                 }
             }
+        }else {
+            $info =
+<<<EOF
+    Master process is not create Pipe, so can not use cli pipe
+EOF;
+            write_info($info, 'red');
         }
+    }
+
+    private function addProcessByCli(string $process_name, int $num = 1) {
+        $key = md5($process_name);
+        if(isset($this->process_lists[$key])) {
+            $this->createDynamicProcess($process_name, $num);
+        }else {
+            write_info("--------------【Warning】Not exist children_process_name = {$process_name}, add failed --------------");
+        }
+
+    }
+
+    private function removeProcessByCli(string $process_name, int $num = 1) {
+        $key = md5($process_name);
+        if(isset($this->process_lists[$key])) {
+            $this->destroyDynamicProcess($process_name, $num);
+        }else {
+            write_info("--------------【Warning】Not exist children_process_name = {$process_name}, remove failed --------------");
+        }
+    }
+
+    /**
+     * getCliPipeFile
+     * @return string
+     */
+    public function getCliPipeFile() {
+        $path_info = pathinfo(PID_FILE);
+        $path_dir = $path_info['dirname'];
+        $file_name = $path_info['basename'];
+        $ext = $path_info['extension'];
+        $pipe_file_name = str_replace($ext,'pipe', $file_name);
+        $pipe_file = $path_dir.'/'.$pipe_file_name;
+        return $pipe_file;
     }
 
     /**
@@ -720,9 +798,15 @@ class ProcessManager {
      */
     private function installRegisterShutdownFunction() {
         register_shutdown_function(function() {
+            // close pipe fofo
             if(is_resource($this->cli_pipe_fd)) {
+                \Swoole\Event::del($this->cli_pipe_fd);
                 fclose($this->cli_pipe_fd);
             }
+            // remove gisnal
+            @\Swoole\Process::signal(SIGUSR1, null);
+            @\Swoole\Process::signal(SIGUSR2, null);
+            @\Swoole\Process::signal(SIGTERM, null);
         });
     }
 
