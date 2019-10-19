@@ -752,11 +752,7 @@ class ProcessManager {
                 }
             }
         }else {
-            $info =
-<<<EOF
-    Master process is not create Pipe, so can not use cli pipe
-EOF;
-            write_info($info, 'red');
+            write_info("--------------【Warning】Master process is not create Pipe, so can not use cli pipe --------------");
         }
     }
 
@@ -803,7 +799,7 @@ EOF;
                 \Swoole\Event::del($this->cli_pipe_fd);
                 fclose($this->cli_pipe_fd);
             }
-            // remove gisnal
+            // remove signal
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
             @\Swoole\Process::signal(SIGTERM, null);
