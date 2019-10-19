@@ -743,7 +743,7 @@ class ProcessManager {
                                 }
                             }
                         }
-                        if($is_call_clipipe === true) {
+                        if($is_call_clipipe === true && $this->onCliMsg instanceof \Closure) {
                             $this->onCliMsg->call($this, $msg);
                         }
                     });
