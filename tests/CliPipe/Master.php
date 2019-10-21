@@ -26,6 +26,7 @@ $process_worker_num = 3;
 $async = true;
 $args = [
     'wait_time' => 1,
+    //'user' => 'bingcoolv'
 ];
 $extend_data = null;
 // 设置启用管道，默认不设置
@@ -33,9 +34,7 @@ $processManager->createCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {
-
     file_put_contents(PID_FILE, $pid);
-
 };
 
 $processManager->onCreateDynamicProcess = function ($process_name, $num) {

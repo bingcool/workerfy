@@ -57,11 +57,4 @@ class Config {
 		return $this->config;
 	}
 
-	public function setTest(string $test = 'hhhhhhh') {
-	    $this->test = $test;
-    }
-
-    public function getTest() {
-        return $this->test;
-    }
 }

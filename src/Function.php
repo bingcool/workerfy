@@ -17,7 +17,7 @@ function json_validate(string $str) {
 function get_one_free_port()
 {
     $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-    if (!socket_bind($socket, "0.0.0.0", 0)) {
+    if (!socket_bind($socket, '0.0.0.0', 0)) {
         return false;
     }
     if (!socket_listen($socket)) {

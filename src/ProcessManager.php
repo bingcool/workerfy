@@ -126,9 +126,7 @@ class ProcessManager {
     public function start(bool $is_daemon = false) {
     	if(!empty($this->process_lists)) {
             $this->daemon($is_daemon);
-            if(!isset($this->master_pid)) {
-                $this->master_pid = posix_getpid();
-            }
+            $this->setMasterPid();
             foreach($this->process_lists as $key => $list) {
     			$process_worker_num = $list['process_worker_num'] ?? 1;
     			for($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
@@ -141,6 +139,7 @@ class ProcessManager {
 			        	$enable_coroutine = $list['enable_coroutine'] ?? true;
 		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
 		    			$process->setProcessWorkerId($worker_id);
+                        $process->setMasterPid($this->master_pid);
                         $process->setStartTime();
                         if(!isset($this->process_wokers[$key][$worker_id])) {
                             $this->process_wokers[$key][$worker_id] = $process;
@@ -154,6 +153,7 @@ class ProcessManager {
     		foreach($this->process_wokers as $key => $process_woker) {
     		    foreach($process_woker as $worker_id => $process) {
                     $process->start();
+                    usleep(50000);
                 }
             }
             $this->installSigchldsignal();
@@ -278,7 +278,7 @@ class ProcessManager {
                         }
                         if(count($this->process_wokers) == 0) {
                             try{
-                                $this->onExit->call($this);
+                                is_callable($this->onExit) && $this->onExit->call($this);
                             }catch (\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
                             }finally {
@@ -309,6 +309,7 @@ class ProcessManager {
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
                                     $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                                     $new_process->setProcessWorkerId($process_worker_id);
+                                    $new_process->setMasterPid($this->master_pid);
                                     $new_process->setProcessType($process_type);
                                     $new_process->setRebootCount($process_reboot_count);
                                     $new_process->setStartTime();
@@ -456,6 +457,7 @@ class ProcessManager {
                 $this->process_lists[$key]['dynamic_process_worker_num']++;
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
+                $process->setMasterPid($this->master_pid);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
                 $process->setStartTime();
                 if(!isset($this->process_wokers[$key][$worker_id])) {
@@ -463,8 +465,7 @@ class ProcessManager {
                 }
                 $process->start();
             }catch(\Throwable $t) {
-                unset($this->process_wokers[$key][$worker_id]);
-                // 发生异常，需要自减
+                unset($this->process_wokers[$key][$worker_id], $process);
                 $this->process_lists[$key]['dynamic_process_worker_num']--;
                 $this->onHandleException->call($this, $t);
 
@@ -684,7 +685,10 @@ class ProcessManager {
      * @param callable $function
      */
     public function addSignal($signal, callable $function) {
-        $this->signal[$signal] = [$signal, $function];
+        // forbidden over has registered signal
+        if(!in_array($signal, [SIGTERM, SIGUSR2, SIGUSR1, SIGCHLD])) {
+            $this->signal[$signal] = [$signal, $function];
+        }
     }
 
     /**
@@ -751,11 +755,14 @@ class ProcessManager {
                     throw $throwable;
                 }
             }
-        }else {
-            write_info("--------------【Warning】Master process is not create Pipe, so can not use cli pipe --------------");
         }
     }
 
+    /**
+     * addProcessByCli
+     * @param string $process_name
+     * @param int $num
+     */
     private function addProcessByCli(string $process_name, int $num = 1) {
         $key = md5($process_name);
         if(isset($this->process_lists[$key])) {
@@ -766,6 +773,11 @@ class ProcessManager {
 
     }
 
+    /**
+     * removeProcessByCli
+     * @param string $process_name
+     * @param int $num
+     */
     private function removeProcessByCli(string $process_name, int $num = 1) {
         $key = md5($process_name);
         if(isset($this->process_lists[$key])) {
@@ -780,12 +792,16 @@ class ProcessManager {
      * @return string
      */
     public function getCliPipeFile() {
-        $path_info = pathinfo(PID_FILE);
-        $path_dir = $path_info['dirname'];
-        $file_name = $path_info['basename'];
-        $ext = $path_info['extension'];
-        $pipe_file_name = str_replace($ext,'pipe', $file_name);
-        $pipe_file = $path_dir.'/'.$pipe_file_name;
+        if(function_exists('getCliPipeFile')) {
+            $pipe_file = getCliPipeFile();
+        }else {
+            $path_info = pathinfo(PID_FILE);
+            $path_dir = $path_info['dirname'];
+            $file_name = $path_info['basename'];
+            $ext = $path_info['extension'];
+            $pipe_file_name = str_replace($ext,'pipe', $file_name);
+            $pipe_file = $path_dir.'/'.$pipe_file_name;
+        }
         return $pipe_file;
     }
 
@@ -798,12 +814,23 @@ class ProcessManager {
             if(is_resource($this->cli_pipe_fd)) {
                 \Swoole\Event::del($this->cli_pipe_fd);
                 fclose($this->cli_pipe_fd);
+                @unlink($this->getCliPipeFile());
             }
             // remove signal
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
             @\Swoole\Process::signal(SIGTERM, null);
         });
+    }
+
+    /**
+     * setMasterPid
+     */
+    private function setMasterPid() {
+        if(!isset($this->master_pid)) {
+            $this->master_pid = posix_getpid();
+            defined("MASTER_PID") OR define("MASTER_PID", $this->master_pid);
+        }
     }
 
     /**
@@ -832,6 +859,7 @@ class ProcessManager {
             $cpu_num = swoole_cpu_num();
             $php_version = PHP_VERSION;
             $swoole_version = swoole_version();
+            $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
             $info =
 <<<EOF
  主进程status:
@@ -841,6 +869,7 @@ class ProcessManager {
         cpu_num: $cpu_num
         php_version: $php_version
         swoole_version: $swoole_version
+        enable_cli_pipe: $enable_cli_pipe
         
  
  子进程status:
@@ -849,7 +878,7 @@ EOF;
             $info =
 <<<EOF
         |
-        【{$process_name}@{$worker_id}】children_process【{$process_type}】: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
+        【{$process_name}@{$worker_id}】【{$process_type}】: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
 EOF;
 
         }

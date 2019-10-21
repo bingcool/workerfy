@@ -23,7 +23,10 @@ abstract class AbstractProcess {
     private $extend_data;
     private $enable_coroutine = false;
     private $pid;
+    private $master_pid;
     private $process_worker_id = 0;
+    private $user;
+    private $group;
     private $is_reboot = false;
     private $is_exit = false;
     private $is_force_exit = false;
@@ -60,6 +63,15 @@ abstract class AbstractProcess {
         if(isset($args['wait_time']) && is_numeric($args['wait_time'])) {
             $this->wait_time = $args['wait_time'];
         }
+        if(isset($args['user']) && is_string($args['user'])) {
+            $this->user = $args['user'];
+        }
+        if(isset($args['group']) && is_string($args['group'])) {
+            $this->group = $args['group'];
+        }
+
+        if(isset($args['max_process_num'])) {}
+
         if(version_compare(swoole_version(),'4.3.0','>=')) {
             $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
         }else {
@@ -85,12 +97,16 @@ abstract class AbstractProcess {
     /**
      * __start 创建process的成功回调处理
      * @param  Process $swooleProcess
-     * @return void
+     * @return mixed
      */
     public function __start(Process $swooleProcess) {
         \Swoole\Runtime::enableCoroutine(true);
         $this->pid = $this->swooleProcess->pid;
         $this->coroutine_id = \Co::getCid();
+        $this->setUserAndGroup();
+        if($this->is_exit) {
+            return false;
+        }
         try {
             if($this->async){
                 Event::add($this->swooleProcess->pipe, function() {
@@ -336,6 +352,20 @@ abstract class AbstractProcess {
      */
     public function getProcessType() {
         return $this->process_type;
+    }
+
+    /**
+     * @param int $master_pid
+     */
+    public function setMasterPid(int $master_pid) {
+        $this->master_pid = $master_pid;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMasterPid() {
+        return $this->master_pid;
     }
 
     /**
@@ -665,6 +695,50 @@ abstract class AbstractProcess {
             }
             \Swoole\Coroutine::sleep($re_wait_time);
         }
+    }
+
+    /**
+     * setUserAndGroup Set unix user and group for current process.
+     * @return boolean
+     */
+    private function setUserAndGroup() {
+        if(!isset($this->user)) {
+            return false;
+        }
+        // Get uid.
+        $user_info = posix_getpwnam($this->user);
+        if(!$user_info) {
+            write_info("--------------【Warning】User {$this->user} not exsits --------------");
+            $this->exit();
+            return false;
+        }
+        $uid = $user_info['uid'];
+        // Get gid.
+        if($this->group) {
+            $group_info = posix_getgrnam($this->group);
+            if(!$group_info) {
+                write_info("--------------【Warning】Group {$this->group} not exsits --------------");
+                $this->exit();
+                return false;
+            }
+            $gid = $group_info['gid'];
+        }else {
+            $gid = $user_info['gid'];
+            $this->group = $gid;
+        }
+        // Set uid and gid.
+        if($uid !== posix_getuid() || $gid !== posix_getgid()) {
+            if(!posix_setgid($gid) || !posix_initgroups($user_info['name'], $gid) || !posix_setuid($uid)) {
+                write_info("--------------【Warning】change gid or uid fail --------------");
+            }
+        }
+    }
+
+    /**
+     * @return array
+     */
+    public function getUserAndGroup() {
+        return [$this->user, $this->group];
     }
 
     /**

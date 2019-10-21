@@ -168,7 +168,12 @@ function status() {
 }
 
 function pipe() {
-    $pipe = fopen(PIPE_FIFO,'w+');
+    $pipe_file = getCliPipeFile();
+    if(!is_file($pipe_file)) {
+        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        exit(0);
+    }
+    $pipe = fopen($pipe_file,'w+');
     $msg = getenv("msg");
     if($msg) {
         write_info("--------------【Info】start write mseesge to master --------------",'green');
@@ -180,35 +185,45 @@ function pipe() {
     exit(0);
 }
 
-function add() {
-    $pipe = fopen(PIPE_FIFO,'w+');
+function add(int $wait_time = 5) {
+    $pipe_file = getCliPipeFile();
+    if(!is_file($pipe_file)) {
+        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        exit(0);
+    }
+    $pipe = fopen($pipe_file,'w+');
     $name = getenv("name");
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Info】master process start to create dynamic process, please wait a time --------------",'green');
+        write_info("--------------【Warning】master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
         write_info("--------------【Warning】please use pipe -name=xxxxx -num=1 --------------");
     }
     fclose($pipe);
-    sleep(5);
+    sleep($wait_time);
     exit(0);
 }
 
-function remove() {
-    $pipe = fopen(PIPE_FIFO,'w+');
+function remove(int $wait_time = 5) {
+    $pipe_file = getCliPipeFile();
+    if(!is_file($pipe_file)) {
+        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        exit(0);
+    }
+    $pipe = fopen($pipe_file,'w+');
     $name = getenv("name");
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Info】master process start to remova all dynamic process, please wait a time --------------",'green');
+        write_info("--------------【Info】master process start to remova all dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
         write_info("--------------【Warning】please use pipe -name=xxxxx --------------");
     }
     fclose($pipe);
-    sleep(5);
+    sleep($wait_time);
     exit(0);
 }
 
@@ -220,6 +235,36 @@ function write_info($msg, $foreground = "red", $background = "black") {
         $colors = new \Workerfy\EachColor();
     }
     echo $colors->getColoredString($msg, $foreground, $background) . "\n\n";
+}
+
+function getCliPipeFile() {
+    $path_info = pathinfo(PID_FILE);
+    $path_dir = $path_info['dirname'];
+    $file_name = $path_info['basename'];
+    $ext = $path_info['extension'];
+    $pipe_file_name = str_replace($ext,'pipe', $file_name);
+    $pipe_file = $path_dir.'/'.$pipe_file_name;
+    return $pipe_file;
+}
+
+/**
+ * 是否是在主进程环境中
+ * @return bool
+ */
+function inMasterProcessEnv() {
+    $pid = posix_getpid();
+    if($pid == MASTER_PID) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 是否是在子进程环境中
+ * @return bool
+ */
+function inChildrenProcessEnv() {
+    return !inMasterProcessEnv();
 }
 
 
