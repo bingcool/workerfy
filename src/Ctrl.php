@@ -85,6 +85,11 @@ function start() {
             exit(0);
         }
     }
+    // 通过cli命令行设置worker_num
+    $worker_num = (int)getenv('worker_num');
+    if(isset($worker_num) && $worker_num > 0) {
+        define("WORKER_NUM", $worker_num);
+    }
 
 }
 
@@ -169,11 +174,15 @@ function status() {
 
 function pipe() {
     $pipe_file = getCliPipeFile();
-    if(!is_file($pipe_file)) {
+    if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
+    if(!flock($pipe, LOCK_EX)) {
+        write_info("--------------【Warning】 Get file flock fail --------------");
+        exit(0);
+    }
     $msg = getenv("msg");
     if($msg) {
         write_info("--------------【Info】start write mseesge to master --------------",'green');
@@ -187,11 +196,15 @@ function pipe() {
 
 function add(int $wait_time = 5) {
     $pipe_file = getCliPipeFile();
-    if(!is_file($pipe_file)) {
+    if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
+    if(!flock($pipe, LOCK_EX)) {
+        write_info("--------------【Warning】 Get file flock fail --------------");
+        exit(0);
+    }
     $name = getenv("name");
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
@@ -201,6 +214,7 @@ function add(int $wait_time = 5) {
     }else {
         write_info("--------------【Warning】please use pipe -name=xxxxx -num=1 --------------");
     }
+    flock($pipe, LOCK_UN);
     fclose($pipe);
     sleep($wait_time);
     exit(0);
@@ -208,11 +222,15 @@ function add(int $wait_time = 5) {
 
 function remove(int $wait_time = 5) {
     $pipe_file = getCliPipeFile();
-    if(!is_file($pipe_file)) {
+    if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
+    if(!flock($pipe, LOCK_EX)) {
+        write_info("--------------【Warning】 Get file flock fail --------------");
+        exit(0);
+    }
     $name = getenv("name");
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
@@ -235,6 +253,21 @@ function write_info($msg, $foreground = "red", $background = "black") {
         $colors = new \Workerfy\EachColor();
     }
     echo $colors->getColoredString($msg, $foreground, $background) . "\n\n";
+    if(defined("CTL_LOG_FILE")) {
+        if(defined("MAX_LOG_FILE_SIZE")) {
+             $max_log_file_size = MAX_LOG_FILE_SIZE;
+        }else {
+            $max_log_file_size = 5 * 1024 * 1024;
+        }
+        if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
+            unlink(CTL_LOG_FILE);
+        }
+        $log_fd = fopen(CTL_LOG_FILE,'a+');
+        $date = date("Y-m-d H:i:s");
+        $write_msg = "【{$date}】".$msg."\n\r";
+        fwrite($log_fd, $write_msg);
+        fclose($log_fd);
+    }
 }
 
 function getCliPipeFile() {

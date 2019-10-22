@@ -2,10 +2,10 @@
 date_default_timezone_set('Asia/Shanghai');
 
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
-$pipe_fifo = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pipe';
+$log_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log';
 
 define("PID_FILE", $pid_file);
-define("PIPE_FIFO", $pipe_fifo);
+define("CTL_LOG_FILE", $log_file);
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
 
@@ -22,7 +22,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-cli-pipe';
 $process_class = \Workerfy\Tests\CliPipe\Worker::class;
-$process_worker_num = 3;
+$process_worker_num = defined("WORKER_NUM") ? defined("WORKER_NUM") : 3;
 $async = true;
 $args = [
     'wait_time' => 1,
@@ -42,7 +42,6 @@ $processManager->onCreateDynamicProcess = function ($process_name, $num) {
 };
 // 终端信息处理
 $processManager->onCliMsg = function($msg) {
-    var_dump(json_decode($msg, true));
     var_dump("父进程收到来自于cli终端信息：".$msg);
 };
 
