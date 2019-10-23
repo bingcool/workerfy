@@ -26,6 +26,9 @@
     "ext-posix" : "*",
     "ext-json": "*"
   },
+  "require-dev": {
+    "ext-sysvmsg": "*"
+  },
   "autoload": {
     "psr-4": {
       "Workerfy\\": "src/"

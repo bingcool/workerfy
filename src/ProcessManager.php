@@ -816,6 +816,9 @@ class ProcessManager {
                 fclose($this->cli_pipe_fd);
                 @unlink($this->getCliPipeFile());
             }
+            // remove sysvmsg queue
+            $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
+            $sysvmsgManager->destroyMSgQueue();
             // remove signal
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
