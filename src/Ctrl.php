@@ -66,7 +66,7 @@ switch($command) {
         remove();
         break;
     default :
-        write_info("--------------【Warning】you must use 【start, stop, reload, status, pipe】command --------------");
+        write_info("--------------【Warning】you must use 【start, stop, reload, status, pipe, add, remove】command --------------");
         exit(0);
 }
 
@@ -254,7 +254,7 @@ function write_info($msg, $foreground = "red", $background = "black") {
     }
     echo $colors->getColoredString($msg, $foreground, $background) . "\n\n";
     if(defined("CTL_LOG_FILE")) {
-        if(defined("MAX_LOG_FILE_SIZE")) {
+        if(defined('MAX_LOG_FILE_SIZE')) {
              $max_log_file_size = MAX_LOG_FILE_SIZE;
         }else {
             $max_log_file_size = 5 * 1024 * 1024;

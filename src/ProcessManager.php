@@ -73,7 +73,7 @@ class ProcessManager {
      * @param array $args
      * @param null $extend_data
      * @param bool $enable_coroutine
-     * @throws \Exception
+     * @throws Exception
      */
 	public function addProcess(
 	    string $process_name,
@@ -716,6 +716,8 @@ class ProcessManager {
 
     /**
      * 创建管道
+     * @throws Exception
+
      */
     private function installCliPipe() {
         if($this->is_create_pipe) {
@@ -819,6 +821,7 @@ class ProcessManager {
             // remove sysvmsg queue
             $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
             $sysvmsgManager->destroyMSgQueue();
+            unset($sysvmsgManager);
             // remove signal
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
@@ -832,7 +835,7 @@ class ProcessManager {
     private function setMasterPid() {
         if(!isset($this->master_pid)) {
             $this->master_pid = posix_getpid();
-            defined("MASTER_PID") OR define("MASTER_PID", $this->master_pid);
+            defined('MASTER_PID') OR define('MASTER_PID', $this->master_pid);
         }
     }
 
@@ -841,6 +844,41 @@ class ProcessManager {
      */
     private function setStartTime() {
         $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
+    }
+
+    /**
+     * getSwooleTableInfo
+     * @return string
+     */
+    public function getSwooleTableInfo() {
+        $swoole_table_info = "unenable swoole table(没启用)";
+        if(defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
+            $all_table_name = \Workerfy\Memory\TableManager::getInstance()->getAllTableName();
+            if(!empty($all_table_name) && is_array($all_table_name)) {
+                $all_table_name_str = implode($all_table_name, ',');
+                $swoole_table_info = "[{$all_table_name_str}]";
+            }
+        }
+        return $swoole_table_info;
+    }
+
+    /**
+     * getSysvmsgInfo
+     */
+    public function getSysvmsgInfo() {
+        $msg_sysvmsg_info = 'unenable sysvmsg(没启用)';
+        if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
+            $msg_queue_info = \Workerfy\Memory\SysvmsgManager::getInstance()->getAllMsgQueueWaitToPopNum();
+            if(!empty($msg_queue_info)) {
+                $msg_sysvmsg_info = '';
+                foreach($msg_queue_info as $info) {
+                    list($msg_queue_name, $wait_to_read_num) = $info;
+                    $msg_sysvmsg_info .= "[队列名称：$msg_queue_name, 消息数量：$wait_to_read_num]".',';
+                }
+                $msg_sysvmsg_info = trim($msg_sysvmsg_info, ',');
+            }
+        }
+        return $msg_sysvmsg_info;
     }
 
     /**
@@ -863,6 +901,9 @@ class ProcessManager {
             $php_version = PHP_VERSION;
             $swoole_version = swoole_version();
             $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
+            $msg_sysvmsg_info = $this->getSysvmsgInfo();
+            $swoole_table_info = $this->getSwooleTableInfo();
+
             $info =
 <<<EOF
  主进程status:
@@ -873,6 +914,8 @@ class ProcessManager {
         php_version: $php_version
         swoole_version: $swoole_version
         enable_cli_pipe: $enable_cli_pipe
+        sysvmsg_status: $msg_sysvmsg_info
+        swoole_table_name: $swoole_table_info
         
  
  子进程status:

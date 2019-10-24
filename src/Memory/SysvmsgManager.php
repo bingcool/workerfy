@@ -45,6 +45,8 @@ class SysvmsgManager {
 
     private $msg_queue = [];
 
+    private $msg_name_map_queue = [];
+
     private $msg_project = [];
 
     private $msg_type = [];
@@ -67,7 +69,7 @@ class SysvmsgManager {
      * @param string $path_name
      * @param string $project
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project) {
         $is_success = true;
@@ -77,11 +79,12 @@ class SysvmsgManager {
             throw new \Exception($error_msg);
         }
 
-        if(strlen($project) > 2) {
+        if(strlen($project) !=1 ) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第三个参数project只能是一个字符串';
             write_info("-------------- $error_msg --------------");
             $is_success = false;
         }
+
         $msg_queue_name_key = md5($msg_queue_name);
         $path_name_key = md5($path_name);
 
@@ -93,7 +96,7 @@ class SysvmsgManager {
             $is_success = false;
         }
 
-        $msg_key = \ftok($path_name, $project);
+        $msg_key = ftok($path_name, $project);
 
         if($msg_key < 0) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 创建msg key 失败';
@@ -102,14 +105,18 @@ class SysvmsgManager {
         }
 
         if(!$is_success) {
-            throw new \Exception("Error");
+            throw new \Exception("【Warning】创建名为{$msg_queue_name}的sysvmsg的队列失败");
         }
 
         $msg_queue = msg_get_queue($msg_key,0666);
 
+        $this->msg_name_map_queue[$msg_queue_name_key] = $msg_queue_name;
+
         if(is_resource($msg_queue) && msg_queue_exists($msg_key)) {
             $this->msg_queue[$msg_queue_name_key] = $msg_queue;
+            defined('ENABLE_WORKERFY_SYSVMSG_MSG') or define('ENABLE_WORKERFY_SYSVMSG_MSG', 1);
         }
+
         return true;
     }
 
@@ -132,7 +139,7 @@ class SysvmsgManager {
             $msg_max = @file_get_contents("/proc/sys/kernel/msgmax");
             // 队列的最大容量限制，单位字节
             $msgmnb = @file_get_contents("/proc/sys/kernel/msgmnb");
-            // 队列能存消息体的最大的数量
+            // 队列能存消息体的最大的数量个数
             $msgmni = @file_get_contents("/proc/sys/kernel/msgmni");
             $this->sys_kernel_info = ['msgmax'=>(int)$msg_max, 'msgmnb'=>(int)$msgmnb, 'msgmni'=>(int)$msgmni];
 
@@ -145,7 +152,7 @@ class SysvmsgManager {
      * @param string $msg_queue_name
      * @param string $msg_type_name
      * @param int $msg_type_flag_num
-     * @throws \Exception
+     * @throws Exception
      */
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
@@ -345,8 +352,32 @@ class SysvmsgManager {
         // remove all
         if(!empty($this->msg_queue)) {
             foreach($this->msg_queue as $msg_queue) {
-                is_resource($msg_queue) && msg_remove_queue($msg_queue);
+                // 存在数据，不应该强制删除
+                if(is_resource($msg_queue)) {
+                    $status = msg_stat_queue($msg_queue);
+                    if($status['msg_qnum'] == 0) {
+                        msg_remove_queue($msg_queue);
+                    }
+                }
             }
         }
+    }
+
+    /**
+     * getAllMsgQueueWaitToPopNum
+     * @return array
+     */
+    public function getAllMsgQueueWaitToPopNum() {
+        $result = [];
+        foreach($this->msg_queue as $key=>$msg_queue) {
+            if(is_resource($msg_queue)) {
+                $status = msg_stat_queue($msg_queue);
+                $wait_to_read_num = $status['msg_qnum'];
+                if($msg_queue_name = $this->msg_name_map_queue[$key]) {
+                    $result[] = [$msg_queue_name, $wait_to_read_num];
+                }
+            }
+        }
+        return $result;
     }
 }

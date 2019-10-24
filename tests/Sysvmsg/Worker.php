@@ -16,11 +16,11 @@ class Worker extends \Workerfy\AbstractProcess {
                 $sysvmsgManager->push(MSG_QUEUE_NAME_ORDER, $msg);
             }
             $msgType = $sysvmsgManager->getMsgType(MSG_QUEUE_NAME_ORDER, 'add_order');
-            $this->exit();
+            //$this->exit();
             //$sysvmsgManager->msgSend(MSG_QUEUE_NAME_ORDER, 'add_order_event','add_order');
         }else {
             // 其他的worker处理逻辑消费队列
-            sleep(2);
+            sleep(20);
             $msg_queue = $sysvmsgManager->getMsgQueue(MSG_QUEUE_NAME_ORDER);
             // 获取系统信息
             var_dump($sysvmsgManager->getSysKernelInfo(), $sysvmsgManager->getMsgQueueSize(MSG_QUEUE_NAME_ORDER));
@@ -35,7 +35,7 @@ class Worker extends \Workerfy\AbstractProcess {
                 }
             }
 
-            $this->exit();
+            //$this->exit();
 
         }
     }

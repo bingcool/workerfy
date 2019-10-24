@@ -14,6 +14,7 @@ namespace Workerfy\Memory;
 use Cron\CronExpression;
 
 class TableManager {
+
     use \Workerfy\Traits\SingletonTrait;
 
     private $swoole_tables = [];
@@ -30,6 +31,7 @@ class TableManager {
             ['tick_tasks','string',8096]
         ]
      ]
+     * @throws Exception
      */
     public function addTable(string $table_name, array $setting) {
         if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
@@ -52,6 +54,10 @@ class TableManager {
         $table->create();
 
         $this->swoole_tables[$table_name] = $table;
+
+        // 标志启用
+        defined('ENABLE_WORKERFY_SWOOLE_TABLE') or define('ENABLE_WORKERFY_SWOOLE_TABLE', 1);
+
         return $table;
     }
 
@@ -82,13 +88,14 @@ class TableManager {
 
     /**
      * @param string $table_name
+     * @throws Exception
      * @return mixed
      */
     public function getTable(string $table_name) {
         if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
             return $this->swoole_tables[$table_name];
         }else {
-            throw new \Exception("{$table_name} table is not create, please create before using");
+            throw new \Exception("table name = {$table_name} is not create, please create it before using");
         }
     }
 
