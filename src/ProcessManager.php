@@ -180,16 +180,32 @@ class ProcessManager {
      * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在退出状态中，这个状态中不能再处理新的任务数据
      */
     private function installMasterStopSignal() {
-        \Swoole\Process::signal(SIGTERM, function($signo) {
-            foreach($this->process_wokers as $key => $processes) {
-                foreach($processes as $worker_id => $process) {
-                    $process_name = $process->getProcessName();
-                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
-                }
-                usleep(1000000);
+        if(!$this->is_daemon) {
+            \Swoole\Process::signal(SIGINT, $this->signalHandle());
+        }
+        \Swoole\Process::signal(SIGTERM, $this->signalHandle());
+    }
+
+    /**
+     * 终止进程处理函数
+     * @return \Closure
+     */
+    private function signalHandle() {
+        return function($signal) {
+            switch ($signal) {
+                case SIGINT:
+                case SIGTERM:
+                    foreach ($this->process_wokers as $key => $processes) {
+                        foreach ($processes as $worker_id => $process) {
+                            $process_name = $process->getProcessName();
+                            $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                        }
+                        usleep(1000000);
+                    }
+                    $this->is_exit = true;
+                    break;
             }
-            $this->is_exit = true;
-        });
+        };
     }
 
     /**

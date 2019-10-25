@@ -156,7 +156,7 @@ class SysvmsgManager {
      */
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
-            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第二个参数msg_flag_num必须大于0';
+            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第三个参数msg_flag_num必须大于0';
             write_info("-------------- $error_msg --------------");
             throw new \Exception($error_msg);
         }
