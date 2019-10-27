@@ -17,6 +17,8 @@ define('PIPE', 'pipe');
 define('ADD','add');
 define('REMOVE', 'remove');
 
+define('WORKERFY_VERSION', '1.0.0');
+
 if(!defined('PID_FILE')) {
     write_info("--------------【Warning】Please define Constans PID_FILE --------------");
     exit(0);
@@ -298,6 +300,13 @@ function inMasterProcessEnv() {
  */
 function inChildrenProcessEnv() {
     return !inMasterProcessEnv();
+}
+
+/**
+ * @return string
+ */
+function workerfy_version() {
+    return WORKERFY_VERSION;
 }
 
 
