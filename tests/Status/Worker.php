@@ -21,6 +21,7 @@ class Worker extends \Workerfy\AbstractProcess {
             // 自身可以发起创建动态进程
             //$this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
         }
+        var_dump('worker'.$this->getProcessWorkerId());
     }
 
     public function onShutDown()
