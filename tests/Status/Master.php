@@ -1,12 +1,15 @@
 #! /usr/bin/php
 <?php
+define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
-$pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
-$pipe_fifo = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pipe';
+$root_script_file = __DIR__.'/'.pathinfo(__FILE__)['filename'];
+$pid_file = $root_script_file.'.pid';
+$log_file = $root_script_file.'.log';
 
 define("PID_FILE", $pid_file);
-define("PIPE_FIFO", $pipe_fifo);
+define("CTL_LOG_FILE", $log_file);
+
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
 

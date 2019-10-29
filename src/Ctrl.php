@@ -19,6 +19,11 @@ define('REMOVE', 'remove');
 
 define('WORKERFY_VERSION', '1.0.0');
 
+if(!defined('START_SCRIPT_FILE')) {
+    write_info("--------------【Warning】Please define Constans START_SCRIPT_FILE --------------");
+    exit(0);
+}
+
 if(!defined('PID_FILE')) {
     write_info("--------------【Warning】Please define Constans PID_FILE --------------");
     exit(0);
@@ -259,7 +264,7 @@ function write_info($msg, $foreground = "red", $background = "black") {
         if(defined('MAX_LOG_FILE_SIZE')) {
              $max_log_file_size = MAX_LOG_FILE_SIZE;
         }else {
-            $max_log_file_size = 5 * 1024 * 1024;
+            $max_log_file_size = 2 * 1024 * 1024;
         }
         if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
             unlink(CTL_LOG_FILE);

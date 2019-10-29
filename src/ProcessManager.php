@@ -47,6 +47,7 @@ class ProcessManager {
     public $onCliMsg;
     public $onCreateDynamicProcess;
     public $onDestroyDynamicProcess;
+    public $onReportStatus;
     public $onHandleException;
     public $onExit;
 
@@ -164,6 +165,7 @@ class ProcessManager {
             $this->registerSignal();
     		$this->swooleEventAdd();
             $this->installCliPipe();
+            $this->installReportStatus();
             $this->setStartTime();
     	}
     	// 设置在process start之后
@@ -233,12 +235,12 @@ class ProcessManager {
                     if(\Swoole\Process::kill($pid, 0)) {
                         $status = 'running';
                     }else {
-                        $status = 'stoped';
+                        $status = 'stop';
                         unset($this->process_wokers[$key][$process_worker_id]);
                     }
 
                     $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
-                    if($status == 'stoped') {
+                    if($status == 'stop') {
                         write_info($info);
                     }else {
                         write_info($info,'green');
@@ -545,6 +547,98 @@ class ProcessManager {
             return true;
         }
         return false;
+    }
+
+    /**
+     * getProcessStatus 获取进程状态信息
+     * @return array
+     */
+    public function getProcessStatus() {
+        $status = [];
+        $children_num = 0;
+        foreach($this->process_wokers as $key=>$processes) {
+            $children_num += count($processes);
+        }
+        $cpu_num = swoole_cpu_num();
+        $php_version = PHP_VERSION;
+        $swoole_version = swoole_version();
+        $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
+        $msg_sysvmsg_info = $this->getSysvmsgInfo();
+        $swoole_table_info = $this->getSwooleTableInfo();
+        $status['master'] = [
+            'start_script_file' => START_SCRIPT_FILE,
+            'master_pid' => $this->getMasterPid(),
+            'cpu_num' => $cpu_num,
+            'php_version' => $php_version,
+            'swoole_version' => $swoole_version,
+            'enable_cli_pipe' => $enable_cli_pipe,
+            'msg_sysvmsg_info' => $msg_sysvmsg_info,
+            'swoole_table_info' => $swoole_table_info,
+            'children_num' => $children_num,
+            'children_process' => [],
+            'report_time' => date("Y-m-d H:i:s")
+        ];
+
+        // 获取子进程status
+        $children_status = [];
+        foreach($this->process_wokers as $key => $processes) {
+            ksort($processes);
+            foreach($processes as $process_worker_id => $process) {
+                $process_name = $process->getProcessName();
+                $worker_id = $process->getProcessWorkerId();
+                $pid = $process->getPid();
+                $start_time = $process->getStartTime();
+                $reboot_count = $process->getRebootCount();
+                $process_type = $process->getProcessType();
+                if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
+                    $process_type = AbstractProcess::PROCESS_STATIC_TYPE_NAME;
+                }else {
+                    $process_type = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
+                }
+
+                if(\Swoole\Process::kill($pid, 0)) {
+                    $process_status = 'running';
+                }else {
+                    $process_status = 'stop';
+                    unset($this->process_wokers[$key][$process_worker_id]);
+                }
+                $children_status[$process_name][$worker_id] = [
+                    'process_name' => $process_name,
+                    'worker_id' => $worker_id,
+                    'pid' => $pid,
+                    'process_type' => $process_type,
+                    'start_time' => $start_time,
+                    'reboot_count' => $reboot_count,
+                    'status' => $process_status
+                ];
+            }
+            $status['master']['children_process'] = $children_status;
+            unset($processes);
+            usleep(100000);
+        }
+        return $status;
+    }
+
+    /**
+     * installReportStatus
+     */
+    private function installReportStatus() {
+        if(is_callable($this->onReportStatus)) {
+            go(function () {
+                if(defined('WORKERFY_REPORT_TICK_TIME')) {
+                    $tick_time = WORKERFY_REPORT_TICK_TIME;
+                }else {
+                    $tick_time = 3;
+                }
+                if($tick_time < 3) {
+                    $tick_time = 3;
+                }
+                \Swoole\Timer::tick($tick_time * 1000, function() {
+                    $status = $this->getProcessStatus();
+                    $this->onReportStatus->call($this, $status);
+                });
+            });
+        }
     }
 
     /**
@@ -913,6 +1007,7 @@ class ProcessManager {
             foreach($this->process_wokers as $key=>$processes) {
                 $children_num += count($processes);
             }
+            $start_script_file = START_SCRIPT_FILE;
             $cpu_num = swoole_cpu_num();
             $php_version = PHP_VERSION;
             $swoole_version = swoole_version();
@@ -925,6 +1020,7 @@ class ProcessManager {
  主进程status:
         |
         master_process: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
+        start_script_file: $start_script_file
         children_num: $children_num
         cpu_num: $cpu_num
         php_version: $php_version
