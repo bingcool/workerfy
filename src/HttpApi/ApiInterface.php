@@ -11,6 +11,9 @@
 
 namespace Workerfy\HttpApi;
 
-class ApiInterface {
+interface ApiInterface {
 	
+	public function startProcess();
+
+	public function stopProcess();
 }

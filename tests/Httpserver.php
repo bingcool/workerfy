@@ -1,42 +1,182 @@
 <?php
-
-define('USER_NAME', 'bingcool');
-define('PASSWORD', '123456');
+defined('USER_NAME') or define('USER_NAME', 'workerfy');
+defined('PASSWORD') or define('PASSWORD', '123456');
 
 if(PHP_OS != 'Darwin') {
-    define("WWW_ROOT", '/home/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
 }else {
-    define("WWW_ROOT", '/Users/bingcool/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
 }
 
+// 根据实际设置
+define('PID_FILE_ROOT', PROJECT_ROOT);
+
 $http = new Swoole\Http\Server("*", 9502);
+
 $http->set([
     'worker_num' => 1
 ]);
 
+$http->on('start', function($server) {
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-master-process');
+});
 
-$http->on('request', function ($request, $response) {
-	if($request->server['request_uri'] == '/favicon.ico') {
-		return;
+$http->on('managerStart', function($server) {
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-manager-process');
+});
+
+$http->on('workerStart',function($server, int $worker_id) {
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-worker-process@'.$worker_id);
+});
+
+$http->on('request', function ($request, $response) use($http) {
+	try {
+        if($request->server['request_uri'] == '/favicon.ico') {
+            return false;
+        }
+
+        $handle = new ActionHandle($request, $response);
+
+        $action = $request->get['action'];
+        $script_filename = trim($request->get['script_filename']);
+
+        if(empty($action) || empty($script_filename)) {
+            $handle->returnJson(-1,'action or script_name params missing');
+            return false;
+        }
+
+        $start_script_file_path = $handle->getStartScriptFile($script_filename);
+
+        if(!file_exists($start_script_file_path)) {
+            $handle->returnJson(-1,"{$start_script_file_path} 不存在");
+            return false;
+	    }
+
+	    switch ($action) {
+            case 'start':
+                $command = 'nohup php '.$start_script_file_path.' start -d >> /dev/null &';
+                $ret = $handle->startProcess($command);
+                if(is_array($ret) && $ret['code'] == 0) {
+                    sleep(2);
+                    $handle->returnJson(0,'进程初始化启动');
+                }else {
+                    $handle->returnJson(-1,'进程初始化启动失败');
+                }
+                break;
+            case 'stop':
+                $command = 'nohup php '.$start_script_file_path.' stop >> /dev/null &';
+                $ret = $handle->stopProcess($command);
+                if(is_array($ret) && $ret['code'] == 0) {
+                    sleep(2);
+                    $handle->returnJson(0,'进程已接收停止指令');
+                }else {
+                    $handle->returnJson(-1,'进程停止失败');
+                }
+                break;
+            case 'running':
+                $isRunning = $handle->isRunning($script_filename);
+                if($isRunning) {
+                    $handle->returnJson(0,'进程启动中');
+                }else {
+                    $handle->returnJson(-1,'进程停止');
+                }
+                break;
+            case 'status':
+                $status_msg = $handle->processStatus($script_filename);
+                $status_info = json_decode($status_msg, true);
+                $handle->returnJson(0,'状态信息', $status_info);
+                break;
+        }
+
+        return true;
+
+	}catch(\Throwable $throwable) {
+
 	}
 
-	$action = $request->get['action'];
-
-	if($action == 'start') {
-		$command = 'nohup php '.WWW_ROOT.'/Status/Master.php start >> /dev/null &';
-		var_dump($command);
-		$ret = \Swoole\Coroutine::exec($command);
-		var_dump($ret);
-	    $response->end('start');
-	}elseif ($action == 'stop') {
-		$command = 'nohup php '.WWW_ROOT.'/Status/Master.php stop >> /dev/null &';
-		$ret = \Swoole\Coroutine::exec($command);
-		var_dump($ret);
-	    $response->end('stop');
-	}else {
-        @$response->end('please add param action');
-    }
 
 });
+
+
+class ActionHandle {
+
+    public $request;
+    public $response;
+
+    public function __construct($request, $response) {
+        $this->request = $request;
+        $this->response = $response;
+    }
+
+    public function startProcess(string $command) {
+        $ret = \Co::exec($command);
+        return $ret;
+    }
+
+    public function stopProcess(string $command) {
+        $ret = \Co::exec($command);
+        return $ret;
+    }
+
+    public function processStatus(string $script_filename) {
+        $status_msg = '{}';
+        $status_file_path = $this->getStartScriptFile($script_filename);
+        if(file_exists($status_file_path)) {
+            $status_msg = file_get_contents($status_file_path);
+        }
+        return $status_msg;
+    }
+
+    public function isRunning(string $script_filename) {
+        $pid_file_path = $this->getPidFile($script_filename);
+        if(file_exists($pid_file_path)) {
+            $master_pid = file_get_contents($pid_file_path);
+            if(is_numeric($master_pid)) {
+                $master_pid = (int) $master_pid;
+                if(\Swoole\Process::kill($master_pid, 0)) {
+                    return true;
+                }else {
+                    return false;
+                }
+            }else {
+                return false;
+            }
+        }
+    }
+
+    public function getStartScriptFile(string $script_filename) {
+        $start_script_file_path = rtrim(PROJECT_ROOT, '/').'/'.trim($script_filename);
+        return $start_script_file_path;
+    }
+
+    public function getCtlLogFile(string $script_filename) {
+        $script_filename = str_replace('.php','.log', $script_filename);
+        $ctl_log_file_path = rtrim(PID_FILE_ROOT, '/').'/'.trim($script_filename);
+        return $ctl_log_file_path;
+    }
+
+    public function getPidFile(string $script_filename) {
+        $script_filename = str_replace('.php','.pid', $script_filename);
+        $pid_file_path = rtrim(PID_FILE_ROOT, '/').'/'.trim($script_filename);
+        return $pid_file_path;
+    }
+
+    public function getStatusFile(string $script_filename) {
+        $script_filename = str_replace('.php','.txt', $script_filename);
+        $status_file_path = rtrim(PID_FILE_ROOT, '/').'/'.trim($script_filename);
+        return $status_file_path;
+    }
+
+    public function returnJson($ret = 0, $msg = '', $data = []) {
+        $result = [
+            'ret' => $ret,
+            'msg' => $msg,
+            'data' => $data
+        ];
+        $json_str = json_encode($result, JSON_UNESCAPED_UNICODE);
+        $this->response->write($json_str);
+    }
+
+}
 
 $http->start();

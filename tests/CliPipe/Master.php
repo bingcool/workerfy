@@ -27,7 +27,8 @@ $process_worker_num = defined("WORKER_NUM") ? defined("WORKER_NUM") : 3;
 $async = true;
 $args = [
     'wait_time' => 1,
-    //'user' => 'bingcoolv'
+    //'user' => 'bingcoolv',
+    //'max_worker_num' => 10
 ];
 $extend_data = null;
 // 设置启用管道，默认不设置
