@@ -177,6 +177,7 @@ function status() {
     }else {
         write_info("--------------【Warning】pid={$master_pid} 的进程不存在，无法获取进程状态 --------------");
     }
+    sleep(1);
     exit(0);
 }
 

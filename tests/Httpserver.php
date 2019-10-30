@@ -39,10 +39,11 @@ $http->on('request', function ($request, $response) use($http) {
 
         $action = isset($request->get['action']) ? $request->get['action'] : null;
         $script_filename = isset($request->get['script_filename']) ? trim($request->get['script_filename']) : null;
+        $pid_filename = isset($request->get['pid_filename']) ? $request->get['pid_filename'] : null;
         $params = isset($request->get['params']) ? $request->get['params'] : null;
 
-        if(empty($action) || empty($script_filename)) {
-            $handle->returnJson(-1,'query params action or script_filename is missing');
+        if(empty($action) || empty($script_filename) || $pid_filename) {
+            $handle->returnJson(-1,'query params action or script_filename or pid_filename is missing');
             return false;
         }
 
@@ -182,7 +183,7 @@ class ActionHandle {
     }
 
     public function getStatusFile(string $script_filename) {
-        $script_filename = str_replace('.php','.txt', $script_filename);
+        $script_filename = str_replace('.php','.status', $script_filename);
         $status_file_path = rtrim(PID_FILE_ROOT, '/').'/'.trim($script_filename);
         return $status_file_path;
     }

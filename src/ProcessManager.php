@@ -583,6 +583,7 @@ class ProcessManager {
         $swoole_table_info = $this->getSwooleTableInfo();
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
+            'pid_file' => PID_FILE,
             'running_status' => $running_status,
             'master_pid' => $this->getMasterPid(),
             'cpu_num' => $cpu_num,
@@ -1026,6 +1027,7 @@ class ProcessManager {
                 $children_num += count($processes);
             }
             $start_script_file = START_SCRIPT_FILE;
+            $pid_file = PID_FILE;
             $cpu_num = swoole_cpu_num();
             $php_version = PHP_VERSION;
             $swoole_version = swoole_version();
@@ -1039,6 +1041,7 @@ class ProcessManager {
         |
         master_process: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
         start_script_file: $start_script_file
+        pid_file: $pid_file
         children_num: $children_num
         cpu_num: $cpu_num
         php_version: $php_version

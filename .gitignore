@@ -4,7 +4,8 @@
 *.pid
 *.pipe
 *.log
-*.txt
+*.status
+*/runtime
 /tests/Db.php
 /tests/Redis.php
 /tests/Test.php
