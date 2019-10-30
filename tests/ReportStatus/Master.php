@@ -5,9 +5,11 @@ date_default_timezone_set('Asia/Shanghai');
 
 $pid_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.pid';
 $log_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log';
+$status_file = __DIR__.'/'.pathinfo(__FILE__)['filename'].'.txt';
 
 define("PID_FILE", $pid_file);
 define("CTL_LOG_FILE", $log_file);
+define("STATUS_FILE", $status_file);
 
 // 可以定义全局变量改变上报状态时间间隔，单位秒
 define("WORKERFY_REPORT_TICK_TIME", 10);
@@ -34,20 +36,18 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->createCliPipe(true);
+$processManager->createCliPipe(false);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {
-
-    file_put_contents(PID_FILE, $pid);
 
 };
 
 // 状态上报
 $processManager->onReportStatus = function($status) {
-    var_dump(\Co::getCid());
+    file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
+    file_put_contents(__DIR__.'/test/test.log','hello word');
     // 可以通过http发送保存mysql等
-    var_dump($status);
 };
 
 

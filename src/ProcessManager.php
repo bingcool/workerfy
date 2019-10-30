@@ -170,8 +170,13 @@ class ProcessManager {
     	}
     	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
+    	$this->saveMasterPidTofile($master_pid);
         if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
+        }
+        if($master_pid && is_callable($this->onReportStatus)) {
+            $status = $this->getProcessStatus();
+            $this->onReportStatus->call($this, $status);
         }
     	return $master_pid;
     }
@@ -300,6 +305,10 @@ class ProcessManager {
                             }catch (\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
                             }finally {
+                                if(is_callable($this->onReportStatus)) {
+                                    $status = $this->getProcessStatus(0);
+                                    $this->onReportStatus->call($this, $status);
+                                }
                                 exit(0);
                             }
                         }
@@ -436,6 +445,13 @@ class ProcessManager {
     }
 
     /**
+     * @param int $master_pid
+     */
+    public function saveMasterPidTofile(int $master_pid) {
+        @file_put_contents(PID_FILE, $master_pid);
+    }
+
+    /**
      * dynamicCreateProcess 动态创建临时进程
      * @param string $process_name
      * @param int $process_num
@@ -553,7 +569,7 @@ class ProcessManager {
      * getProcessStatus 获取进程状态信息
      * @return array
      */
-    public function getProcessStatus() {
+    public function getProcessStatus(int $running_status = 1) {
         $status = [];
         $children_num = 0;
         foreach($this->process_wokers as $key=>$processes) {
@@ -567,6 +583,7 @@ class ProcessManager {
         $swoole_table_info = $this->getSwooleTableInfo();
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
+            'running_status' => $running_status,
             'master_pid' => $this->getMasterPid(),
             'cpu_num' => $cpu_num,
             'php_version' => $php_version,
@@ -576,6 +593,7 @@ class ProcessManager {
             'swoole_table_info' => $swoole_table_info,
             'children_num' => $children_num,
             'children_process' => [],
+            'stop_time' => !$running_status ? date("Y-m-d H:i:s") : '',
             'report_time' => date("Y-m-d H:i:s")
         ];
 

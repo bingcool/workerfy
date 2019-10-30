@@ -83,6 +83,7 @@ function start() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
+            unlink(PID_FILE);
             write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }

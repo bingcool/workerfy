@@ -37,11 +37,12 @@ $http->on('request', function ($request, $response) use($http) {
 
         $handle = new ActionHandle($request, $response);
 
-        $action = $request->get['action'];
-        $script_filename = trim($request->get['script_filename']);
+        $action = isset($request->get['action']) ? $request->get['action'] : null;
+        $script_filename = isset($request->get['script_filename']) ? trim($request->get['script_filename']) : null;
+        $params = isset($request->get['params']) ? $request->get['params'] : null;
 
         if(empty($action) || empty($script_filename)) {
-            $handle->returnJson(-1,'action or script_name params missing');
+            $handle->returnJson(-1,'query params action or script_filename is missing');
             return false;
         }
 
@@ -54,36 +55,55 @@ $http->on('request', function ($request, $response) use($http) {
 
 	    switch ($action) {
             case 'start':
-                $command = 'nohup php '.$start_script_file_path.' start -d >> /dev/null &';
-                $ret = $handle->startProcess($command);
-                if(is_array($ret) && $ret['code'] == 0) {
-                    sleep(2);
-                    $handle->returnJson(0,'进程初始化启动');
+                if(!$handle->isRunning($script_filename)) {
+                    $command = 'nohup php '.$start_script_file_path.' start -d >> /dev/null &';
+                    $ret = $handle->startProcess($command);
+                    if(is_array($ret) && $ret['code'] == 0) {
+                        sleep(2);
+                        $handle->returnJson(0,'进程初始化启动');
+                    }else {
+                        $handle->returnJson(-1,'进程初始化启动失败');
+                    }
                 }else {
-                    $handle->returnJson(-1,'进程初始化启动失败');
+                    $handle->returnJson(-1,'进程已启动，无需再启动');
                 }
                 break;
             case 'stop':
-                $command = 'nohup php '.$start_script_file_path.' stop >> /dev/null &';
-                $ret = $handle->stopProcess($command);
-                if(is_array($ret) && $ret['code'] == 0) {
-                    sleep(2);
-                    $handle->returnJson(0,'进程已接收停止指令');
+                if($handle->isRunning($script_filename)) {
+                    $command = 'nohup php '.$start_script_file_path.' stop >> /dev/null &';
+                    $ret = $handle->stopProcess($command);
+                    if(is_array($ret) && $ret['code'] == 0) {
+                        sleep(2);
+                        $handle->returnJson(0,'进程已接收停止指令');
+                    }else {
+                        $handle->returnJson(-1,'进程停止失败');
+                    }
                 }else {
-                    $handle->returnJson(-1,'进程停止失败');
+                    $handle->returnJson(-1,'不存在该进程');
                 }
                 break;
             case 'running':
                 $isRunning = $handle->isRunning($script_filename);
                 if($isRunning) {
-                    $handle->returnJson(0,'进程启动中');
+                    $handle->returnJson(0,'进程running中');
                 }else {
-                    $handle->returnJson(-1,'进程停止');
+                    $handle->returnJson(-1,'进程是停止状态');
                 }
                 break;
             case 'status':
                 $status_msg = $handle->processStatus($script_filename);
                 $status_info = json_decode($status_msg, true);
+                if(isset($status_info['master']['master_pid']) && is_numeric($status_info['master']['master_pid'])) {
+                    $master_pid = (int) $status_info['master']['master_pid'];
+                    if(\Swoole\Process::kill($master_pid, 0)) {
+                        $status_info['master']['running_status'] = 1;
+                    }else {
+                        $status_info['master']['running_status'] = 0;
+                        if(isset($status_info['master']['children_process']) && !empty($status_info['master']['children_process'])) {
+                            $status_info['master']['children_process'] = [];
+                        }
+                    }
+                }
                 $handle->returnJson(0,'状态信息', $status_info);
                 break;
         }
@@ -120,7 +140,7 @@ class ActionHandle {
 
     public function processStatus(string $script_filename) {
         $status_msg = '{}';
-        $status_file_path = $this->getStartScriptFile($script_filename);
+        $status_file_path = $this->getStatusFile($script_filename);
         if(file_exists($status_file_path)) {
             $status_msg = file_get_contents($status_file_path);
         }
@@ -173,6 +193,7 @@ class ActionHandle {
             'msg' => $msg,
             'data' => $data
         ];
+        $this->response->header('Content-Type', 'application/json; charset=UTF-8');
         $json_str = json_encode($result, JSON_UNESCAPED_UNICODE);
         $this->response->write($json_str);
     }
