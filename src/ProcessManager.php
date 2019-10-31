@@ -1056,8 +1056,12 @@ class ProcessManager {
             $info =
 <<<EOF
  主进程status:
-        |
-        master_process: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动时间：$start_time
+        | 
+        进程名称name: $process_name
+        进程编号worker_id: $worker_id
+        进程master_id: $pid
+        进程状态status：$status
+        启动时间start_time：$start_time
         start_script_file: $start_script_file
         pid_file: $pid_file
         children_num: $children_num
