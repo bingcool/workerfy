@@ -171,12 +171,9 @@ class ProcessManager {
     	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
     	$this->saveMasterPidTofile($master_pid);
+        $this->saveStatusToFile();
         if($master_pid && is_callable($this->onStart)) {
             $this->onStart && $this->onStart->call($this, $master_pid);
-        }
-        if($master_pid && is_callable($this->onReportStatus)) {
-            $status = $this->getProcessStatus();
-            $this->onReportStatus->call($this, $status);
         }
     	return $master_pid;
     }
@@ -305,8 +302,7 @@ class ProcessManager {
                             }catch (\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
                             }finally {
-                                $status = $this->getProcessStatus(0);
-                                $this->saveStatusToFile($status);
+                                $this->saveStatusToFile();
                                 exit(0);
                             }
                         }
@@ -452,7 +448,10 @@ class ProcessManager {
     /**
      * @param $status
      */
-    public function saveStatusToFile($status) {
+    public function saveStatusToFile(array $status = []) {
+        if(empty($status)) {
+            $status = $this->getProcessStatus();
+        }
         @file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
     }
 
@@ -939,6 +938,15 @@ class ProcessManager {
             $pipe_file = $path_dir.'/'.$pipe_file_name;
         }
         return $pipe_file;
+    }
+
+    /**
+     * 获取cli命令行传入的参数选项
+     * @param string $name
+     * @return array|false|string
+     */
+    public function getCliEnvParam(string $name) {
+        return @getenv($name);
     }
 
     /**

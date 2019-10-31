@@ -45,9 +45,9 @@ if(!defined('STATUS_FILE')) {
     }
 }
 
-$command = $argv[1] ?? START;
+$command = $_SERVER['argv'][1] ?? START;
 
-$new_argv = $argv;
+$new_argv = $_SERVER['argv'];
 
 $argv_arr = array_splice($new_argv, 2);
 unset($new_argv);

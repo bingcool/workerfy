@@ -544,6 +544,15 @@ abstract class AbstractProcess {
     }
 
     /**
+     * 获取cli命令行传入的参数选项
+     * @param string $name
+     * @return array|false|string
+     */
+    public function getCliEnvParam(string $name) {
+        return @getenv($name);
+    }
+
+    /**
      * reboot 自动重启
      * @param float $wait_time
      * @return bool
