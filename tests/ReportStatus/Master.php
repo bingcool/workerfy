@@ -4,20 +4,20 @@ define("START_SCRIPT_ROOT", __DIR__);
 define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
-// 默认在当前目录runtime下
-define("PID_FILE_ROOT", START_SCRIPT_ROOT.'/runtime');
+//当前pid的目录
+//为了方便测试存放在/tmp下，实际生产不能设置在/tmp下
+//需要根据项目模块目录调整,不能直接复制这行
+define("PID_FILE_ROOT", '/tmp/workerfy/log/RebortStatus');
+
 $pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
-$log_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.log';
-$status_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.status';
 
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
-    mkdir(PID_FILE_ROOT,0777);
+    mkdir(PID_FILE_ROOT,0777,true);
 }
 
+// 定义pid_file常量
 define("PID_FILE", $pid_file);
-define("CTL_LOG_FILE", $log_file);
-define("STATUS_FILE", $status_file);
 
 // 可以定义全局变量改变上报状态时间间隔，单位秒
 define("WORKERFY_REPORT_TICK_TIME", 10);

@@ -29,6 +29,22 @@ if(!defined('PID_FILE')) {
     exit(0);
 }
 
+if(!defined('CTL_LOG_FILE')) {
+    define('CTL_LOG_FILE', str_replace('.pid', '.log', PID_FILE));
+    if(!file_exists(CTL_LOG_FILE)) {
+        touch(CTL_LOG_FILE);
+        chmod(CTL_LOG_FILE, 0666);
+    }
+}
+
+if(!defined('STATUS_FILE')) {
+    define('STATUS_FILE', str_replace('.pid', '.status', PID_FILE));
+    if(!file_exists(STATUS_FILE)) {
+        touch(STATUS_FILE);
+        chmod(STATUS_FILE, 0666);
+    }
+}
+
 $command = $argv[1] ?? START;
 
 $new_argv = $argv;

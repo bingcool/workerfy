@@ -305,10 +305,8 @@ class ProcessManager {
                             }catch (\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
                             }finally {
-                                if(is_callable($this->onReportStatus)) {
-                                    $status = $this->getProcessStatus(0);
-                                    $this->onReportStatus->call($this, $status);
-                                }
+                                $status = $this->getProcessStatus(0);
+                                $this->saveStatusToFile($status);
                                 exit(0);
                             }
                         }
@@ -449,6 +447,13 @@ class ProcessManager {
      */
     public function saveMasterPidTofile(int $master_pid) {
         @file_put_contents(PID_FILE, $master_pid);
+    }
+
+    /**
+     * @param $status
+     */
+    public function saveStatusToFile($status) {
+        @file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
     }
 
     /**
