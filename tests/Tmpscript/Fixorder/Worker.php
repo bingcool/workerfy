@@ -13,8 +13,9 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         sleep(1);
         $action = getenv('action');
+        var_dump($action);
         // 一般选择第一个worker处理，防止多个worker处理情况出现
-        if($this->getProcessWorkerId() == 0 && isset($action)) {
+        if($this->getProcessWorkerId() == 0 && $action !== false) {
             switch ($action) {
                 case 'test1' :
                     $this->actionTest1();

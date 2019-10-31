@@ -576,7 +576,7 @@ abstract class AbstractProcess {
                         $this->runtimeCoroutineWait();
                         $this->onShutDown();
                     }catch (\Throwable $throwable) {
-                        throw new \Exception($throwable->getMessage());
+                        throw $throwable;
                     }finally {
                         $this->kill($pid, SIGUSR1);
                     }

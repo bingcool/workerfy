@@ -12,6 +12,7 @@
 define('START', 'start');
 define('STOP', 'stop');
 define('RELOAD', 'reload');
+define('RESTART','restart');
 define('STATUS', 'status');
 define('PIPE', 'pipe');
 define('ADD','add');
@@ -76,6 +77,9 @@ switch($command) {
     case RELOAD :
         reload();
         break;
+    case RESTART:
+        restart();
+        break;
     case STATUS :
         status();
         break;
@@ -103,7 +107,6 @@ function start() {
             write_info("--------------【Warning】master pid is invalid --------------");
             exit(0);
         }
-        // 已经启动了，不再重新启动
         if(\Swoole\Process::kill($master_pid, 0)) {
             write_info("--------------【Warning】master process has started, you can not start again --------------");
             exit(0);
@@ -175,6 +178,36 @@ function reload() {
         write_info("--------------【Warning】pid={$master_pid} 的进程不存在，没法自动reload子进程 --------------");
     }
     exit(0);
+
+}
+
+function restart() {
+    if(is_file(PID_FILE)) {
+        $master_pid = file_get_contents(PID_FILE);
+        if(is_numeric($master_pid)) {
+            $master_pid = (int) $master_pid;
+        }else {
+            write_info("--------------【Warning】master pid is invalid --------------");
+            exit(0);
+        }
+    }
+
+    if(\Swoole\Process::kill($master_pid, 0)) {
+        $res = \Swoole\Process::kill($master_pid, SIGTERM);
+        if($res) {
+            write_info("--------------【Info】master and children process start to stop, please wait a time --------------",'green');
+        }
+        $start_stop_time = time();
+        while(\Swoole\Process::kill($master_pid, 0)) {
+            if(time() - $start_stop_time > 30) {
+                break;
+            }
+            sleep(1);
+        }
+        write_info("--------------【Info】master and children process has stopped --------------",'green');
+    }
+
+    write_info("--------------【Info】master and children ready to restart, please wait a time --------------",'green');
 
 }
 

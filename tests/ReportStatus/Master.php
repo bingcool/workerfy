@@ -20,7 +20,7 @@ if(!is_dir(PID_FILE_ROOT)) {
 define("PID_FILE", $pid_file);
 
 // 可以定义全局变量改变上报状态时间间隔，单位秒
-define("WORKERFY_REPORT_TICK_TIME", 10);
+define("WORKERFY_REPORT_TICK_TIME", 2);
 
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
@@ -52,9 +52,8 @@ $processManager->onStart = function ($pid) {
 };
 
 // 状态上报
-$processManager->onReportStatus = function($status) {
+$processManager->onReportStatus =  function ($status) {
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
-    // 可以通过http发送保存mysql等
 };
 
 

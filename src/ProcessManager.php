@@ -646,21 +646,26 @@ class ProcessManager {
      * installReportStatus
      */
     private function installReportStatus() {
+        $default_tick_time = 3;
         if(is_callable($this->onReportStatus)) {
-            go(function () {
-                if(defined('WORKERFY_REPORT_TICK_TIME')) {
-                    $tick_time = WORKERFY_REPORT_TICK_TIME;
-                }else {
-                    $tick_time = 3;
-                }
-                if($tick_time < 3) {
-                    $tick_time = 3;
-                }
-                \Swoole\Timer::tick($tick_time * 1000, function() {
-                    $status = $this->getProcessStatus();
-                    $this->onReportStatus->call($this, $status);
-                });
+            if(defined('WORKERFY_REPORT_TICK_TIME')) {
+                $tick_time = WORKERFY_REPORT_TICK_TIME;
+            }else {
+                $tick_time = $default_tick_time;
+            }
+            if($tick_time < $default_tick_time) {
+                $tick_time = $default_tick_time;
+            }
+            $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
+                $status = $this->getProcessStatus();
+                $this->onReportStatus->call($this, $status);
             });
+            // master destroy before clear timer_id
+            if($timer_id) {
+                register_shutdown_function(function() use($timer_id) {
+                    \Swoole\Timer::clear($timer_id);
+                });
+            }
         }
     }
 
