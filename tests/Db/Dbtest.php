@@ -37,14 +37,28 @@ $process_name = 'Dbtest';
 $process_class = \Workerfy\Tests\Db\Worker::class;
 $process_worker_num = 1;
 $async = true;
-$args = [];
+$args = [
+    'wait_time' => 1
+];
 $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
-$processManager->onStart = function ($pid) {
-    file_put_contents(PID_FILE, $pid);
+$processManager->onStart = function ($pid) use($config_file_path) {
+    sleep(5);
+    var_dump("fffff");
+    //file_put_contents(PID_FILE, $pid);
+//    go(function () {
+//        $db = \Workerfy\Tests\Db::getMasterMysql();
+//        $query = $db->query("select * from user limit 1");
+//        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+//        var_dump($res);
+//    });
+//    $redis = \Workerfy\Tests\Redis::getMasterRedis();
+//    $redis->set("name", "bingcool-".rand(1,1000));
+//    $value = $redis->get('name');
+//    var_dump($value);
 };
 
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
