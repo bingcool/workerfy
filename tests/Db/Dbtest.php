@@ -46,19 +46,17 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) use($config_file_path) {
-    sleep(5);
     var_dump("fffff");
-    //file_put_contents(PID_FILE, $pid);
-//    go(function () {
-//        $db = \Workerfy\Tests\Db::getMasterMysql();
-//        $query = $db->query("select * from user limit 1");
-//        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-//        var_dump($res);
-//    });
-//    $redis = \Workerfy\Tests\Redis::getMasterRedis();
-//    $redis->set("name", "bingcool-".rand(1,1000));
-//    $value = $redis->get('name');
-//    var_dump($value);
+    // file_put_contents 不能用在协程中，否则主进程存在异步IO,子进程reboot时无法重新创建
+    file_put_contents(PID_FILE, $pid);
+
+    // 需要运行在协程中
+    go(function () use($pid) {
+        $db = \Workerfy\Tests\Db::getMasterMysql();
+        $query = $db->query("select * from user limit 1");
+        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        var_dump($res);
+    });
 };
 
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
@@ -84,6 +82,11 @@ $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_w
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);
+};
+
+$processManager->onHandleException = function($t) {
+    var_dump("aaaaaaaaaaaaaaaa");
+    var_dump($t->getMessage());
 };
 
 $master_pid = $processManager->start();

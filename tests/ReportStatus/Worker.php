@@ -9,7 +9,16 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
             //$this->reboot(); //可以观察到子进程pid在变化
+            $ids = $this->getCliEnvParam('ids');
 
+            $db = \Workerfy\Tests\Db::getMasterMysql();
+            $query = $db->query("select * from user limit 2");
+            $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+            var_dump($res);
+            sleep(1);
+            //var_dump($ids);
+            //$this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
+            $this->reboot();
         }
 
         if($this->getProcessWorkerId() == 1) {

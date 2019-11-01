@@ -12,7 +12,7 @@ class Worker extends \Workerfy\AbstractProcess {
             $query = $db->query("select * from user limit 1");
             $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
             var_dump($res);
-            sleep(6);
+            sleep(1);
             $this->reboot();
         }
 

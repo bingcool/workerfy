@@ -38,7 +38,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-report-status';
 $process_class = \Workerfy\Tests\ReportStatus\Worker::class;
-$process_worker_num = 3;
+$process_worker_num = 1;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -48,12 +48,21 @@ $processManager->createCliPipe(false);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {
-
 };
 
 // 状态上报
 $processManager->onReportStatus =  function ($status) {
+    var_dump("hhhhhhhh");
+
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
+
+    // 需要运行在协程中
+    go(function () {
+        $db = \Workerfy\Tests\Db::getMasterMysql();
+        $query = $db->query("select * from user limit 1");
+        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        var_dump($res);
+    });
 };
 
 

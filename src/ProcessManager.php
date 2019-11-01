@@ -157,6 +157,7 @@ class ProcessManager {
                     usleep(50000);
                 }
             }
+    		// process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
             $this->installSigchldsignal();
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
@@ -173,7 +174,11 @@ class ProcessManager {
     	$this->saveMasterPidTofile($master_pid);
         $this->saveStatusToFile();
         if($master_pid && is_callable($this->onStart)) {
-            $this->onStart && $this->onStart->call($this, $master_pid);
+            try {
+                $this->onStart && $this->onStart->call($this, $master_pid);
+            }catch (\Throwable $t) {
+                $this->onHandleException->call($this, $t);
+            }
         }
     	return $master_pid;
     }
@@ -204,7 +209,6 @@ class ProcessManager {
                             $process_name = $process->getProcessName();
                             $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                         }
-                        usleep(1000000);
                     }
                     $this->is_exit = true;
                     break;
@@ -249,7 +253,6 @@ class ProcessManager {
                     }
                 }
                 unset($processes);
-                usleep(100000);
             }
         });
     }
@@ -266,7 +269,6 @@ class ProcessManager {
                     $process_name = $process->getProcessName();
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_REBOOT_FLAG, $worker_id);
                 }
-                usleep(1000000);
             }
             $this->is_exit = true;
         });
@@ -372,19 +374,35 @@ class ProcessManager {
                                     switch ($action) {
                                         case ProcessManager::CREATE_DYNAMIC_WORKER :
                                             $is_call_pipe = false;
-                                            $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            if(is_callable($this->onCreateDynamicProcess)) {
+                                                $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            }else {
+                                                $this->createDynamicProcess($dynamic_process_name, $dynamic_process_num);
+                                            }
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS:
                                             $is_call_pipe = false;
-                                            $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            if(is_callable($this->onDestroyDynamicProcess)) {
+                                                $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                            }else {
+                                                $this->destroyDynamicProcess($dynamic_process_name);
+                                            }
                                             break;
                                     }
                                 }
                                 if($is_call_pipe === true) {
-                                    $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                    if(is_callable($this->onPipeMsg)) {
+                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                    }else {
+                                        $this->writeByProcessName($from_process_name, $msg, $from_process_worker_id);
+                                    }
                                 }
                             }else {
-                                $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                if(is_callable($this->onProxyMsg)) {
+                                    $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                }else {
+                                    $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                }
                             }
                         }catch(\Throwable $t) {
                             $this->onHandleException->call($this, $t);
@@ -414,19 +432,35 @@ class ProcessManager {
                                         switch ($action) {
                                             case ProcessManager::CREATE_DYNAMIC_WORKER :
                                                 $is_call_dynamic = true;
-                                                $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                if(is_callable($this->onCreateDynamicProcess)) {
+                                                    $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                }else {
+                                                    $this->createDynamicProcess($dynamic_process_name, $dynamic_process_num);
+                                                }
                                                 break;
                                             case ProcessManager::DESTROY_DYNAMIC_PROCESS:
                                                 $is_call_dynamic = true;
-                                                $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                if(is_callable($this->onDestroyDynamicProcess)) {
+                                                    $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
+                                                }else {
+                                                    $this->destroyDynamicProcess($dynamic_process_name);
+                                                }
                                                 break;
                                         }
                                     }
                                     if($is_call_dynamic === false) {
-                                        $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                        if(is_callable($this->onPipeMsg)) {
+                                            $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
+                                        }else {
+                                            $this->writeByProcessName($from_process_name, $msg, $from_process_worker_id);
+                                        }
                                     }
                                 }else {
-                                    $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                    if(is_callable($this->onProxyMsg)) {
+                                        $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                    }else {
+                                        $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+                                    }
                                 }
                             }catch(\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
@@ -509,7 +543,6 @@ class ProcessManager {
 
             }
             $this->swooleEventAdd($process);
-            usleep(50000);
         }
     }
 
@@ -526,7 +559,6 @@ class ProcessManager {
                 $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                 // 动态进程销毁，需要自减
                 $this->process_lists[$key]['dynamic_process_worker_num']--;
-                sleep(1);
             }
         }
     }
@@ -637,7 +669,6 @@ class ProcessManager {
             }
             $status['master']['children_process'] = $children_status;
             unset($processes);
-            usleep(100000);
         }
         return $status;
     }
@@ -656,6 +687,11 @@ class ProcessManager {
             if($tick_time < $default_tick_time) {
                 $tick_time = $default_tick_time;
             }
+            // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
+            //出现unable to create Swoole\Process with async-io threads
+            \Swoole\Timer::set([
+                'enable_coroutine' => false,
+            ]);
             $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
                 $status = $this->getProcessStatus();
                 $this->onReportStatus->call($this, $status);

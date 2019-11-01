@@ -51,18 +51,18 @@ $processManager->onStart = function ($pid) {
 };
 
 // 父进程收到某个子进程请求，希望父进程向其他某个子进程代理转发信息
-$processManager->onProxyMsg = function($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) {
-    $array = [
-        $msg,
-        $from_process_name,
-        $from_process_worker_id,
-        $to_process_name,
-        $to_process_worker_id
-    ];
-    var_dump("父进程已收到代理转发信息");
-    $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
-    var_dump('父进程开始转发给子进程：'.$to_process_name.'@'.$to_process_worker_id);
-};
+//$processManager->onProxyMsg = function($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) {
+//    $array = [
+//        $msg,
+//        $from_process_name,
+//        $from_process_worker_id,
+//        $to_process_name,
+//        $to_process_worker_id
+//    ];
+//    var_dump("父进程已收到代理转发信息");
+//    $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+//    var_dump('父进程开始转发给子进程：'.$to_process_name.'@'.$to_process_worker_id);
+//};
 
 
 $processManager->onExit = function() use($config_file_path) {
