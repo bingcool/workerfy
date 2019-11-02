@@ -12,7 +12,7 @@ $status_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.status';
 
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
-    mkdir(PID_FILE_ROOT,0777);
+    mkdir(PID_FILE_ROOT,0777,true);
 }
 
 define("PID_FILE", $pid_file);

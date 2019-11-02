@@ -72,11 +72,9 @@ abstract class AbstractProcess {
 
         if(isset($args['max_process_num'])) {}
 
-        if(version_compare(swoole_version(),'4.3.0','>=')) {
-            $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
-        }else {
-            $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2);
-        }
+        if(isset($args['dynamic_destroy_process_time'])) {}
+
+        $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
     }
 
     /**
@@ -197,6 +195,7 @@ abstract class AbstractProcess {
      * @param  string $name
      * @param  mixed $data
      * @param  int    $process_worker_id
+     * @throws
      * @return boolean
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
@@ -302,13 +301,15 @@ abstract class AbstractProcess {
             if(isset($this->getArgs()['dynamic_destroy_process_time'])) {
                 $dynamic_destroy_process_time = $this->getArgs()['dynamic_destroy_process_time'];
                 // 最大时间不能太长
-                if($dynamic_destroy_process_time > 1800) {
-                    $dynamic_destroy_process_time = 1800;
+                if(is_numeric($dynamic_destroy_process_time)) {
+                    if($dynamic_destroy_process_time > 300) {
+                        $dynamic_destroy_process_time = 300;
+                    }
                 }else {
-                    $dynamic_destroy_process_time = $this->wait_time + 5;
+                    $dynamic_destroy_process_time = $this->wait_time + 10;
                 }
             }else {
-                $dynamic_destroy_process_time = $this->wait_time + 5;
+                $dynamic_destroy_process_time = $this->wait_time + 10;
             }
             // 等待
             \Swoole\Coroutine::sleep($dynamic_destroy_process_time);
@@ -549,7 +550,11 @@ abstract class AbstractProcess {
      * @return array|false|string
      */
     public function getCliEnvParam(string $name) {
-        return @getenv($name);
+        $value = @getenv($name);
+        if($value !== false) {
+            return $value;
+        }
+        return null;
     }
 
     /**

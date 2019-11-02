@@ -36,6 +36,8 @@ class ProcessManager {
 
     private $start_time;
 
+    private $is_running = false;
+
     private $is_create_pipe = false;
 
     private $cli_pipe_fd;
@@ -158,6 +160,7 @@ class ProcessManager {
                 }
             }
     		// process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
+            $this->running();
             $this->installSigchldsignal();
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
@@ -168,7 +171,7 @@ class ProcessManager {
             $this->installCliPipe();
             $this->installReportStatus();
             $this->setStartTime();
-    	}
+        }
     	// 设置在process start之后
     	$master_pid = $this->getMasterPid();
     	$this->saveMasterPidTofile($master_pid);
@@ -219,7 +222,7 @@ class ProcessManager {
     /**
      * 父进程的status指令监听SIGUSR1信号
      */
-    public function installMasterStatusSignal() {
+    private function installMasterStatusSignal() {
         \Swoole\Process::signal(SIGUSR1, function($signo) {
             $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
             write_info($master_info, 'green');
@@ -567,7 +570,7 @@ class ProcessManager {
      * daemon
      * @param bool $is_daemon
      */
-    public function daemon($is_daemon) {
+    private function daemon($is_daemon) {
         if($is_daemon) {
             $this->is_daemon = $is_daemon;
         }else {
@@ -709,6 +712,7 @@ class ProcessManager {
      * getProcessByName 通过名称获取一个进程
      * @param string $process_name
      * @param int $process_worker_id
+     * @throws
      * @return mixed|null
      */
 	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
@@ -718,7 +722,7 @@ class ProcessManager {
         }else if($process_worker_id == -1) {
             return $this->process_wokers[$key];
         }else {
-            return null;
+            throw new \Exception("进程={$process_name}, worker_id={$process_worker_id} is missing ");
         }
     }
 
@@ -786,11 +790,15 @@ class ProcessManager {
      * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
+     * @throws
      * @return bool
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0) {
         if($this->isMaster($process_name)) {
-            return false;
+            throw new \Exception("master process can not write msg to master process self");
+        }
+        if(!$this->isRunning()) {
+            throw new \Exception("master process is not start, you can not use writeByProcessName(), please checkout it");
         }
         $process_workers = [];
         $process = $this->getProcessByName($process_name, $process_worker_id);
@@ -890,8 +898,7 @@ class ProcessManager {
 
     /**
      * 创建管道
-     * @throws Exception
-
+     * @throws
      */
     private function installCliPipe() {
         if($this->is_create_pipe) {
@@ -987,7 +994,11 @@ class ProcessManager {
      * @return array|false|string
      */
     public function getCliEnvParam(string $name) {
-        return @getenv($name);
+        $value = @getenv($name);
+        if($value !== false) {
+            return $value;
+        }
+        return null;
     }
 
     /**
@@ -1027,6 +1038,25 @@ class ProcessManager {
      */
     private function setStartTime() {
         $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
+    }
+
+    /**
+     * flag start
+     * @return bool
+     */
+    protected function running() {
+        $this->is_running = true;
+    }
+
+    /**
+     * master && children process是否启动
+     * @return bool
+     */
+    public function isRunning() {
+        if(isset($this->is_running) && $this->is_running === true) {
+            return true;
+        }
+        return false;
     }
 
     /**

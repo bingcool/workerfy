@@ -10,7 +10,7 @@ class Worker extends \Workerfy\AbstractProcess {
         if($this->getProcessWorkerId() == 0) {
             //$this->reboot(); //可以观察到子进程pid在变化
             $ids = $this->getCliEnvParam('ids');
-
+            var_dump($ids);
             $db = \Workerfy\Tests\Db::getMasterMysql();
             $query = $db->query("select * from user limit 2");
             $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据

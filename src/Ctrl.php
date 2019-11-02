@@ -20,6 +20,16 @@ define('REMOVE', 'remove');
 
 define('WORKERFY_VERSION', '1.0.0');
 
+if(!version_compare(phpversion(),'7.1.0', '>=')) {
+    write_info("--------------【Warning】php version require > php7.1+ --------------");
+    exit(0);
+}
+
+if(!version_compare(swoole_version(),'4.4.5','>=')) {
+    write_info("--------------【Warning】swoole version require > 4.4.5 --------------");
+    exit(0);
+}
+
 if(!defined('START_SCRIPT_FILE')) {
     write_info("--------------【Warning】Please define Constans START_SCRIPT_FILE --------------");
     exit(0);
@@ -117,6 +127,8 @@ function start() {
     if(isset($worker_num) && $worker_num > 0) {
         define("WORKER_NUM", $worker_num);
     }
+
+    write_info("--------------【Info】Master && Children process ready to start, please wait a time ...... --------------",'green');
 
 }
 
