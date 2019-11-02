@@ -4,6 +4,13 @@ namespace Workerfy\Tests\CliPipe;
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
+//        go(function () {
+//            sleep(10);
+//        });
+//
+//        go(function () {
+//            sleep(10);
+//        });
         // 模拟处理业务
         sleep(1);
         //var_dump("子进程 开始 reboot start");
@@ -21,6 +28,8 @@ class Worker extends \Workerfy\AbstractProcess {
             // 自身可以发起创建动态进程
             $this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
         }
+
+
     }
 
     public function onShutDown()

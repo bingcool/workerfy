@@ -38,6 +38,7 @@ abstract class AbstractProcess {
     private $is_dynamic_destroy = false; // 动态进程正在销毁时，原则上在一定时间内不能动态创建进程
     private $reboot_count = 0; //自动重启次数
     private $start_time; // 启动(重启)时间
+    protected $cycle_times = 5;// 停止轮询次数，默认5次,子类可以重置
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
@@ -578,7 +579,7 @@ abstract class AbstractProcess {
                 $this->is_reboot = true;
                 $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                     try {
-                        $this->runtimeCoroutineWait();
+                        $this->runtimeCoroutineWait($this->cycle_times);
                         $this->onShutDown();
                     }catch (\Throwable $throwable) {
                         throw $throwable;
@@ -613,7 +614,7 @@ abstract class AbstractProcess {
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     if(!$this->is_reboot) {
-                        $this->runtimeCoroutineWait();
+                        $this->runtimeCoroutineWait($this->cycle_times);
                         $this->onShutDown();
                     }
                 }catch (\Throwable $throwable) {
@@ -630,7 +631,7 @@ abstract class AbstractProcess {
             $this->is_exit = true;
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
-                    $this->runtimeCoroutineWait();
+                    $this->runtimeCoroutineWait($this->cycle_times);
                     $this->onShutDown();
                 }catch (\Throwable $throwable) {
                     throw $throwable;
@@ -697,17 +698,23 @@ abstract class AbstractProcess {
 
     /**
      * 对于运行态的协程，还没有执行完的，设置一个再等待时间$re_wait_time
-     * @param int $re_wait_time
+     * @param int $cycle_times 轮询次数
+     * @param int $re_wait_time 每次2s轮询
      */
-    private function runtimeCoroutineWait($re_wait_time = 8) {
-        // 当前运行的coroutine
-        $runCoroutineNum = $this->getCurrentRunCoroutineNum();
-        // 除了主协程，还有其他协程没唤醒，则再等待
-        if($runCoroutineNum > 1) {
-            if($this->wait_time < 5)  {
-                $re_wait_time = 5;
+    private function runtimeCoroutineWait(int $cycle_times = 5, int $re_wait_time = 2) {
+        if($cycle_times <= 0) {
+            $cycle_times = 2;
+        }
+        while($cycle_times) {
+            // 当前运行的coroutine
+            $runCoroutineNum = $this->getCurrentRunCoroutineNum();
+            // 除了主协程，还有其他协程没唤醒，则再等待
+            if($runCoroutineNum > 1) {
+                --$cycle_times;
+                \Swoole\Coroutine::sleep($re_wait_time);
+            }else {
+                break;
             }
-            \Swoole\Coroutine::sleep($re_wait_time);
         }
     }
 
