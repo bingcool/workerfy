@@ -6,9 +6,21 @@ use Workerfy\ProcessManager;
 
 class Worker extends \Workerfy\AbstractProcess {
 
+    public $tick_format = '';
+
+    public function init() {
+        $tick_format = $this->getCliEnvParams('tick_format');
+        if($tick_format) {
+            $this->tick_format = $tick_format;
+        }else {
+            throw new \Exception("cli command env params must be set tick_format", 1);
+            
+        }
+    }
+
     public function run() {
         // 每分钟执行一次，时间格式类似于linux的crontab
-        CrontabManager::getInstance()->addRule("tick", "* * * * *" , function() {
+        CrontabManager::getInstance()->addRule("tick", $this->tick_format , function() {
             var_dump('一分钟时间到了，执行任务:'.date('Y-m-d H:i:s', time()));
         });
 

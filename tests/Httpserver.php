@@ -49,18 +49,18 @@ $http->on('request', function ($request, $response) use($http) {
         $params = isset($request->post['params']) ? $request->post['params'] : null;
 
         if(empty($action) || empty($script_filename) || empty($pid_filename)) {
-            $handle->returnJson(1000,'query params action or script_filename or pid_filename is missing');
+            $handle->returnJson(1000, 'query params action or script_filename or pid_filename is missing');
             return false;
         }
 
         if($params !== null && !is_array($params)) {
-            $handle->returnJson(1001,'params must be a array type');
+            $handle->returnJson(1001, 'params must be a array type');
             return false;
         }
 
         $start_script_file_path = $handle->getStartScriptFile($script_filename);
         if(!file_exists($start_script_file_path)) {
-            $handle->returnJson(1002,"{$start_script_file_path} 不存在");
+            $handle->returnJson(1002, "{$start_script_file_path} 不存在");
             return false;
 	    }
 
@@ -76,12 +76,12 @@ $http->on('request', function ($request, $response) use($http) {
                     $ret = $handle->startProcess($command);
                     if(is_array($ret) && $ret['code'] == 0) {
                         sleep(2);
-                        $handle->returnJson(0,'进程初始化启动');
+                        $handle->returnJson(0, '进程初始化启动');
                     }else {
-                        $handle->returnJson(1003,'进程初始化启动失败');
+                        $handle->returnJson(1003, '进程初始化启动失败');
                     }
                 }else {
-                    $handle->returnJson(1004,'进程已启动，无需再启动');
+                    $handle->returnJson(1004, '进程已启动，无需再启动');
                 }
                 break;
             case 'stop':
@@ -90,20 +90,32 @@ $http->on('request', function ($request, $response) use($http) {
                     $ret = $handle->stopProcess($command);
                     if(is_array($ret) && $ret['code'] == 0) {
                         sleep(2);
-                        $handle->returnJson(0,'进程已接收停止指令');
+                        $handle->returnJson(0, '进程已接收停止指令');
                     }else {
-                        $handle->returnJson(1005,'进程停止失败');
+                        $handle->returnJson(1005, '进程停止失败');
                     }
                 }else {
-                    $handle->returnJson(1006,'不存在该进程或pid文件不存在');
+                    $handle->returnJson(1006, '不存在该进程或pid文件不存在');
                 }
                 break;
             case 'running':
                 $isRunning = $handle->isRunning($pid_filename);
+                $master_pid = isset($request->post['master_pid']) ? $request->post['master_pid'] : null;
+                $running = false;
+                if($master_pid !==null && !empty($master_pid)) {
+                    if($master_pid > 0) {
+                        $running = \Swoole\Process::kill($master_pid, 0);
+                    }
+                }
+                
                 if($isRunning) {
-                    $handle->returnJson(0,'进程running中');
+                    $handle->returnJson(0, '进程running中');
                 }else {
-                    $handle->returnJson(1007,'进程是停止状态');
+                    if(isset($running) && $running == true) {
+                        $handle->returnJson(0, '进程running中');
+                    }else {
+                        $handle->returnJson(1007, '进程是停止状态');
+                    }
                 }
                 break;
             case 'status':
@@ -120,14 +132,14 @@ $http->on('request', function ($request, $response) use($http) {
                         }
                     }
                 }
-                $handle->returnJson(0,'进程状态信息', $status_info);
+                $handle->returnJson(0, '进程状态信息', $status_info);
                 break;
             case 'showlog':
                 $line_contents = $handle->showLog($pid_filename);
                 if(!empty($line_contents)) {
-                    $handle->returnJson(0,'启动控制信息', $line_contents);
+                    $handle->returnJson(0, '启动控制信息', $line_contents);
                 }else {
-                    $handle->returnJson(1008,'没有启动控制的log信息');
+                    $handle->returnJson(1008, '没有启动控制的log信息');
                 }
         }
 
@@ -153,14 +165,13 @@ $http->on('request', function ($request, $response) use($http) {
         return false;
 	}
 
-
 });
 
 
 class ActionHandle {
 
-    public $request;
-    public $response;
+    private $request;
+    private $response;
 
     public function __construct($request, $response) {
         $this->request = $request;
