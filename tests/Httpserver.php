@@ -43,6 +43,11 @@ $http->on('request', function ($request, $response) use($http) {
 
         $handle = new ActionHandle($request, $response);
 
+        if(!$handle->basicAuth()) {
+            $handle->returnJson(400, 'Basic Auth failed, please checkout http header item of Authorization');
+            return false;
+        }
+
         $action = isset($request->post['action']) ? $request->post['action'] : null;
         $script_filename = isset($request->post['script_filename']) ? trim($request->post['script_filename']) : null;
         $pid_filename = isset($request->post['pid_filename']) ? trim($request->post['pid_filename']) : null;
@@ -176,6 +181,60 @@ class ActionHandle {
     public function __construct($request, $response) {
         $this->request = $request;
         $this->response = $response;
+    }
+
+    public function basicAuth(string $username = null, string $password = null) {
+        $isPass = true;
+        if(defined('USER_NAME') && defined('PASSWORD')) {
+            list($auth_username, $auth_password) = $this->basicAuthCredentials();
+            if(empty($auth_username) || empty($auth_password)) {
+                $isPass = false;
+            }else {
+                $token = md5(USER_NAME.'@'.PASSWORD);
+                $auth_token = md5($auth_username,'@'.$auth_password);
+                if($token == $auth_token) {
+                    $isPass = true;
+                }else {
+                    $isPass  = false;
+                }
+            }
+        }
+        return $isPass;
+
+    }
+
+    public function basicAuthCredentials(string $username = null, string $password = null) {
+        return $this->getBasicAuthCredentials();
+    }
+
+    /**
+     * 请求方接入 $Authorization = base64_encode($username.':'.$password);
+     * $headers = array(
+        "Authorization:".$Authorization,
+        "Content-type:application/x-www-form-urlencoded",
+        "Accept:application/json"
+        );
+     * @return array
+     */
+    public function getBasicAuthCredentials() {
+        if(!isset($this->request->header['Authorization'])) {
+            return [null, null];
+        }
+
+        $header = $this->request->header['Authorization'][0];
+        if(strpos($header, 'Basic ') !== 0) {
+            return [null, null];
+        }
+
+        if(!($decoded = base64_decode(substr($header, 6)))) {
+            return [null, null];
+        }
+
+        if(strpos($decoded, ':') === false) {
+            return [null, null]; // HTTP Basic header without colon isn't valid
+        }
+
+        return explode(':', $decoded, 2);
     }
 
     public function startProcess(string $command) {
