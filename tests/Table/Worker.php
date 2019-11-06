@@ -32,6 +32,10 @@ class Worker extends \Workerfy\AbstractProcess {
 
             var_dump($process_name.'设置table的值：'.$value);
 
+            // 读取配置
+            $setting = \Workerfy\Memory\TableManager::getInstance()->getTableSetting('redis-table');
+            var_dump($setting);
+
             // 通知父进程读，看是否可以读到新值
             $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME,['hello']);
 

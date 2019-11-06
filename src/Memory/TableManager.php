@@ -53,6 +53,8 @@ class TableManager {
 
         $table->create();
 
+        $table->setting = $setting;
+
         $this->swoole_tables[$table_name] = $table;
 
         // 标志启用
@@ -109,5 +111,57 @@ class TableManager {
             $table_name = array_keys($this->swoole_tables);
         }
         return $table_name;
+    }
+
+    /**
+     * @param string $table_name
+     * @return mixed
+     */
+    public function getTableSetting(string $table_name) {
+        $table = $this->getTable($table_name);
+        var_dump($table);
+        if(isset($table) && is_object($table) && isset($table->setting)) {
+            return $table->setting;
+        }
+    }
+
+    /**
+     * 获取table占用的内存，单位字节
+     * @param string $table_name
+     * @return mixed
+     */
+    public function getTableMemory(string $table_name) {
+        $table = $this->getTable($table_name);
+        if(isset($table) && is_object($table) && isset($table->memorySize)) {
+            return $table->memorySize;
+        }
+        return 0;
+    }
+
+    /**
+     * 返回table基本信息
+     * @param string $table_name
+     * @return array 返回格式 = [$size, $momory, $setting]
+     */
+    public function getTableInfo(string $table_name) {
+        $info = [];
+        $table = $this->getTable($table_name);
+        if(isset($table->size)) {
+            array_push($info, $table->size);
+        }
+
+        if(isset($table->memorySize)) {
+            array_push($info, $table->memorySize);
+        }else {
+            array_push($info, 0);
+        }
+
+        if(isset($table->setting)) {
+            array_push($info, $table->setting);
+        }else {
+            array_push($info, []);
+        }
+
+        return $info;
     }
 }

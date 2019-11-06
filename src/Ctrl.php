@@ -243,6 +243,20 @@ function status() {
 }
 
 function pipe() {
+    if(is_file(PID_FILE)) {
+        $master_pid = file_get_contents(PID_FILE);
+        if(is_numeric($master_pid)) {
+            $master_pid = (int) $master_pid;
+        }else {
+            write_info("--------------【Warning】master pid is invalid --------------");
+            exit(0);
+        }
+    }
+    if(!\Swoole\Process::kill($master_pid, 0)) {
+        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        exit(0);
+    }
+
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
@@ -265,6 +279,20 @@ function pipe() {
 }
 
 function add(int $wait_time = 5) {
+    if(is_file(PID_FILE)) {
+        $master_pid = file_get_contents(PID_FILE);
+        if(is_numeric($master_pid)) {
+            $master_pid = (int) $master_pid;
+        }else {
+            write_info("--------------【Warning】master pid is invalid --------------");
+            exit(0);
+        }
+    }
+    if(!\Swoole\Process::kill($master_pid, 0)) {
+        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        exit(0);
+    }
+
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
@@ -291,6 +319,20 @@ function add(int $wait_time = 5) {
 }
 
 function remove(int $wait_time = 5) {
+    if(is_file(PID_FILE)) {
+        $master_pid = file_get_contents(PID_FILE);
+        if(is_numeric($master_pid)) {
+            $master_pid = (int) $master_pid;
+        }else {
+            write_info("--------------【Warning】master pid is invalid --------------");
+            exit(0);
+        }
+    }
+    if(!\Swoole\Process::kill($master_pid, 0)) {
+        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        exit(0);
+    }
+
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
         write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
