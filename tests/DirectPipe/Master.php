@@ -32,24 +32,23 @@ $config_file_path = $dir_config."/Config/config.php";
 $Config = \Workerfy\Config::getInstance();
 $Config->loadConfig($config_file_path);
 
-$processManager = \Workerfy\ProcessManager::getInstance();
+$processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-redis';
-$process_class = \Workerfy\Tests\Redis\Worker::class;
+$process_name = 'test-direct-pipe';
+$process_class = \Workerfy\Tests\DirectPipe\Worker::class;
 $process_worker_num = 2;
 $async = true;
 $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-
+// 设置启用管道，默认不设置
+$processManager->createCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
-
 
 $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };
-
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);

@@ -54,6 +54,7 @@ class TableManager {
         $table->create();
 
         $table->setting = $setting;
+        $table->table_name = $table_name;
 
         $this->swoole_tables[$table_name] = $table;
 
@@ -106,11 +107,24 @@ class TableManager {
      * @return array
      */
     public function getAllTableName() {
-        $table_name = [];
+        $table_names = [];
         if(isset($this->swoole_tables) && !empty($this->swoole_tables)) {
-            $table_name = array_keys($this->swoole_tables);
+            $table_names = array_keys($this->swoole_tables);
         }
-        return $table_name;
+        return $table_names;
+    }
+
+    /**
+     * getAllTableKeyMapRowValue 获取所有table的key和value信息
+     * @return array
+     */
+    public function getAllTableKeyMapRowValue() {
+        $table_infos = [];
+        $table_names = $this->getAllTableName();
+        foreach($table_names as $table_name) {
+            $table_infos[$table_name] = $this->getKeyMapRowValue($table_name);
+        }
+        return $table_infos;
     }
 
     /**
@@ -119,7 +133,6 @@ class TableManager {
      */
     public function getTableSetting(string $table_name) {
         $table = $this->getTable($table_name);
-        var_dump($table);
         if(isset($table) && is_object($table) && isset($table->setting)) {
             return $table->setting;
         }
@@ -163,5 +176,43 @@ class TableManager {
         }
 
         return $info;
+    }
+
+    /**
+     * 获取已设置的key
+     * @param $table
+     * @return array
+     */
+    public function getTableKeys($table) {
+        $keys = [];
+        if(is_string($table)) {
+            $table_name = $table;
+            $table = $this->getTable($table_name);
+        }
+        if(is_object($table) && $table instanceof \Swoole\Table) {
+            foreach ($table as $key => $item) {
+                array_push($keys, $key);
+            }
+        }
+        return $keys;
+    }
+
+    /**
+     * 获取table的key映射的每一行数据rowValue
+     * @param $table
+     * @return array
+     */
+    public function getKeyMapRowValue($table) {
+        $table_rows = [];
+        if(is_string($table)) {
+            $table_name = $table;
+            $table = $this->getTable($table_name);
+        }
+        if(is_object($table) && $table instanceof \Swoole\Table) {
+            foreach ($table as $key => $item) {
+                $table_rows[$key] = $item;
+            }
+        }
+        return $table_rows;
     }
 }

@@ -52,6 +52,7 @@ $processManager->onStart = function ($pid) use($config_file_path) {
 
     // 需要运行在协程中
     go(function () use($pid) {
+        sleep(5);
         $db = \Workerfy\Tests\Db::getMasterMysql();
         $query = $db->query("select * from user limit 1");
         $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据

@@ -69,7 +69,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         //$this->writeByProcessName(ProcessManager::getInstance()->getMasterWorkerName(), 'hello hhhhhhhh');
         if($this->getProcessWorkerId() == 0) {
-            $this->writeByProcessName('worker', 'hello hhhhhhhh', 1, false);
+            $this->writeToMasterProcess('worker', 'hello hhhhhhhh', 1);
 
         }
 

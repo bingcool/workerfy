@@ -619,7 +619,7 @@ class ProcessManager {
         $swoole_version = swoole_version();
         $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
         $msg_sysvmsg_info = $this->getSysvmsgInfo();
-        $swoole_table_info = $this->getSwooleTableInfo();
+        $swoole_table_info = $this->getSwooleTableInfo(false);
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
             'pid_file' => PID_FILE,
@@ -1063,14 +1063,24 @@ class ProcessManager {
      * getSwooleTableInfo
      * @return string
      */
-    public function getSwooleTableInfo() {
+    public function getSwooleTableInfo(bool $simple = true) {
         $swoole_table_info = "unenable swoole table(没启用)";
         if(defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
-            $all_table_name = \Workerfy\Memory\TableManager::getInstance()->getAllTableName();
-            if(!empty($all_table_name) && is_array($all_table_name)) {
-                $all_table_name_str = implode($all_table_name, ',');
-                $swoole_table_info = "[{$all_table_name_str}]";
+            if($simple) {
+                $all_table_name = \Workerfy\Memory\TableManager::getInstance()->getAllTableName();
+                if(!empty($all_table_name) && is_array($all_table_name)) {
+                    $all_table_name_str = implode($all_table_name, ',');
+                    $swoole_table_info = "[{$all_table_name_str}]";
+                }
+            }else {
+                $all_table_info = \Workerfy\Memory\TableManager::getInstance()->getAllTableKeyMapRowValue();
+                if(!empty($all_table_info)) {
+                    $swoole_table_info = $all_table_info;
+                }else {
+                    $swoole_table_info = "swoole table(已启用)，但没有设置table_name";
+                }
             }
+
         }
         return $swoole_table_info;
     }

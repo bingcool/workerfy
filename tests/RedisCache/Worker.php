@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\Myexception;
+namespace Workerfy\Tests\RedisCache;
 
 class Worker extends \Workerfy\AbstractProcess {
 

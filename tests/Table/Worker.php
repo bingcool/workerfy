@@ -20,7 +20,8 @@ class Worker extends \Workerfy\AbstractProcess {
             var_dump($process_name.'读取到table的值'.' : '.$value);
         }else {
             // 读取父进程设置的值
-            $table = \Workerfy\Memory\TableManager::getInstance()->getTable('redis-table');
+            $TableManager = \Workerfy\Memory\TableManager::getInstance();
+            $table = $TableManager->getTable('redis-table');
             $value = $table->get('redis_test_data','tick_tasks');
             var_dump($process_name.'读取到table的值'.' : '.$value);
 
@@ -38,6 +39,19 @@ class Worker extends \Workerfy\AbstractProcess {
 
             // 通知父进程读，看是否可以读到新值
             $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME,['hello']);
+
+//            foreach($table as $key=>$value) {
+//                var_dump($value);
+//            }
+            $keys = $TableManager->getTableKeys($table);
+            var_dump($keys);
+
+            $table_rows = $TableManager->getKeyMapRowValue($table);
+            var_dump($table_rows);
+
+            $table_info = $TableManager->getAllTableKeyMapRowValue();
+
+            var_dump($table_info);
 
         }
     }

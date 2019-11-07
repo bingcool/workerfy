@@ -199,7 +199,7 @@ abstract class AbstractProcess {
      * @throws
      * @return boolean
      */
-    public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = false) {
+    public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = true) {
         $processManager = \Workerfy\processManager::getInstance();
         $isMaster = $processManager->isMaster($process_name);
         $from_process_name = $this->getProcessName();
