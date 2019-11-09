@@ -37,7 +37,7 @@ $Config->loadConfig($config_file_path);
 $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-report-status';
-$process_class = \Workerfy\Tests\ReportStatus\Worker::class;
+$process_class = \Workerfy\Tests\DbSleep\Worker::class;
 $process_worker_num = 2;
 $async = true;
 $args = [
@@ -55,14 +55,11 @@ $processManager->onStart = function ($pid) {
 
 // 状态上报
 $processManager->onReportStatus =  function ($status) {
-    var_dump("hhhhhhhh");
-
-    file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
-
+    var_dump("master status");
     // 需要运行在协程中
     go(function () {
         $db = \Workerfy\Tests\Db::getMasterMysql();
-        $query = $db->query("SELECT * FROM user LIMIT 1");
+        $query = $db->query("select sleep(5)");
         $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
         var_dump($res);
     });

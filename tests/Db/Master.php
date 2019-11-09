@@ -46,9 +46,9 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) use($config_file_path) {
-    var_dump("fffff");
+    //var_dump("fffff");
     // file_put_contents 不能用在协程中，否则主进程存在异步IO,子进程reboot时无法重新创建
-    file_put_contents(PID_FILE, $pid);
+    //file_put_contents(PID_FILE, $pid);
 
     // 需要运行在协程中
     go(function () use($pid) {

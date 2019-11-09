@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\ReportStatus;
+namespace Workerfy\Tests\DbSleep;
 
 class Worker extends \Workerfy\AbstractProcess {
 
@@ -10,10 +10,10 @@ class Worker extends \Workerfy\AbstractProcess {
         if($this->getProcessWorkerId() == 0) {
             while (1) {
                 $db = \Workerfy\Tests\Db::getMasterMysql();
-                $query = $db->query("SELECT * FROM user LIMIT 1");
+                $query = $db->query("select sleep(2)");
                 $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
                 var_dump($res);
-                sleep(1);
+                usleep(1000);
             }
             //$this->reboot(); //可以观察到子进程pid在变化
             //$ids = $this->getCliEnvParam('ids');
@@ -30,16 +30,11 @@ class Worker extends \Workerfy\AbstractProcess {
         if($this->getProcessWorkerId() == 1) {
             while (1) {
                 $db = \Workerfy\Tests\Db::getMasterMysql();
-                $query = $db->query("SELECT * FROM user LIMIT 1");
+                $query = $db->query("select sleep(3)");
                 $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
                 var_dump($res);
-                sleep(1);
+                usleep(1000);
             }
-        }
-
-        if($this->getProcessWorkerId() == 2) {
-            // 自身可以发起创建动态进程
-            //$this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
         }
         //var_dump('worker'.$this->getProcessWorkerId());
     }
@@ -50,8 +45,4 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("shutdown--");
     }
 
-//    public function __destruct()
-//    {
-//        var_dump("destruct");
-//    }
 }
