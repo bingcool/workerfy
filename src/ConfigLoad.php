@@ -11,7 +11,7 @@
 
 namespace Workerfy;
 
-class Config {
+class ConfigLoad {
 
 	use \Workerfy\Traits\SingletonTrait;
 

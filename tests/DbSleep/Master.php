@@ -31,7 +31,7 @@ include $root_path."/vendor/autoload.php";
 
 $config_file_path = $dir_config."/Config/config.php";
 
-$Config = \Workerfy\Config::getInstance();
+$Config = \Workerfy\ConfigLoad::getInstance();
 $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
