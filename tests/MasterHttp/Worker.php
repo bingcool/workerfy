@@ -1,35 +1,21 @@
 <?php
-namespace Workerfy\Tests\AppInstance;
+namespace Workerfy\Tests\MasterHttp;
 
 use PDO;
 
 class Worker extends \Workerfy\AbstractProcess {
 
-    public function init() {
-        $this->getApp()->registerService('Db', function() {
-            $user = "bingcool";
-            $pass = "bingcool@123456";
-            $pdo = new PDO('mysql:host=123.207.19.149;dbname=bingcool', $user, $pass);
-            return $pdo;
-        });
-    }
+    public function init() {}
 
     public function run() {
         // 模拟处理业务
         sleep(1);
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
-            go(function () {
-                var_dump($this->getApp());
-                $db = $this->getApp()->getService('Db');
-                $query = $db->query("select * from user limit 1");
-                $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-                var_dump($res);
-            });
 
         }
         if($this->getProcessWorkerId() == 1) {
-            sleep(2);
+            sleep(5);
             //$this->reboot(); //可以观察到子进程pid在变化
         }
 

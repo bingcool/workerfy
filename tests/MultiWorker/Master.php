@@ -33,27 +33,52 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-app-instance';
-$process_class = \Workerfy\Tests\AppInstance\Worker::class;
-$process_worker_num = 3;
+
+$process_worker_num = 1;
 $async = true;
 $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->createCliPipe(true);
+$processManager->createCliPipe(false);
+
+// 多个worker按照消费不同的队列
+//worker
+$process_name = 'test-worker';
+$process_class = \Workerfy\Tests\MultiWorker\Worker::class;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
+
+// worker0
+$process_name = 'test-worker0';
+$process_class = \Workerfy\Tests\MultiWorker\Worker0::class;
+$processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
+
+// worker1
+$process_name = 'test-worker1';
+$process_class = \Workerfy\Tests\MultiWorker\Worker1::class;
+$processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
+
 
 $processManager->onStart = function ($pid) {
 
-    file_put_contents(PID_FILE, $pid);
-
 };
 
-$processManager->onCreateDynamicProcess = function ($process_name, $process_num) use($processManager) {
-    $this->createDynamicProcess($process_name, $process_num);
+$processManager->onReportStatus = function($status) {
+    // HTTP API必须在协程中使用
+    go(function() {
+        $cli = new \Swoole\Coroutine\Http\Client('127.0.0.1', 80);
+        $cli->setHeaders([
+            'Host' => "localhost",
+            "User-Agent" => 'Chrome/49.0.2587.3',
+            'Accept' => 'text/html,application/xhtml+xml,application/xml',
+            'Accept-Encoding' => 'gzip',
+        ]);
+        $cli->set([ 'timeout' => 1]);
+        $cli->get('/index.php');
+        echo $cli->body;
+        $cli->close();
+    });
 };
-
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);

@@ -27,6 +27,14 @@ class CrontabManager {
 
 	private $timer_ids = [];
 
+	protected function __construct() {
+	    if(function_exists('inChildrenProcessEnv')) {
+	        if(inChildrenProcessEnv() === false) {
+	            throw new \Exception(__CLASS__." only use in children worker process");
+            }
+        }
+    }
+
     /**
      * @param string $cron_name
      * @param string $expression
