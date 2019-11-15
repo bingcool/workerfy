@@ -74,9 +74,9 @@ $http->on('request', function ($request, $response) use($http) {
                 if(!$handle->isRunning($pid_filename)) {
                     $env_params = $handle->parseParams($params);
                     if(!empty($env_params)) {
-                        $command = "nohup php {$start_script_file_path} start -d {$env_params} >> /dev/null &";
+                        $command = "nohup php {$start_script_file_path} start -d {$env_params} >> /dev/null 2>&1 &";
                     }else {
-                        $command = "nohup php {$start_script_file_path} start -d >> /dev/null &";
+                        $command = "nohup php {$start_script_file_path} start -d >> /dev/null 2>&1 &";
                     }
                     $ret = $handle->startProcess($command);
                     if(is_array($ret) && $ret['code'] == 0) {
@@ -91,7 +91,7 @@ $http->on('request', function ($request, $response) use($http) {
                 break;
             case 'stop':
                 if($handle->isRunning($pid_filename)) {
-                    $command = "nohup php $start_script_file_path stop >> /dev/null &";
+                    $command = "nohup php $start_script_file_path stop >> /dev/null 2>&1 &";
                     $ret = $handle->stopProcess($command);
                     if(is_array($ret) && $ret['code'] == 0) {
                         sleep(2);
@@ -159,7 +159,7 @@ $http->on('request', function ($request, $response) use($http) {
             $date = date("Y_m_d", strtotime('now'));
             $pre_date = date("Y_m_d", strtotime('-1 day'));
             $pre_sys_error_log_file = rtrim(SYS_ERROR_LOG_ROOT, '/').'/sys_error_'.$pre_date.'.log';
-            if(file_exits($pre_sys_error_log_file)) {
+            if(file_exists($pre_sys_error_log_file)) {
                 unlink($pre_sys_error_log_file);
             }
             $sys_error_log_file = rtrim(SYS_ERROR_LOG_ROOT, '/').'/sys_error_'.$date.'.log';

@@ -55,7 +55,7 @@ $processManager->onStart = function ($pid) {
 
 // 状态上报
 $processManager->onReportStatus =  function ($status) {
-    var_dump("hhhhhhhh");
+    var_dump($status);
 
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
 
