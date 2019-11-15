@@ -346,9 +346,7 @@ class ProcessManager {
                                 $new_process->setProcessType($process_type);
                                 $new_process->setRebootCount($process_reboot_count);
                                 $new_process->setStartTime();
-                                if(!isset($this->process_wokers[$key][$process_worker_id])) {
-                                    $this->process_wokers[$key][$process_worker_id] = $new_process;
-                                }
+                                $this->process_wokers[$key][$process_worker_id] = $new_process;
                                 $new_process->start();
                             }catch(\Throwable $t) {
                                 $this->onHandleException->call($this, $t);
@@ -674,9 +672,6 @@ class ProcessManager {
                         'status' => $process_status
                     ];
                     $running_children_num++;
-                }else {
-                    $process_status = 'stop';
-                    unset($this->process_wokers[$key][$process_worker_id]);
                 }
             }
             $status['master']['children_process'] = $children_status;

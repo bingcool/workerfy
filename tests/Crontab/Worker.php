@@ -9,6 +9,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public $tick_format = "*/1 * * * *";
 
     public function init() {
+
         $tick_format = $this->getCliEnvParam('tick_format');
         var_dump($tick_format);
 
@@ -21,6 +22,7 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
+        $this->tick_format = '*/5 14-15 * * *';
         // 每分钟执行一次，时间格式类似于linux的crontab
         CrontabManager::getInstance()->addRule("tick", $this->tick_format , function() {
             var_dump('一分钟时间到了，执行任务:'.date('Y-m-d H:i:s', time()));
@@ -31,7 +33,7 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump('创建了一个Crontable 每隔一分钟执行的任务，timer_id='.$timer_id);
     }
 
-    public function time() {
-
+    public function onHandleException($t) {
+        var_dump($t->getMessage());
     }
 }

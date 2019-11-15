@@ -5,22 +5,21 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
         // 模拟处理业务
-        sleep(5);
+        sleep(1);
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
             $this->reboot(); //可以观察到子进程pid在变化
         }
 
         if($this->getProcessWorkerId() == 1) {
-            sleep(2);
-            //$this->reboot(); //可以观察到子进程pid在变化
+            $this->reboot(); //可以观察到子进程pid在变化
         }
 
         if($this->getProcessWorkerId() == 2) {
             // 自身可以发起创建动态进程
             //$this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
         }
-        var_dump('worker'.$this->getProcessWorkerId());
+        var_dump('worker'.$this->getProcessWorkerId().'-'.$this->getProcessName());
     }
 
     public function onShutDown()

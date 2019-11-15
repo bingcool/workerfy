@@ -50,14 +50,14 @@ $processManager->onStart = function ($pid) {
 
     // 模拟sleep
     // 然后子进程发送消息给父进程，看是否父进程能够收到,子进程会变成僵死进程
-    sleep(3);
+    sleep(10);
 };
 
 // 状态上报
 $processManager->onReportStatus =  function ($status) {
     //子进程会变成僵死进程,但在ReportStatus的定时器中，依然调用rebootOrExitHandle()处理，回收僵死进程，所以可以避免僵死进程的大量存在
     //var_dump($status);
-    var_dump($status);
+    //var_dump($status);
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
 
     // 需要运行在协程中
