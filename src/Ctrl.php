@@ -304,7 +304,7 @@ function add(int $wait_time = 5) {
         exit(0);
     }
     $name = getenv("name");
-    $num = getenv('num') ?? 1;
+    $num = getenv('num') ? getenv('num') : 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
         write_info("--------------【Warning】master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');

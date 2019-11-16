@@ -109,7 +109,6 @@ class ProcessManager {
         }else {
             $args['max_process_num'] = swoole_cpu_num() * (self::NUM_PEISHU);
         }
-
         $this->process_lists[$key] = [
             'process_name' => $process_name,
             'process_class' => $process_class,
@@ -241,12 +240,11 @@ class ProcessManager {
                     }
 
                     if(\Swoole\Process::kill($pid, 0)) {
+                        $this->rebootOrExitHandle();
                         $status = 'running';
                     }else {
                         $status = 'stop';
-                        unset($this->process_wokers[$key][$process_worker_id]);
                     }
-
                     $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
                     if($status == 'stop') {
                         write_info($info);
@@ -285,6 +283,9 @@ class ProcessManager {
 		});
     }
 
+    /**
+     * rebootOrExitHandle 信号处理函数
+     */
     protected function rebootOrExitHandle() {
         //必须为false，非阻塞模式
         while($ret = \Swoole\Process::wait(false)) {
@@ -502,12 +503,15 @@ class ProcessManager {
      * @param int $process_num
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
-        $key = md5($process_name);
-        $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         if($this->isMasterExiting()) {
             write_info("--------------【Warning】 master进程正在处于exiting退出状态，不能再动态创建子进程 --------------");
             return false;
         }
+        if($process_num <= 0) {
+            $process_num = 1;
+        }
+        $key = md5($process_name);
+        $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
         if(isset($this->process_lists[$key]['dynamic_process_worker_num']) && $this->process_lists[$key]['dynamic_process_worker_num'] > 0) {
