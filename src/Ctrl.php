@@ -256,6 +256,10 @@ function status() {
     }
     posix_mkfifo($ctl_pipe_file, 0777);
     $ctl_pipe = fopen($ctl_pipe_file, 'w+');
+    if(!flock($ctl_pipe, LOCK_EX)) {
+        write_info("--------------【Warning】 Get file flock fail --------------");
+        exit(0);
+    }
     stream_set_blocking($ctl_pipe, false);
     \Swoole\Timer::after(3000, function() {
         \Swoole\Event::exit();
@@ -267,6 +271,10 @@ function status() {
     sleep(1);
     fwrite($pipe, $pipe_msg);
     \Swoole\Event::wait();
+    flock($ctl_pipe, LOCK_UN);
+    flock($pipe,LOCK_UN);
+    fclose($ctl_pipe);
+    fclose($pipe);
     unlink($ctl_pipe_file);
     exit(0);
 }
