@@ -38,7 +38,7 @@ class ProcessManager {
 
     private $is_running = false;
 
-    private $is_create_pipe = false;
+    private $is_create_pipe = true;
 
     private $cli_pipe_fd;
 
@@ -159,14 +159,13 @@ class ProcessManager {
             }
     		// process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
             $this->running();
+            $this->installCliPipe();
             $this->installSigchldsignal();
             $this->installMasterStopSignal();
             $this->installMasterReloadSignal();
-            $this->installMasterStatusSignal();
             $this->installRegisterShutdownFunction();
             $this->registerSignal();
     		$this->swooleEventAdd();
-            $this->installCliPipe();
             $this->installReportStatus();
             $this->setStartTime();
         }
@@ -218,43 +217,41 @@ class ProcessManager {
     }
 
     /**
-     * 父进程的status指令监听SIGUSR1信号
+     * 父进程的status通过fifo有名管道信号回传
      */
-    private function installMasterStatusSignal() {
-        \Swoole\Process::signal(SIGUSR1, function($signo) {
-            $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
-            write_info($master_info, 'green');
-            foreach($this->process_wokers as $key => $processes) {
-                ksort($processes);
-                foreach($processes as $process_worker_id => $process) {
-                    $process_name = $process->getProcessName();
-                    $worker_id = $process->getProcessWorkerId();
-                    $pid = $process->getPid();
-                    $start_time = $process->getStartTime();
-                    $reboot_count = $process->getRebootCount();
-                    $process_type = $process->getProcessType();
-                    if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
-                        $process_type = AbstractProcess::PROCESS_STATIC_TYPE_NAME;
-                    }else {
-                        $process_type = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
-                    }
-
-                    if(\Swoole\Process::kill($pid, 0)) {
-                        $this->rebootOrExitHandle();
-                        $status = 'running';
-                    }else {
-                        $status = 'stop';
-                    }
-                    $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
-                    if($status == 'stop') {
-                        write_info($info);
-                    }else {
-                        write_info($info,'green');
-                    }
+    private function masterStatusToCliFifoPipe($ctl_pipe) {
+        $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
+        fwrite($ctl_pipe, $master_info);
+        foreach($this->process_wokers as $key => $processes) {
+            ksort($processes);
+            foreach($processes as $process_worker_id => $process) {
+                $process_name = $process->getProcessName();
+                $worker_id = $process->getProcessWorkerId();
+                $pid = $process->getPid();
+                $start_time = $process->getStartTime();
+                $reboot_count = $process->getRebootCount();
+                $process_type = $process->getProcessType();
+                if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
+                    $process_type = AbstractProcess::PROCESS_STATIC_TYPE_NAME;
+                }else {
+                    $process_type = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
                 }
-                unset($processes);
+
+                if(\Swoole\Process::kill($pid, 0)) {
+                    $this->rebootOrExitHandle();
+                    $status = 'running';
+                }else {
+                    $status = 'stop';
+                }
+                $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
+                if($status == 'stop') {
+                    write_info($info);
+                }else {
+                    fwrite($ctl_pipe, $info);
+                }
             }
-        });
+            unset($processes);
+        }
     }
 
     /**
@@ -935,6 +932,11 @@ class ProcessManager {
                                     case 'remove' :
                                         $is_call_clipipe = false;
                                         $this->removeProcessByCli($process_name, $num);
+                                        break;
+                                    case 'status' :
+                                        $is_call_clipipe = false;
+                                        $ctl_pipe = fopen($process_name,'w+');
+                                        $this->masterStatusToCliFifoPipe($ctl_pipe);
                                         break;
                                 }
                             }

@@ -56,7 +56,7 @@ $processManager->onCreateDynamicProcess = function ($process_name, $num) {
 };
 // 终端信息处理
 $processManager->onCliMsg = function($msg) {
-    var_dump("父进程收到来自于cli终端信息：".$msg);
+    //var_dump("父进程收到来自于cli终端信息：".$msg);
 };
 
 $processManager->onExit = function() use($config_file_path) {

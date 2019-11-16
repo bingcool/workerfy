@@ -233,12 +233,41 @@ function status() {
             exit(0);
         }
     }
-    if(\Swoole\Process::kill($master_pid, 0)) {
-        $res = \Swoole\Process::kill($master_pid, SIGUSR1);
-    }else {
-        write_info("--------------【Warning】pid={$master_pid} 的进程不存在，无法获取进程状态 --------------");
+
+    if(!\Swoole\Process::kill($master_pid, 0)) {
+        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        exit(0);
     }
+
+    $pipe_file = getCliPipeFile();
+    $ctl_pipe_file = getCtlPipeFile();
+    if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
+        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        exit(0);
+    }
+    $pipe = fopen($pipe_file,'r+');
+    if(!flock($pipe, LOCK_EX)) {
+        write_info("--------------【Warning】 Get file flock fail --------------");
+        exit(0);
+    }
+    $pipe_msg = json_encode(['status', $ctl_pipe_file, ''], JSON_UNESCAPED_UNICODE);
+    if(file_exists($ctl_pipe_file)) {
+        unlink($ctl_pipe_file);
+    }
+    posix_mkfifo($ctl_pipe_file, 0777);
+    $ctl_pipe = fopen($ctl_pipe_file, 'w+');
+    stream_set_blocking($ctl_pipe, false);
+    \Swoole\Timer::after(3000, function() {
+        \Swoole\Event::exit();
+    });
+    \Swoole\Event::add($ctl_pipe, function() use($ctl_pipe) {
+        $msg = fread($ctl_pipe, 8192);
+        write_info($msg,'green');
+    });
     sleep(1);
+    fwrite($pipe, $pipe_msg);
+    \Swoole\Event::wait();
+    unlink($ctl_pipe_file);
     exit(0);
 }
 
@@ -388,6 +417,14 @@ function getCliPipeFile() {
     $file_name = $path_info['basename'];
     $ext = $path_info['extension'];
     $pipe_file_name = str_replace($ext,'pipe', $file_name);
+    $pipe_file = $path_dir.'/'.$pipe_file_name;
+    return $pipe_file;
+}
+
+function getCtlPipeFile() {
+    $path_info = pathinfo(PID_FILE);
+    $path_dir = $path_info['dirname'];
+    $pipe_file_name = 'ctl.pipe';
     $pipe_file = $path_dir.'/'.$pipe_file_name;
     return $pipe_file;
 }
