@@ -250,6 +250,7 @@ class ProcessManager {
                     fwrite($ctl_pipe, $info);
                 }
             }
+            fclose($ctl_pipe);
             unset($processes);
         }
     }
