@@ -158,6 +158,10 @@ abstract class AbstractProcess {
                     $this->__destruct();
                 }
                 $this->writeStopFormatInfo();
+                // clear
+                if($this->master_live_timer_id) {
+                    @\Swoole\Timer::clear($this->master_live_timer_id);
+                }
                 $this->swooleProcess->exit(SIGTERM);
             });
 
@@ -165,6 +169,11 @@ abstract class AbstractProcess {
             Process::signal(SIGUSR1, function ($signo) {
                 Event::del($this->swooleProcess->pipe);
                 Event::exit();
+                // clear
+                if($this->master_live_timer_id) {
+                    @\Swoole\Timer::clear($this->master_live_timer_id);
+                }
+                // destroy
                 if(method_exists($this,'__destruct')) {
                     $this->__destruct();
                 }
@@ -172,9 +181,10 @@ abstract class AbstractProcess {
             });
 
             // 定时检测父进程是否存活
-            $timer_id = \Swoole\Timer::tick((120 + rand(1, 10) * 1000), function($timer_id) {
+            $this->master_live_timer_id = \Swoole\Timer::tick((10 + rand(1, 10) * 1000), function($timer_id) {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
+                    $this->master_live_timer_id = null;
                     $this->exit(true, 1);
                 }
             });
