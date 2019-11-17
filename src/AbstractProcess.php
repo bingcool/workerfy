@@ -171,6 +171,14 @@ abstract class AbstractProcess {
                 $this->swooleProcess->exit(SIGUSR1);
             });
 
+            // 定时检测父进程是否存活
+            $timer_id = \Swoole\Timer::tick((120 + rand(1, 10) * 1000), function($timer_id) {
+                if($this->isMasterLive() === false) {
+                    \Swoole\Timer::clear($timer_id);
+                    $this->exit(true, 1);
+                }
+            });
+
             // 子进程会复制父进程的信号注册，这里子进程不需要SIGUSR2，需要移除信号监听
             @Process::signal(SIGUSR2, null);
 
@@ -178,6 +186,7 @@ abstract class AbstractProcess {
                 $process_type_name = $this->getProcessTypeName();
                 $this->swooleProcess->name("php-process-worker[{$process_type_name}]:".$this->getProcessName().'@'.$this->getProcessWorkerId());
             }
+
             $this->writeStartFormatInfo();
             try{
                 $this->init();
@@ -671,6 +680,20 @@ abstract class AbstractProcess {
     public function kill($pid, $signal) {
         if(Process::kill($pid, 0)){
             Process::kill($pid, $signal);
+        }
+    }
+
+    /**
+     * isMasterLive
+     * @return bool
+     */
+    public function isMasterLive() {
+        if($this->master_pid) {
+            if(Process::kill($this->master_pid, 0)) {
+                return true;
+            }else {
+                return false;
+            }
         }
     }
 

@@ -624,7 +624,7 @@ class ProcessManager {
         $php_version = PHP_VERSION;
         $swoole_version = swoole_version();
         $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
-        $msg_sysvmsg_info = $this->getSysvmsgInfo();
+        list($msg_sysvmsg_info, $sysKernel) = $this->getSysvmsgInfo();
         $swoole_table_info = $this->getSwooleTableInfo(false);
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
@@ -635,6 +635,7 @@ class ProcessManager {
             'php_version' => $php_version,
             'swoole_version' => $swoole_version,
             'enable_cli_pipe' => $enable_cli_pipe,
+            'msg_sysvmsg_kernel' => $sysKernel,
             'msg_sysvmsg_info' => $msg_sysvmsg_info,
             'swoole_table_info' => $swoole_table_info,
             'children_num' => $children_num,
@@ -704,6 +705,9 @@ class ProcessManager {
             ]);
             $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
                 $status = $this->getProcessStatus();
+                // save status
+                file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
+                // callable todo
                 $this->onReportStatus->call($this, $status);
             });
             // master destroy before clear timer_id
@@ -1102,8 +1106,9 @@ class ProcessManager {
      */
     public function getSysvmsgInfo() {
         $msg_sysvmsg_info = 'unenable sysvmsg(没启用)';
+        $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
         if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
-            $msg_queue_info = \Workerfy\Memory\SysvmsgManager::getInstance()->getAllMsgQueueWaitToPopNum();
+            $msg_queue_info = $sysvmsgManager->getAllMsgQueueWaitToPopNum();
             if(!empty($msg_queue_info)) {
                 $msg_sysvmsg_info = '';
                 foreach($msg_queue_info as $info) {
@@ -1113,7 +1118,11 @@ class ProcessManager {
                 $msg_sysvmsg_info = trim($msg_sysvmsg_info, ',');
             }
         }
-        return $msg_sysvmsg_info;
+        $sysKernel = '';
+        $sysKernelInfo = array_values($sysvmsgManager->getSysKernelInfo(true));
+        list($msgmax, $msgmnb, $msgmni) = $sysKernelInfo;
+        $sysKernel = "[单个消息体最大字节msgmax:{$msgmax},队列的最大容量msgmnb:{$msgmnb},队列最大个数:{$msgmni}]";
+        return [$msg_sysvmsg_info, $sysKernel];
     }
 
     /**
@@ -1138,7 +1147,7 @@ class ProcessManager {
             $php_version = PHP_VERSION;
             $swoole_version = swoole_version();
             $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
-            $msg_sysvmsg_info = $this->getSysvmsgInfo();
+            list($msg_sysvmsg_info, $sysKernel)= $this->getSysvmsgInfo();
             $swoole_table_info = $this->getSwooleTableInfo();
 
             $info =
@@ -1157,16 +1166,18 @@ class ProcessManager {
         php_version: $php_version
         swoole_version: $swoole_version
         enable_cli_pipe: $enable_cli_pipe
+        sysvmsg_kernel: $sysKernel
         sysvmsg_status: $msg_sysvmsg_info
         swoole_table_name: $swoole_table_info
         
  
  子进程status:
+        |
 EOF;
         }else {
             $info =
 <<<EOF
-        |
+        
         【{$process_name}@{$worker_id}】【{$process_type}】: 进程名称name: $process_name, 进程编号worker_id: $worker_id, 进程Pid: $pid, 进程状态status：$status, 启动(重启)时间：$start_time, 重启次数：$reboot_count
 EOF;
 

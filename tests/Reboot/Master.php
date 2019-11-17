@@ -5,7 +5,7 @@ define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
-define("PID_FILE_ROOT", START_SCRIPT_ROOT.'/runtime');
+define("PID_FILE_ROOT", '/tmp/Reboot/runtime');
 $pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
 $log_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.log';
 $status_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.status';

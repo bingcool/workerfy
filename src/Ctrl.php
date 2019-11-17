@@ -242,7 +242,7 @@ function status() {
     $pipe_file = getCliPipeFile();
     $ctl_pipe_file = getCtlPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        write_info("--------------【Warning】 Master process is not enable cli pipe, can not show status --------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'r+');
@@ -321,18 +321,18 @@ function add(int $wait_time = 5) {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】master pid is invalid --------------");
+            write_info("--------------【Warning】 master pid is invalid --------------");
             exit(0);
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】 pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        write_info("--------------【Warning】 Master process is not enable cli pipe, can not add process --------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
@@ -344,14 +344,15 @@ function add(int $wait_time = 5) {
     $num = getenv('num') ? getenv('num') : 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Warning】master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
+        write_info("--------------【Info】 master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】please use pipe -name=xxxxx -num=1 --------------");
+        write_info("--------------【Warning】 please use pipe -name=xxxxx -num=1 --------------");
     }
     flock($pipe, LOCK_UN);
     fclose($pipe);
     sleep($wait_time);
+    write_info("--------------【Info】 Dynamic process add successful, you can show status to see --------------", 'green');
     exit(0);
 }
 
@@ -361,18 +362,18 @@ function remove(int $wait_time = 5) {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】master pid is invalid --------------");
+            write_info("--------------【Warning】 master pid is invalid --------------");
             exit(0);
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】 pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        write_info("--------------【Warning】 Master process is not enable cli pipe, can not remove process --------------");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
@@ -384,13 +385,14 @@ function remove(int $wait_time = 5) {
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Info】master process start to remova all dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
+        write_info("--------------【Info】 master process start to remova all dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】please use pipe -name=xxxxx --------------");
+        write_info("--------------【Warning】 please use pipe -name=xxxxx --------------");
     }
     fclose($pipe);
     sleep($wait_time);
+    write_info("--------------【Info】 All process_name={$name} of dynamic process be removed, you can show status to see --------------", 'green');
     exit(0);
 }
 
