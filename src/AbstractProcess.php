@@ -34,12 +34,27 @@ abstract class AbstractProcess {
     private $wait_time = 30;
     private $reboot_timer_id;
     private $exit_timer_id;
-    private $coroutine_id;//当前进程的主协程id
-    private $is_dynamic_destroy = false; // 动态进程正在销毁时，原则上在一定时间内不能动态创建进程
-    private $reboot_count = 0; //自动重启次数
-    private $start_time; // 启动(重启)时间
+    private $coroutine_id;
+    private $start_time;
     private $master_live_timer_id;
-    protected $cycle_times = 5;// 停止轮询次数，默认5次,子类可以重置
+
+    /**
+     * 动态进程正在销毁时，原则上在一定时间内不能动态创建进程，常量DYNAMIC_DESTROY_PROCESS_TIME
+     * @var boolean
+     */
+    private $is_dynamic_destroy = false;
+
+    /**
+     * 自动重启次数
+     * @var integer
+     */
+    private $reboot_count = 0;
+
+    /**
+     * 停止时，存在挂起的协程，进行轮询次数协程是否恢复，并执行完毕，默认5次,子类可以重置
+     * @var int
+     */
+    protected $cycle_times = 5;
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
@@ -48,6 +63,14 @@ abstract class AbstractProcess {
     const WORKERFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
     const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
+    /**
+     * 动态进程销毁间隔多少秒后，才能再次接受动态创建，防止频繁销毁和创建，最大300s
+     */
+    const DYNAMIC_DESTROY_PROCESS_TIME = 300;
+
+    /**
+     * 定时检查master是否存活的轮询时间
+     */
     const CHECK_MASTER_LIVE_TICK_TIME = 60;
 
     /**
@@ -334,7 +357,7 @@ abstract class AbstractProcess {
                 // 最大时间不能太长
                 if(is_numeric($dynamic_destroy_process_time)) {
                     if($dynamic_destroy_process_time > 300) {
-                        $dynamic_destroy_process_time = 300;
+                        $dynamic_destroy_process_time = self::DYNAMIC_DESTROY_PROCESS_TIME;
                     }
                 }else {
                     $dynamic_destroy_process_time = $this->wait_time + 10;

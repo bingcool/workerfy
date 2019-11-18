@@ -346,11 +346,18 @@ class ProcessManager {
                                 $new_process->setRebootCount($process_reboot_count);
                                 $new_process->setStartTime();
                                 $this->process_wokers[$key][$process_worker_id] = $new_process;
+
                                 $new_process->start();
+
+                                $this->swooleEventAdd($new_process);
+
                             }catch(\Throwable $t) {
+                                if(isset($this->process_wokers[$key][$process_worker_id])) {
+                                    unset($this->process_wokers[$key][$process_worker_id]);
+                                }
                                 $this->onHandleException->call($this, $t);
                             }
-                            $this->swooleEventAdd($new_process);
+                            
                         }
                     }
                     break;
@@ -505,10 +512,14 @@ class ProcessManager {
             write_info("--------------【Warning】 master进程正在处于exiting退出状态，不能再动态创建子进程 --------------");
             return false;
         }
+
+        $key = md5($process_name);
+        $this->getDynamicProcessNum($process_name);
+
         if($process_num <= 0) {
             $process_num = 1;
         }
-        $key = md5($process_name);
+        
         $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
@@ -527,15 +538,14 @@ class ProcessManager {
         $args = $this->process_lists[$key]['args'];
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
-        // 禁止动态创建
+        // 超出限定总数，禁止动态创建
         if($running_process_worker_num >= $total_process_num) {
             write_info("--------------【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程 --------------");
             return false;
         }
+
         for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
             try {
-                // 动态创建成功，需要自加
-                $this->process_lists[$key]['dynamic_process_worker_num']++;
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
                 $process->setMasterPid($this->master_pid);
@@ -544,15 +554,19 @@ class ProcessManager {
                 if(!isset($this->process_wokers[$key][$worker_id])) {
                     $this->process_wokers[$key][$worker_id] = $process;
                 }
+
                 $process->start();
+
+                $this->swooleEventAdd($process);
+
             }catch(\Throwable $t) {
                 unset($this->process_wokers[$key][$worker_id], $process);
-                $this->process_lists[$key]['dynamic_process_worker_num']--;
                 $this->onHandleException->call($this, $t);
-
             }
-            $this->swooleEventAdd($process);
         }
+
+        $this->getDynamicProcessNum($process_name);
+
     }
 
     /**
@@ -570,6 +584,26 @@ class ProcessManager {
                 $this->process_lists[$key]['dynamic_process_worker_num']--;
             }
         }
+    }
+
+    /**
+     * getDynamicProcessNum
+     * @param  string $process_name
+     * @return int
+     */
+    public function getDynamicProcessNum(string $process_name) {
+        $dynamic_process_num = 0;
+        $key = md5($process_name);
+        $process_workers = $this->getProcessByName($process_name, -1);
+        foreach($process_workers as $worker_id=>$process) {
+            if($process->isDynamicProcess()) {
+                ++$dynamic_process_num;
+            }
+        }
+        
+        $this->process_lists[$key]['dynamic_process_worker_num'] = $dynamic_process_num;
+
+        return $dynamic_process_num;
     }
 
     /**
