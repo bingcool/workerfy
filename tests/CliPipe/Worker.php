@@ -16,12 +16,22 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
             //$this->reboot(); //可以观察到子进程pid在变化
-
+            while (1) {
+                $str = str_repeat("bing",1000);
+                $used_memory = memory_get_usage();
+                var_dump('worker0:'.$used_memory);
+                sleep(2);
+            }
         }
 
         if($this->getProcessWorkerId() == 1) {
             sleep(2);
             //$this->reboot(); //可以观察到子进程pid在变化
+            while (1) {
+                $used_memory = memory_get_usage();
+                var_dump('worker1:'.$used_memory);
+                sleep(2);
+            }
         }
 
         if($this->getProcessWorkerId() == 2) {

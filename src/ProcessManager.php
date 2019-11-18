@@ -1045,8 +1045,8 @@ class ProcessManager {
     private function setMasterPid() {
         if(!isset($this->master_pid)) {
             $this->master_pid = posix_getpid();
-            defined('MASTER_PID') OR define('MASTER_PID', $this->master_pid);
         }
+        defined('MASTER_PID') OR define('MASTER_PID', $this->master_pid);
     }
 
     /**

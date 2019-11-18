@@ -38,6 +38,7 @@ abstract class AbstractProcess {
     private $is_dynamic_destroy = false; // 动态进程正在销毁时，原则上在一定时间内不能动态创建进程
     private $reboot_count = 0; //自动重启次数
     private $start_time; // 启动(重启)时间
+    private $master_live_timer_id;
     protected $cycle_times = 5;// 停止轮询次数，默认5次,子类可以重置
 
     const PROCESS_STATIC_TYPE = 1; //静态进程
@@ -46,6 +47,8 @@ abstract class AbstractProcess {
     const PROCESS_DYNAMIC_TYPE_NAME = 'dynamic';
     const WORKERFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
     const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
+
+    const CHECK_MASTER_LIVE_TICK_TIME = 60;
 
     /**
      * AbstractProcess constructor.
@@ -74,6 +77,14 @@ abstract class AbstractProcess {
         if(isset($args['max_process_num'])) {}
 
         if(isset($args['dynamic_destroy_process_time'])) {}
+
+        if(isset($args['check_master_live_tick_time'])) {
+            if($args['check_master_live_tick_time'] < 60) {
+                $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
+            }
+        }else {
+            $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
+        }
 
         $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
     }
@@ -181,7 +192,7 @@ abstract class AbstractProcess {
             });
 
             // 定时检测父进程是否存活
-            $this->master_live_timer_id = \Swoole\Timer::tick((10 + rand(1, 10) * 1000), function($timer_id) {
+            $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 10)) * 1000, function($timer_id) {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
