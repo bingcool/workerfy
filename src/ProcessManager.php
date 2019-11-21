@@ -190,8 +190,10 @@ class ProcessManager {
      */
     private function installMasterStopSignal() {
         if(!$this->is_daemon) {
+            // Ctrl+C 退出，master如果使用了协程，可能会出现Segmentation fault，因为是在退出阶段，对业务影响不大，可以忽略
             \Swoole\Process::signal(SIGINT, $this->signalHandle());
         }
+
         \Swoole\Process::signal(SIGTERM, $this->signalHandle());
     }
 
@@ -900,9 +902,14 @@ class ProcessManager {
                 foreach($process_workers as $process_worker_id => $process) {
                     $process->getSwooleProcess()->write($message);
                 }
+            }else {
+                $e = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist {$process_name}, please check it");
             }
         }else {
             $e = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
+        }
+
+        if(isset($e) && $e instanceof \Throwable) {
             $this->onHandleException->call($this, $e);
         }
     }
