@@ -371,8 +371,24 @@ class ProcessManager {
      * @param null $process
      */
     private function swooleEventAdd($process = null) {
+        $process_workers = [];
         if(isset($process)) {
             if($process instanceof AbstractProcess) {
+                $process_name = $process->getProcessName();
+                $process_worker_id = $process->getProcessWorkerId();
+                $key = md5($process_name);
+                $process_workers[$key][$process_worker_id] = $process;
+            }else {
+                $e =  new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
+                $this->onHandleException->call($this, $e);
+                return false;
+            }
+        }else {
+            $process_workers = $this->process_wokers;
+        }
+
+        foreach($process_workers as $key => $processes) {
+            foreach($processes as $worker_id => $process) {
                 $swooleProcess = $process->getSwooleProcess();
                 \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
                     $msg = $swooleProcess->read(64 * 1024);
@@ -383,12 +399,12 @@ class ProcessManager {
                     if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
                         try {
                             if($to_process_name == $this->getMasterWorkerName()) {
-                                $is_call_pipe = true;
+                                $is_call_dynamic = false;
                                 if(is_array($msg) && count($msg) == 3) {
                                     list($action, $dynamic_process_name, $dynamic_process_num) = $msg;
                                     switch ($action) {
                                         case ProcessManager::CREATE_DYNAMIC_WORKER :
-                                            $is_call_pipe = false;
+                                            $is_call_dynamic = true;
                                             if(is_callable($this->onCreateDynamicProcess)) {
                                                 $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
                                             }else {
@@ -396,7 +412,7 @@ class ProcessManager {
                                             }
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS:
-                                            $is_call_pipe = false;
+                                            $is_call_dynamic = true;
                                             if(is_callable($this->onDestroyDynamicProcess)) {
                                                 $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
                                             }else {
@@ -405,7 +421,7 @@ class ProcessManager {
                                             break;
                                     }
                                 }
-                                if($is_call_pipe === true) {
+                                if($is_call_dynamic === false) {
                                     if(is_callable($this->onPipeMsg)) {
                                         $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
                                     }else {
@@ -424,67 +440,9 @@ class ProcessManager {
                         }
                     }
                 });
-            }else {
-                $e =  new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
-                $this->onHandleException->call($this, $e);
-            }
-        }else {
-            foreach($this->process_wokers as $key => $processes) {
-                foreach($processes as $worker_id => $process) {
-                    $swooleProcess = $process->getSwooleProcess();
-                    \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
-                        $msg = $swooleProcess->read(64 * 1024);
-                        if(is_string($msg)) {
-                            $message = json_decode($msg, true);
-                            list($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id) = $message;
-                        }
-                        if($msg && isset($from_process_name) && isset($from_process_worker_id) && isset($to_process_name) && isset($to_process_worker_id) ) {
-                            try {
-                                if($to_process_name == $this->getMasterWorkerName()) {
-                                    $is_call_dynamic = false;
-                                    if(is_array($msg) && count($msg) == 3) {
-                                        list($action, $dynamic_process_name, $dynamic_process_num) = $msg;
-                                        switch ($action) {
-                                            case ProcessManager::CREATE_DYNAMIC_WORKER :
-                                                $is_call_dynamic = true;
-                                                if(is_callable($this->onCreateDynamicProcess)) {
-                                                    $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
-                                                }else {
-                                                    $this->createDynamicProcess($dynamic_process_name, $dynamic_process_num);
-                                                }
-                                                break;
-                                            case ProcessManager::DESTROY_DYNAMIC_PROCESS:
-                                                $is_call_dynamic = true;
-                                                if(is_callable($this->onDestroyDynamicProcess)) {
-                                                    $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $from_process_name, $from_process_worker_id);
-                                                }else {
-                                                    $this->destroyDynamicProcess($dynamic_process_name);
-                                                }
-                                                break;
-                                        }
-                                    }
-                                    if($is_call_dynamic === false) {
-                                        if(is_callable($this->onPipeMsg)) {
-                                            $this->onPipeMsg->call($this, $msg, $from_process_name, $from_process_worker_id);
-                                        }else {
-                                            $this->writeByProcessName($from_process_name, $msg, $from_process_worker_id);
-                                        }
-                                    }
-                                }else {
-                                    if(is_callable($this->onProxyMsg)) {
-                                        $this->onProxyMsg->call($this, $msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
-                                    }else {
-                                        $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
-                                    }
-                                }
-                            }catch(\Throwable $t) {
-                                $this->onHandleException->call($this, $t);
-                            }
-                        }
-                    });
-                }
             }
         }
+
     }
 
     /**

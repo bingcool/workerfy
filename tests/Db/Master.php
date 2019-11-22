@@ -4,6 +4,8 @@ define("START_SCRIPT_ROOT", __DIR__);
 define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
+var_dump(get_cfg_var('envirment'));
+
 // 默认在当前目录runtime下
 define("PID_FILE_ROOT", START_SCRIPT_ROOT.'/runtime');
 $pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
