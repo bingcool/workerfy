@@ -53,6 +53,7 @@ class ProcessManager {
     public $onExit;
 
     const NUM_PEISHU = 8;
+    const REPORT_STATUS_TICK_TIME = 3;
     const MASTER_WORKER_NAME = 'master_worker';
     const CREATE_DYNAMIC_WORKER = 'create_dynamic_process_worker';
     const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
@@ -682,34 +683,34 @@ class ProcessManager {
      * installReportStatus
      */
     private function installReportStatus() {
-        $default_tick_time = 3;
-        if(is_callable($this->onReportStatus)) {
-            if(defined('WORKERFY_REPORT_TICK_TIME')) {
-                $tick_time = WORKERFY_REPORT_TICK_TIME;
-            }else {
-                $tick_time = $default_tick_time;
-            }
-            if($tick_time < $default_tick_time) {
-                $tick_time = $default_tick_time;
-            }
-            // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
-            //出现unable to create Swoole\Process with async-io threads
-            \Swoole\Timer::set([
-                'enable_coroutine' => false,
-            ]);
-            $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
-                $status = $this->getProcessStatus();
-                // save status
-                file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
-                // callable todo
+        $default_tick_time = self::REPORT_STATUS_TICK_TIME;
+        if(defined('WORKERFY_REPORT_TICK_TIME')) {
+            $tick_time = WORKERFY_REPORT_TICK_TIME;
+        }else {
+            $tick_time = $default_tick_time;
+        }
+        if($tick_time < $default_tick_time) {
+            $tick_time = $default_tick_time;
+        }
+        // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
+        //出现unable to create Swoole\Process with async-io threads
+        \Swoole\Timer::set([
+            'enable_coroutine' => false,
+        ]);
+        $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
+            $status = $this->getProcessStatus();
+            // save status
+            file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
+            // callable todo
+            if(is_callable($this->onReportStatus)) {
                 $this->onReportStatus->call($this, $status);
-            });
-            // master destroy before clear timer_id
-            if($timer_id) {
-                register_shutdown_function(function() use($timer_id) {
-                    \Swoole\Timer::clear($timer_id);
-                });
             }
+        });
+        // master destroy before clear timer_id
+        if($timer_id) {
+            register_shutdown_function(function() use($timer_id) {
+                \Swoole\Timer::clear($timer_id);
+            });
         }
     }
 

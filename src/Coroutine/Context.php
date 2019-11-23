@@ -23,7 +23,7 @@ class Context {
             $context = \Swoole\Coroutine::getContext();
             return $context;
         }else {
-            throw new \Exception("Not in Coroutine Envirement");
+            throw new \Exception("Not in Coroutine Envirment");
         }
     }
 

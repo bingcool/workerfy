@@ -102,7 +102,7 @@ abstract class AbstractProcess {
         if(isset($args['dynamic_destroy_process_time'])) {}
 
         if(isset($args['check_master_live_tick_time'])) {
-            if($args['check_master_live_tick_time'] < 60) {
+            if($args['check_master_live_tick_time'] < self::CHECK_MASTER_LIVE_TICK_TIME) {
                 $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
             }
         }else {
