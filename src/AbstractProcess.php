@@ -87,12 +87,15 @@ abstract class AbstractProcess {
         $this->extend_data = $extend_data;
         $this->process_name = $process_name;
         $this->enable_coroutine = $enable_coroutine;
+
         if(isset($args['wait_time']) && is_numeric($args['wait_time'])) {
             $this->wait_time = $args['wait_time'];
         }
+
         if(isset($args['user']) && is_string($args['user'])) {
             $this->user = $args['user'];
         }
+
         if(isset($args['group']) && is_string($args['group'])) {
             $this->group = $args['group'];
         }
@@ -617,35 +620,37 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function reboot(float $wait_time = null) {
-        if($this->isStaticProcess()) {
-            // 设置强制退出后，不能再设置reboot
-            if($this->is_force_exit) {
-                return false;
-            }
-            // 自定义等待重启时间
-            if($wait_time) {
-                $this->wait_time = $wait_time;
-            }
-
-            $pid = $this->getPid();
-            if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
-                $this->is_reboot = true;
-                $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                    try {
-                        $this->runtimeCoroutineWait($this->cycle_times);
-                        $this->onShutDown();
-                    }catch (\Throwable $throwable) {
-                        throw $throwable;
-                    }finally {
-                        $this->kill($pid, SIGUSR1);
-                    }
-                });
-                $this->reboot_timer_id = $timer_id;
-            }
-            return true;
-        }else {
+        if(!$this->isStaticProcess()) {
             $this->writeReloadFormatInfo();
+            return false;
         }
+
+        // 设置强制退出后，不能再设置reboot
+        if($this->is_force_exit) {
+            return false;
+        }
+
+        // 自定义等待重启时间
+        if($wait_time) {
+            $this->wait_time = $wait_time;
+        }
+
+        $pid = $this->getPid();
+        if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
+            $this->is_reboot = true;
+            $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
+                try {
+                    $this->runtimeCoroutineWait($this->cycle_times);
+                    $this->onShutDown();
+                }catch (\Throwable $throwable) {
+                    throw $throwable;
+                }finally {
+                    $this->kill($pid, SIGUSR1);
+                }
+            });
+            $this->reboot_timer_id = $timer_id;
+        }
+        return true;
     }
 
     /**

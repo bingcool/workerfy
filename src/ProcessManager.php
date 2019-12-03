@@ -757,15 +757,10 @@ class ProcessManager {
      * @param string $process_name
      * @param int $process_worker_id
      * @return mixed
-     * @throws \Exception
      */
     public function getPidByName(string $process_name, int $process_worker_id) {
         $process = $this->getProcessByName($process_name, $process_worker_id);
-        if(method_exists($process, 'getPid')) {
-            return $process->getPid();
-        }else {
-            throw new \Exception(get_class($process)."::getPid() method is not exist");
-        }
+        return is_object($process) ? $process->getPid() : null;
     }
 
     /**
