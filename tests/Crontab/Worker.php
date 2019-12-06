@@ -22,7 +22,7 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
-        $this->tick_format = '*/5 14-15 * * *';
+        $this->tick_format = '*/1 * * * *';
         // 每分钟执行一次，时间格式类似于linux的crontab
         CrontabManager::getInstance()->addRule("tick", $this->tick_format , function() {
             var_dump('一分钟时间到了，执行任务:'.date('Y-m-d H:i:s', time()));

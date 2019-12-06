@@ -907,48 +907,53 @@ class ProcessManager {
      * @throws
      */
     private function installCliPipe() {
-        if($this->is_create_pipe) {
-            $pipe_file = $this->getCliPipeFile();
-            if(file_exists($pipe_file)) {
-                unlink($pipe_file);
-            }
-            if(posix_mkfifo($pipe_file, 0777)) {
-                try {
-                    $this->cli_pipe_fd = fopen($pipe_file, 'w+');
-                    is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
-                    \Swoole\Event::add($this->cli_pipe_fd, function() {
-                        $msg = fread($this->cli_pipe_fd, 8192);
-                        $is_call_clipipe = true;
-                        if(json_validate($msg)) {
-                            $pipe_msg_arr = json_decode($msg, true);
-                            if(is_array($pipe_msg_arr) && count($pipe_msg_arr) == 3) {
-                                list($action, $process_name, $num) = $pipe_msg_arr;
-                                switch($action) {
-                                    case 'add' :
-                                        !isset($num) && $num = 1;
-                                        $is_call_clipipe = false;
-                                        $this->addProcessByCli($process_name, $num);
-                                        break;
-                                    case 'remove' :
-                                        $is_call_clipipe = false;
-                                        $this->removeProcessByCli($process_name, $num);
-                                        break;
-                                    case 'status' :
-                                        $is_call_clipipe = false;
-                                        $ctl_pipe = fopen($process_name,'w+');
-                                        $this->masterStatusToCliFifoPipe($ctl_pipe);
-                                        break;
-                                }
-                            }
+        if(!$this->is_create_pipe) {
+            return false;
+        }
+
+        $pipe_file = $this->getCliPipeFile();
+        if(file_exists($pipe_file)) {
+            unlink($pipe_file);
+        }
+
+        if(!posix_mkfifo($pipe_file, 0777)) {
+            throw new \Exception("Create Cli Pipe Faile");
+        }
+
+        try{
+            $this->cli_pipe_fd = fopen($pipe_file, 'w+');
+            is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
+            \Swoole\Event::add($this->cli_pipe_fd, function() {
+                $msg = fread($this->cli_pipe_fd, 8192);
+                $is_call_clipipe = true;
+                if(json_validate($msg)) {
+                    $pipe_msg_arr = json_decode($msg, true);
+                    if(is_array($pipe_msg_arr) && count($pipe_msg_arr) == 3) {
+                        list($action, $process_name, $num) = $pipe_msg_arr;
+                        switch($action) {
+                            case 'add' :
+                                !isset($num) && $num = 1;
+                                $is_call_clipipe = false;
+                                $this->addProcessByCli($process_name, $num);
+                                break;
+                            case 'remove' :
+                                $is_call_clipipe = false;
+                                $this->removeProcessByCli($process_name, $num);
+                                break;
+                            case 'status' :
+                                $is_call_clipipe = false;
+                                $ctl_pipe = fopen($process_name,'w+');
+                                $this->masterStatusToCliFifoPipe($ctl_pipe);
+                                break;
                         }
-                        if($is_call_clipipe === true && $this->onCliMsg instanceof \Closure) {
-                            $this->onCliMsg->call($this, $msg);
-                        }
-                    });
-                }catch (\Throwable $throwable) {
-                    throw $throwable;
+                    }
                 }
-            }
+                if($is_call_clipipe === true && $this->onCliMsg instanceof \Closure) {
+                    $this->onCliMsg->call($this, $msg);
+                }
+            });
+        }catch (\Throwable $throwable) {
+            throw $throwable;
         }
     }
 
