@@ -8,14 +8,11 @@ date_default_timezone_set('Asia/Shanghai');
 //为了方便测试存放在/tmp下，实际生产不能设置在/tmp下
 //需要根据项目模块目录调整,不能直接复制这行
 define("PID_FILE_ROOT", '/tmp/workerfy/log/RebortStatus');
-
-$pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
-
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
     mkdir(PID_FILE_ROOT,0777,true);
 }
-
+$pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
 // 定义pid_file常量
 define("PID_FILE", $pid_file);
 
@@ -44,7 +41,7 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->createCliPipe(false);
+$processManager->createCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 

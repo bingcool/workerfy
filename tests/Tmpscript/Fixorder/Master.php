@@ -5,19 +5,13 @@ define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
-define("PID_FILE_ROOT", START_SCRIPT_ROOT.'/runtime');
-$pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
-$log_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.log';
-$status_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.status';
-
+define("PID_FILE_ROOT", '/tmp/workerfy/log/Tmpscript/Fixorder');
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
     mkdir(PID_FILE_ROOT,0777,true);
 }
-
+$pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
 define("PID_FILE", $pid_file);
-define("CTL_LOG_FILE", $log_file);
-define("STATUS_FILE", $status_file);
 
 // 这里的文件夹位置需要再上一层级
 $dir_config = dirname(dirname(__DIR__));

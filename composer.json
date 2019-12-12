@@ -24,7 +24,8 @@
     "dragonmantank/cron-expression" : "2.3.0",
     "ext-pcntl" : "*",
     "ext-posix" : "*",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-sockets": "*"
   },
   "require-dev": {
     "ext-sysvmsg": "*"

@@ -136,14 +136,15 @@ abstract class AbstractProcess {
      * @return mixed
      */
     public function __start(Process $swooleProcess) {
-        \Swoole\Runtime::enableCoroutine(true);
-        $this->pid = $this->swooleProcess->pid;
-        $this->coroutine_id = \Co::getCid();
-        $this->setUserAndGroup();
-        if($this->is_exit) {
-            return false;
-        }
         try {
+            \Swoole\Runtime::enableCoroutine(true);
+            $this->pid = $this->swooleProcess->pid;
+            $this->coroutine_id = \Swoole\Coroutine::getCid();
+            $this->setUserAndGroup();
+            if($this->is_exit) {
+                return false;
+            }
+
             if($this->async){
                 Event::add($this->swooleProcess->pipe, function() {
                     $msg = $this->swooleProcess->read(64 * 1024);
