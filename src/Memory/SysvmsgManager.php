@@ -152,7 +152,7 @@ class SysvmsgManager {
      * @param string $msg_queue_name
      * @param string $msg_type_name
      * @param int $msg_type_flag_num
-     * @throws Exception
+     * @throws \Exception
      */
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
@@ -268,7 +268,7 @@ class SysvmsgManager {
      * getMsgQueue 获取队列实例
      * @param string $msg_queue_name
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function getMsgQueue(string $msg_queue_name) {
         $msg_queue_name_key = md5($msg_queue_name);
