@@ -76,7 +76,7 @@ class ProcessManager {
      * @param array $args
      * @param null $extend_data
      * @param bool $enable_coroutine
-     * @throws Exception
+     * @throws \Exception
      */
 	public function addProcess(
 	    string $process_name,
@@ -126,62 +126,66 @@ class ProcessManager {
      * @return
      */
     public function start(bool $is_daemon = false) {
-    	if(!empty($this->process_lists)) {
-            $this->daemon($is_daemon);
-            $this->setMasterPid();
-            foreach($this->process_lists as $key => $list) {
-    			$process_worker_num = $list['process_worker_num'] ?? 1;
-    			for($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
-    				try {
-	    				$process_name = $list['process_name'];
-			        	$process_class = $list['process_class'];
-			        	$async = $list['async'] ?? true;
-			        	$args = $list['args'] ?? [];
-			        	$extend_data = $list['extend_data'] ?? null;
-			        	$enable_coroutine = $list['enable_coroutine'] ?? true;
-		    			$process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-		    			$process->setProcessWorkerId($worker_id);
-                        $process->setMasterPid($this->master_pid);
-                        $process->setStartTime();
-                        if(!isset($this->process_wokers[$key][$worker_id])) {
-                            $this->process_wokers[$key][$worker_id] = $process;
+        try {
+            if(!empty($this->process_lists)) {
+                $this->daemon($is_daemon);
+                $this->setMasterPid();
+                foreach ($this->process_lists as $key => $list) {
+                    $process_worker_num = $list['process_worker_num'] ?? 1;
+                    for ($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
+                        try {
+                            $process_name = $list['process_name'];
+                            $process_class = $list['process_class'];
+                            $async = $list['async'] ?? true;
+                            $args = $list['args'] ?? [];
+                            $extend_data = $list['extend_data'] ?? null;
+                            $enable_coroutine = $list['enable_coroutine'] ?? true;
+                            $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                            $process->setProcessWorkerId($worker_id);
+                            $process->setMasterPid($this->master_pid);
+                            $process->setStartTime();
+                            if (!isset($this->process_wokers[$key][$worker_id])) {
+                                $this->process_wokers[$key][$worker_id] = $process;
+                            }
+                            usleep(50000);
+                        } catch (\Throwable $t) {
+                            $this->onHandleException->call($this, $t);
                         }
+                    }
+                }
+                foreach ($this->process_wokers as $key => $process_woker) {
+                    foreach ($process_woker as $worker_id => $process) {
+                        $process->start();
                         usleep(50000);
-	    			}catch(\Throwable $t) {
-                        $this->onHandleException->call($this, $t);
-	    			}
-    			}
-    		}
-    		foreach($this->process_wokers as $key => $process_woker) {
-    		    foreach($process_woker as $worker_id => $process) {
-                    $process->start();
-                    usleep(50000);
+                    }
+                }
+                // process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
+                $this->running();
+                $this->installCliPipe();
+                $this->installSigchldsignal();
+                $this->installMasterStopSignal();
+                $this->installMasterReloadSignal();
+                $this->installRegisterShutdownFunction();
+                $this->registerSignal();
+                $this->swooleEventAdd();
+                $this->installReportStatus();
+                $this->setStartTime();
+            }
+            // 设置在process start之后
+            $master_pid = $this->getMasterPid();
+            $this->saveMasterPidTofile($master_pid);
+            $this->saveStatusToFile();
+            if($master_pid && is_callable($this->onStart)) {
+                try {
+                    $this->onStart && $this->onStart->call($this, $master_pid);
+                } catch (\Throwable $throwable) {
+                    throw $throwable;
                 }
             }
-    		// process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
-            $this->running();
-            $this->installCliPipe();
-            $this->installSigchldsignal();
-            $this->installMasterStopSignal();
-            $this->installMasterReloadSignal();
-            $this->installRegisterShutdownFunction();
-            $this->registerSignal();
-    		$this->swooleEventAdd();
-            $this->installReportStatus();
-            $this->setStartTime();
+            return $master_pid;
+        } catch (\Throwable $throwable) {
+            $this->onHandleException->call($this, $throwable);
         }
-    	// 设置在process start之后
-    	$master_pid = $this->getMasterPid();
-    	$this->saveMasterPidTofile($master_pid);
-        $this->saveStatusToFile();
-        if($master_pid && is_callable($this->onStart)) {
-            try {
-                $this->onStart && $this->onStart->call($this, $master_pid);
-            }catch (\Throwable $t) {
-                $this->onHandleException->call($this, $t);
-            }
-        }
-    	return $master_pid;
     }
 
     /**
@@ -295,75 +299,79 @@ class ProcessManager {
             }
             $pid = $ret['pid'];
             $code = $ret['code'];
-            switch ($code) {
-                // exit 信号
-                case 0       :
-                case SIGTERM :
-                case SIGKILL :
-                    $process = $this->getProcessByPid($pid);
-                    $process_name = $process->getProcessName();
-                    $process_worker_id = $process->getProcessWorkerId();
-                    $key = md5($process_name);
-                    if(isset($this->process_wokers[$key][$process_worker_id])) {
-                        unset($this->process_wokers[$key][$process_worker_id]);
-                        if(count($this->process_wokers[$key]) == 0) {
-                            unset($this->process_wokers[$key]);
-                        }
-                    }
-                    if(count($this->process_wokers) == 0) {
-                        try{
-                            is_callable($this->onExit) && $this->onExit->call($this);
-                        }catch (\Throwable $t) {
-                            $this->onHandleException->call($this, $t);
-                        }finally {
-                            $this->saveStatusToFile();
-                            exit(0);
-                        }
-                    }
-                    break;
-                // reboot 信号
-                case SIGUSR1  :
-                default  :
-                    if(!(\Swoole\Process::kill($pid, 0))) {
+            try {
+                switch ($code) {
+                    // exit 信号
+                    case 0       :
+                    case SIGTERM :
+                    case SIGKILL :
                         $process = $this->getProcessByPid($pid);
                         $process_name = $process->getProcessName();
-                        $process_type = $process->getProcessType();
                         $process_worker_id = $process->getProcessWorkerId();
-                        $process_reboot_count = $process->getRebootCount() + 1;
                         $key = md5($process_name);
-                        $list = $this->process_lists[$key];
-                        \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                        unset($this->process_wokers[$key][$process_worker_id]);
-                        if(is_array($list)) {
-                            try {
-                                $process_name = $list['process_name'];
-                                $process_class = $list['process_class'];
-                                $async = $list['async'] ?? true;
-                                $args = $list['args'] ?? [];
-                                $extend_data = $list['extend_data'] ?? null;
-                                $enable_coroutine = $list['enable_coroutine'] ?? false;
-                                $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-                                $new_process->setProcessWorkerId($process_worker_id);
-                                $new_process->setMasterPid($this->master_pid);
-                                $new_process->setProcessType($process_type);
-                                $new_process->setRebootCount($process_reboot_count);
-                                $new_process->setStartTime();
-                                $this->process_wokers[$key][$process_worker_id] = $new_process;
-
-                                $new_process->start();
-
-                                $this->swooleEventAdd($new_process);
-
-                            }catch(\Throwable $t) {
-                                if(isset($this->process_wokers[$key][$process_worker_id])) {
-                                    unset($this->process_wokers[$key][$process_worker_id]);
-                                }
-                                $this->onHandleException->call($this, $t);
+                        if (isset($this->process_wokers[$key][$process_worker_id])) {
+                            unset($this->process_wokers[$key][$process_worker_id]);
+                            if (count($this->process_wokers[$key]) == 0) {
+                                unset($this->process_wokers[$key]);
                             }
-                            
                         }
-                    }
-                    break;
+                        if (count($this->process_wokers) == 0) {
+                            try {
+                                is_callable($this->onExit) && $this->onExit->call($this);
+                            } catch (\Throwable $throwable) {
+                                $this->onHandleException->call($this, $throwable);
+                            } finally {
+                                $this->saveStatusToFile();
+                                exit(0);
+                            }
+                        }
+                        break;
+                    // reboot 信号
+                    case SIGUSR1  :
+                    default  :
+                        if(!(\Swoole\Process::kill($pid, 0))) {
+                            $process = $this->getProcessByPid($pid);
+                            $process_name = $process->getProcessName();
+                            $process_type = $process->getProcessType();
+                            $process_worker_id = $process->getProcessWorkerId();
+                            $process_reboot_count = $process->getRebootCount() + 1;
+                            $key = md5($process_name);
+                            $list = $this->process_lists[$key];
+                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
+                            unset($this->process_wokers[$key][$process_worker_id]);
+                            if(is_array($list)) {
+                                try {
+                                    $process_name = $list['process_name'];
+                                    $process_class = $list['process_class'];
+                                    $async = $list['async'] ?? true;
+                                    $args = $list['args'] ?? [];
+                                    $extend_data = $list['extend_data'] ?? null;
+                                    $enable_coroutine = $list['enable_coroutine'] ?? false;
+                                    $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                                    $new_process->setProcessWorkerId($process_worker_id);
+                                    $new_process->setMasterPid($this->master_pid);
+                                    $new_process->setProcessType($process_type);
+                                    $new_process->setRebootCount($process_reboot_count);
+                                    $new_process->setStartTime();
+                                    $this->process_wokers[$key][$process_worker_id] = $new_process;
+
+                                    $new_process->start();
+
+                                    $this->swooleEventAdd($new_process);
+
+                                } catch (\Throwable $throwable) {
+                                    if(isset($this->process_wokers[$key][$process_worker_id])) {
+                                        unset($this->process_wokers[$key][$process_worker_id]);
+                                    }
+                                    $this->onHandleException->call($this, $throwable);
+                                }
+
+                            }
+                        }
+                        break;
+                }
+            } catch (\Throwable $throwable) {
+                $this->onHandleException->call($this, $throwable);
             }
         }
     }
@@ -380,8 +388,7 @@ class ProcessManager {
                 $key = md5($process_name);
                 $process_workers[$key][$process_worker_id] = $process;
             }else {
-                $e =  new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess');
-                $this->onHandleException->call($this, $e);
+                $this->onHandleException->call($this, new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess'));
                 return false;
             }
         }else {
@@ -436,8 +443,8 @@ class ProcessManager {
                                     $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
                                 }
                             }
-                        }catch(\Throwable $t) {
-                            $this->onHandleException->call($this, $t);
+                        }catch(\Throwable $throwable) {
+                            $this->onHandleException->call($this, $throwable);
                         }
                     }
                 });
@@ -512,22 +519,15 @@ class ProcessManager {
                 $process->setMasterPid($this->master_pid);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
                 $process->setStartTime();
-                if(!isset($this->process_wokers[$key][$worker_id])) {
-                    $this->process_wokers[$key][$worker_id] = $process;
-                }
-
+                $this->process_wokers[$key][$worker_id] = $process;
                 $process->start();
-
                 $this->swooleEventAdd($process);
-
-            }catch(\Throwable $t) {
+            }catch(\Throwable $throwable) {
                 unset($this->process_wokers[$key][$worker_id], $process);
-                $this->onHandleException->call($this, $t);
+                $this->onHandleException->call($this, $throwable);
             }
         }
-
         $this->getDynamicProcessNum($process_name);
-
     }
 
     /**
@@ -857,14 +857,14 @@ class ProcessManager {
                     $process->getSwooleProcess()->write($message);
                 }
             }else {
-                $e = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist {$process_name}, please check it");
+                $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist {$process_name}, please check it");
             }
         }else {
-            $e = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
+            $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
         }
 
-        if(isset($e) && $e instanceof \Throwable) {
-            $this->onHandleException->call($this, $e);
+        if(isset($exception) && $exception instanceof \Throwable) {
+            $this->onHandleException->call($this, $exception);
         }
     }
 
@@ -888,8 +888,8 @@ class ProcessManager {
                 list($signal, $function) = $signal_info;
                 try {
                     \Swoole\Process::signal($signal, $function);
-                }catch (\Exception $e) {
-                    $this->onHandleException->call($this, $e);
+                }catch (\Throwable $throwable) {
+                    $this->onHandleException->call($this, $throwable);
                 }
             }
         }
@@ -904,7 +904,7 @@ class ProcessManager {
 
     /**
      * 创建管道
-     * @throws
+     * @throws null
      */
     private function installCliPipe() {
         if(!$this->is_create_pipe) {
@@ -1082,18 +1082,19 @@ class ProcessManager {
     public function getSwooleTableInfo(bool $simple = true) {
         $swoole_table_info = "unenable swoole table(没启用)";
         if(defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
+            $tableManager = \Workerfy\Memory\TableManager::getInstance();
             if($simple) {
-                $all_table_name = \Workerfy\Memory\TableManager::getInstance()->getAllTableName();
+                $all_table_name = $tableManager->getAllTableName();
                 if(!empty($all_table_name) && is_array($all_table_name)) {
                     $all_table_name_str = implode($all_table_name, ',');
                     $swoole_table_info = "[{$all_table_name_str}]";
                 }
             }else {
-                $all_table_info = \Workerfy\Memory\TableManager::getInstance()->getAllTableKeyMapRowValue();
+                $all_table_info = $tableManager->getAllTableKeyMapRowValue();
                 if(!empty($all_table_info)) {
                     $swoole_table_info = $all_table_info;
                 }else {
-                    $swoole_table_info = "swoole table(已启用)，但没有设置table_name";
+                    $swoole_table_info = "swoole table(已启用),但没有设置table_name";
                 }
             }
 
@@ -1113,7 +1114,7 @@ class ProcessManager {
                 $msg_sysvmsg_info = '';
                 foreach($msg_queue_info as $info) {
                     list($msg_queue_name, $wait_to_read_num) = $info;
-                    $msg_sysvmsg_info .= "[队列名称：$msg_queue_name, 消息数量：$wait_to_read_num]".',';
+                    $msg_sysvmsg_info .= "[队列名称:$msg_queue_name,消息数量:$wait_to_read_num]".',';
                 }
                 $msg_sysvmsg_info = trim($msg_sysvmsg_info, ',');
             }

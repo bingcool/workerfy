@@ -144,46 +144,43 @@ abstract class AbstractProcess {
             if($this->is_exit) {
                 return false;
             }
-
-            if($this->async){
+            if($this->async) {
                 Event::add($this->swooleProcess->pipe, function() {
-                    $msg = $this->swooleProcess->read(64 * 1024);
-                    if(is_string($msg)) {
-                        $message = json_decode($msg, true);
-                        @list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
-                        if(!isset($is_proxy_by_master) || is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
-                            $is_proxy_by_master = false;
-                        }else {
-                            $is_proxy_by_master = true;
+                    try{
+                        $msg = $this->swooleProcess->read(64 * 1024);
+                        if (is_string($msg)) {
+                            $message = json_decode($msg, true);
+                            @list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
+                            if (!isset($is_proxy_by_master) || is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
+                                $is_proxy_by_master = false;
+                            } else {
+                                $is_proxy_by_master = true;
+                            }
                         }
-                    }
-                    if($msg && isset($from_process_name) && isset($from_process_worker_id)) {
-                        try {
+                        if ($msg && isset($from_process_name) && isset($from_process_worker_id)) {
                             $is_call_pipe = true;
-                            if(is_string($msg)) {
-                                switch($msg) {
+                            if (is_string($msg)) {
+                                switch ($msg) {
                                     case self::WORKERFY_PROCESS_REBOOT_FLAG :
                                         $is_call_pipe = false;
                                         $this->reboot();
                                         break;
                                     case self::WORKERFY_PROCESS_EXIT_FLAG :
                                         $is_call_pipe = false;
-                                        if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
+                                        if ($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
                                             $this->exit(true);
-                                        }else {
+                                        } else {
                                             $this->exit();
                                         }
                                         break;
                                 }
                             }
-
-                            if($is_call_pipe === true) {
+                            if ($is_call_pipe === true) {
                                 $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
                             }
-
-                        }catch(\Throwable $throwable) {
-                            throw $throwable;
                         }
+                    }catch (\Throwable $throwable) {
+                        throw $throwable;
                     }
                 });
             }
@@ -263,8 +260,7 @@ abstract class AbstractProcess {
         $from_process_worker_id = $this->getProcessWorkerId();
         
         if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id) {
-            $error = "Error:write message to self worker";
-            throw new \Exception($error);
+            throw new \Exception('Error can not write message to myself');
         }
 
         if($isMaster) {
@@ -539,7 +535,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * @return null
+     * @return mixed
      */
     public function getExtendData() {
         return $this->extend_data;

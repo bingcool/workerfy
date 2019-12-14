@@ -30,7 +30,7 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-cli-pipe';
 $process_class = \Workerfy\Tests\CliPipe\Worker::class;
-$process_worker_num = defined("WORKER_NUM") ? defined("WORKER_NUM") : 3;
+$process_worker_num = defined("WORKER_NUM") ? WORKER_NUM : 3;
 $async = true;
 $args = [
     'wait_time' => 1,

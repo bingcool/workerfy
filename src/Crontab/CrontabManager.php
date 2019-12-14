@@ -27,6 +27,10 @@ class CrontabManager {
 
 	private $timer_ids = [];
 
+    /**
+     * CrontabManager constructor.
+     * @throws \Exception
+     */
 	protected function __construct() {
 	    if(function_exists('inChildrenProcessEnv')) {
 	        if(inChildrenProcessEnv() === false) {
