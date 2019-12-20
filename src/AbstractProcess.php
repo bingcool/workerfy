@@ -104,12 +104,12 @@ abstract class AbstractProcess {
 
         if(isset($args['dynamic_destroy_process_time'])) {}
 
+        $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
+
         if(isset($args['check_master_live_tick_time'])) {
             if($args['check_master_live_tick_time'] < self::CHECK_MASTER_LIVE_TICK_TIME) {
                 $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
             }
-        }else {
-            $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
         }
 
         $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);

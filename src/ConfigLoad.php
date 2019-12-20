@@ -41,9 +41,7 @@ class ConfigLoad {
         if(is_array($config)) {
             $this->config = array_merge_recursive($this->config, $config);
         }else {
-            $msg = $this->color->getColoredString("Config file {$config_file_path} is not return array", "red", "black");
-            echo($msg). "\n\n";
-            exit;
+            throw new \Exception("Config file {$config_file_path} is not return array");
         }
 	}
 
