@@ -5,7 +5,7 @@ define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
-define("PID_FILE_ROOT", '/tmp/Sysvmsg/runtime');
+define("PID_FILE_ROOT", '/tmp/workerfy/log/Sysvmsg/');
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
     mkdir(PID_FILE_ROOT,0777,true);
