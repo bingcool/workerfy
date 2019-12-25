@@ -1,21 +1,21 @@
 <?php
 
-defined('USER_NAME') or define('USER_NAME', 'workerfy');
-defined('PASSWORD') or define('PASSWORD', '123456');
+//defined('USER_NAME') or define('USER_NAME', 'workerfy');
+//defined('PASSWORD') or define('PASSWORD', '123456');
 
-if(PHP_OS != 'Darwin') {
-    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
-    defined('PID_ROOT') or define('PID_ROOT', '/home/wwwroot/workerfy/tests');
-}else {
+if(PHP_OS == 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
-    defined('PID_ROOT') or define('PID_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
+    defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
+}else {
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/bingcool/wwwroot/workerfy/tests');
+    defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }
 
 // 根据实际设置
 define('PID_FILE_ROOT', PID_ROOT);
 
 //日志错误目录
-define('SYS_ERROR_LOG_ROOT', __DIR__);
+define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 
 $http = new Swoole\Http\Server("*", 9502);
 
@@ -112,7 +112,7 @@ $http->on('request', function ($request, $response) use($http) {
                         $running = \Swoole\Process::kill($master_pid, 0);
                     }
                 }
-                
+
                 if($isRunning) {
                     $handle->returnJson(0, '进程running中');
                 }else {
@@ -150,11 +150,11 @@ $http->on('request', function ($request, $response) use($http) {
 
         return true;
 
-	}catch(\Throwable $throwable) {   
+	}catch(\Throwable $throwable) {
         $file = $throwable->getFile();
         $line = $throwable->getLine();
         $message = $throwable->getMessage();
-        $error_msg = "【Error】{$message} in {$file} on line {$line}";     
+        $error_msg = "【Error】{$message} in {$file} on line {$line}";
 	    if(defined('SYS_ERROR_LOG_ROOT')) {
             $date = date("Y_m_d", strtotime('now'));
             $pre_date = date("Y_m_d", strtotime('-1 day'));
@@ -238,12 +238,12 @@ class ActionHandle {
     }
 
     public function startProcess(string $command) {
-        $ret = \Co::exec($command);
+        $ret = \Swoole\Coroutine\System::exec($command);
         return $ret;
     }
 
     public function stopProcess(string $command) {
-        $ret = \Co::exec($command);
+        $ret = \Swoole\Coroutine\System::exec($command);
         return $ret;
     }
 
@@ -337,7 +337,7 @@ class ActionHandle {
         $fp->seek($start_line);
         for($i = 0; $i <= $count; ++$i) {
             // current()获取当前行内容
-            $line_contents[] = $fp->current();
+            $line_contents[] = trim($fp->current());
             // 下一行
             $fp->next();
         }

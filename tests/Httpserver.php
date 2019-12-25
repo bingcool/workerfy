@@ -5,17 +5,17 @@ defined('PASSWORD') or define('PASSWORD', '123456');
 
 if(PHP_OS != 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
-    defined('PID_ROOT') or define('PID_ROOT', '/home/wwwroot/workerfy/tests');
+    defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log/');
 }else {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
-    defined('PID_ROOT') or define('PID_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
+    defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log/');
 }
 
 // 根据实际设置
 define('PID_FILE_ROOT', PID_ROOT);
 
 //日志错误目录
-define('SYS_ERROR_LOG_ROOT', __DIR__);
+define('SYS_ERROR_LOG_ROOT', '/tmp/syslog/');
 
 $http = new Swoole\Http\Server("*", 9502);
 
