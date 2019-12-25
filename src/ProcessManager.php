@@ -572,13 +572,14 @@ class ProcessManager {
      * @param bool $is_daemon
      */
     private function daemon($is_daemon) {
+        if(defined('IS_DAEMON') && IS_DAEMON == true) {
+            $this->is_daemon = IS_DAEMON;
+        }
+
         if($is_daemon) {
             $this->is_daemon = $is_daemon;
-        }else {
-            if(IS_DAEMON == true) {
-                $this->is_daemon = IS_DAEMON;
-            }
         }
+
         if($this->is_daemon) {
             if(!isset($this->start_daemon)) {
                 \Swoole\Process::daemon();
@@ -1036,6 +1037,8 @@ class ProcessManager {
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
             @\Swoole\Process::signal(SIGTERM, null);
+            write_info("--------------【Warning】 master进程stop, master_pid={$this->master_pid}--------------");
+
         });
     }
 
