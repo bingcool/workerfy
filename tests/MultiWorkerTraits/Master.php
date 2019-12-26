@@ -50,7 +50,6 @@ $processManager->onStart = function ($pid) {
 
 $processManager->onReportStatus = function($status) {
     // HTTP API必须在协程中使用
-    var_dump('v');
     go(function() {
         $cli = new \Swoole\Coroutine\Http\Client('127.0.0.1', 80);
         $cli->setHeaders([
