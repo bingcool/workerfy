@@ -259,6 +259,7 @@ function status() {
     \Swoole\Event::add($ctl_pipe, function() use($ctl_pipe) {
         $msg = fread($ctl_pipe, 8192);
         write_info($msg,'green');
+        \Swoole\Event::exit();
     });
     sleep(1);
     fwrite($pipe, $pipe_msg);
