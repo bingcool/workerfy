@@ -30,12 +30,11 @@ class ConfigLoad {
 	 * @return mixed
 	 */
 	public function loadConfig(string $config_file_path = null) {
-	    if(!empty($config_file_path)) {
-	        if(!is_file($config_file_path)) {
-                throw new \Exception("Load config path is not a file");
-            }
-        }else {
+	    if(empty($config_file_path)) {
 	        return false;
+        }
+        if(!is_file($config_file_path)) {
+            throw new \Exception("Load config path is not a file");
         }
         $config = require $config_file_path;
         if(is_array($config)) {
