@@ -69,7 +69,7 @@ class SysvmsgManager {
      * @param string $path_name
      * @param string $project
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project) {
         $is_success = true;
@@ -189,7 +189,7 @@ class SysvmsgManager {
      * @param $msg
      * @param string|null $msg_type_name
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function push(string $msg_queue_name, $msg, string $msg_type_name = null) {
         $msg_queue_name_key = md5($msg_queue_name);
