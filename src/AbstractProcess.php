@@ -116,21 +116,6 @@ abstract class AbstractProcess {
     }
 
     /**
-     * getProcess 获取process进程对象
-     * @return object
-     */
-    public function getProcess() {
-        return $this->swooleProcess;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getCoroutineId() {
-        return $this->coroutine_id;
-    }
-
-    /**
      * __start 创建process的成功回调处理
      * @param  Process $swooleProcess
      * @return mixed
@@ -385,6 +370,21 @@ abstract class AbstractProcess {
      */
     public function start() {
         $this->swooleProcess->start();
+    }
+
+    /**
+     * getProcess 获取process进程对象
+     * @return object
+     */
+    public function getProcess() {
+        return $this->swooleProcess;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCoroutineId() {
+        return $this->coroutine_id;
     }
 
     /**
