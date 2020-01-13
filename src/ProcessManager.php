@@ -927,8 +927,7 @@ class ProcessManager {
             \Swoole\Event::add($this->cli_pipe_fd, function() {
                 $msg = fread($this->cli_pipe_fd, 8192);
                 $is_call_clipipe = true;
-                if(json_validate($msg)) {
-                    $pipe_msg_arr = json_decode($msg, true);
+                if(($pipe_msg_arr = json_decode($msg, true)) !== null) {
                     if(is_array($pipe_msg_arr) && count($pipe_msg_arr) == 3) {
                         list($action, $process_name, $num) = $pipe_msg_arr;
                         switch($action) {
@@ -1122,7 +1121,6 @@ class ProcessManager {
                 $msg_sysvmsg_info = trim($msg_sysvmsg_info, ',');
             }
         }
-        $sysKernel = '';
         $sysKernelInfo = array_values($sysvmsgManager->getSysKernelInfo(true));
         list($msgmax, $msgmnb, $msgmni) = $sysKernelInfo;
         $sysKernel = "[单个消息体最大字节msgmax:{$msgmax},队列的最大容量msgmnb:{$msgmnb},队列最大个数:{$msgmni}]";
