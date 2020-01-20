@@ -849,9 +849,9 @@ abstract class AbstractProcess {
         $pid = $this->getPid();
 
         $info =
-<<<EOF
+<<<MSG
     start children_process【{$process_type}】: $process_name@$worker_id started, Pid=$pid
-EOF;
+MSG;
         write_info($info,'green');
 
     }
@@ -870,9 +870,9 @@ EOF;
         $pid = $this->getPid();
 
         $info =
-<<<EOF
+<<<MSG
     stop children_process【{$process_type}】: $process_name@$worker_id stoped, Pid=$pid
-EOF;
+MSG;
         write_info($info,'red');
     }
 
@@ -886,10 +886,10 @@ EOF;
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
             $pid = $this->getPid();
             $info =
-<<<EOF
+<<<MSG
 Tips:
     start children_process【{$process_type}】: $process_name@$worker_id start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid=$pid
-EOF;
+MSG;
             write_info($info,'red');
         }
     }
