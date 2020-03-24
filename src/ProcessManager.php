@@ -98,18 +98,21 @@ class ProcessManager {
             $async = true;
         }
 
-        if($process_worker_num > swoole_cpu_num() * (self::NUM_PEISHU)) {
+        $cpu_num = swoole_cpu_num();
+
+        if($process_worker_num > $cpu_num * (self::NUM_PEISHU)) {
             write_info("--------------【Warning】Params process_worker_num 大于最大的子进程限制数量=cpu_num * ".(self::NUM_PEISHU)."--------------");
             exit(0);
         }
 
         if(isset($args['max_process_num'])) {
-            if($args['max_process_num'] > swoole_cpu_num() * (self::NUM_PEISHU)) {
-                $args['max_process_num'] = swoole_cpu_num() * (self::NUM_PEISHU);
+            if($args['max_process_num'] > $cpu_num * (self::NUM_PEISHU)) {
+                $args['max_process_num'] = $cpu_num * (self::NUM_PEISHU);
             }
         }else {
-            $args['max_process_num'] = swoole_cpu_num() * (self::NUM_PEISHU);
+            $args['max_process_num'] = $cpu_num * (self::NUM_PEISHU);
         }
+
         $this->process_lists[$key] = [
             'process_name' => $process_name,
             'process_class' => $process_class,

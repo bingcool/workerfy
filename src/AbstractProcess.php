@@ -606,7 +606,7 @@ abstract class AbstractProcess {
     public function getCliEnvParam(string $name) {
         $value = @getenv($name);
         if($value !== false) {
-            return $value;
+            return base64_decode($value) ?? $value;
         }
         return null;
     }

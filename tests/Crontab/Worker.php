@@ -10,6 +10,8 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function init() {
 
+        var_dump(base64_encode($this->tick_format));
+
         $tick_format = $this->getCliEnvParam('tick_format');
         var_dump($tick_format);
 

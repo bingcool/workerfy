@@ -7,7 +7,7 @@ if(PHP_OS == 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }else {
-    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/bingcool/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }
 
@@ -20,7 +20,8 @@ define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 $http = new Swoole\Http\Server("*", 9502);
 
 $http->set([
-    'worker_num' => 1
+    'worker_num' => 1,
+    'max_request' => 10000
 ]);
 
 $http->on('start', function($server) {
@@ -37,7 +38,8 @@ $http->on('workerStart',function($server, int $worker_id) {
 
 $http->on('request', function ($request, $response) use($http) {
 	try {
-        if($request->server['request_uri'] == '/favicon.ico') {
+        if($request->server['path_info'] == '/favicon.ico' || $request->server['request_uri'] == '/favicon.ico') {
+            $response->end();
             return false;
         }
 
@@ -307,7 +309,7 @@ class ActionHandle {
         if(is_array($params)) {
             foreach($params as $name=>$value) {
                 $name = trim($name);
-                $value = trim($value);
+                $value = base64_encode(trim($value));
                 $env_params .= " -{$name}={$value}";
             }
         }
