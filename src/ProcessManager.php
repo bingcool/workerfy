@@ -229,7 +229,8 @@ class ProcessManager {
     /**
      * 父进程的status通过fifo有名管道信号回传
      */
-    private function masterStatusToCliFifoPipe($ctl_pipe) {
+    private function masterStatusToCliFifoPipe($ctl_pipe_file) {
+        $ctl_pipe = fopen($ctl_pipe_file,'w+');
         $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
         fwrite($ctl_pipe, $master_info);
         foreach($this->process_wokers as $key => $processes) {
@@ -257,10 +258,10 @@ class ProcessManager {
                 if($status == 'stop') {
                     write_info($info);
                 }else {
-                    fwrite($ctl_pipe, $info);
+                    @fwrite($ctl_pipe, $info);
                 }
             }
-            fclose($ctl_pipe);
+            @fclose($ctl_pipe);
             unset($processes);
         }
     }
@@ -800,10 +801,10 @@ class ProcessManager {
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0) {
         if($this->isMaster($process_name)) {
-            throw new \Exception("master process can not write msg to master process self");
+            throw new \Exception("Master process can not write msg to master process self");
         }
         if(!$this->isRunning()) {
-            throw new \Exception("master process is not start, you can not use writeByProcessName(), please checkout it");
+            throw new \Exception("Master process is not start, you can not use writeByProcessName(), please checkout it");
         }
         $process_workers = [];
         $process = $this->getProcessByName($process_name, $process_worker_id);
@@ -921,13 +922,13 @@ class ProcessManager {
         }
 
         if(!posix_mkfifo($pipe_file, 0777)) {
-            throw new \Exception("Create Cli Pipe Faile");
+            throw new \Exception("Create Cli Pipe failed");
         }
 
-        try{
-            $this->cli_pipe_fd = fopen($pipe_file, 'w+');
-            is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
-            \Swoole\Event::add($this->cli_pipe_fd, function() {
+        $this->cli_pipe_fd = fopen($pipe_file, 'w+');
+        is_resource($this->cli_pipe_fd) && stream_set_blocking($this->cli_pipe_fd, false);
+        \Swoole\Event::add($this->cli_pipe_fd, function() {
+            try{
                 $msg = fread($this->cli_pipe_fd, 8192);
                 $is_call_clipipe = true;
                 if(($pipe_msg_arr = json_decode($msg, true)) !== null) {
@@ -945,8 +946,7 @@ class ProcessManager {
                                 break;
                             case 'status' :
                                 $is_call_clipipe = false;
-                                $ctl_pipe = fopen($process_name,'w+');
-                                $this->masterStatusToCliFifoPipe($ctl_pipe);
+                                $this->masterStatusToCliFifoPipe($process_name);
                                 break;
                         }
                     }
@@ -954,10 +954,10 @@ class ProcessManager {
                 if($is_call_clipipe === true && $this->onCliMsg instanceof \Closure) {
                     $this->onCliMsg->call($this, $msg);
                 }
-            });
-        }catch (\Throwable $throwable) {
-            throw $throwable;
-        }
+            }catch (\Throwable $throwable) {
+                $this->onHandleException->call($this, $throwable);
+            }
+        });
     }
 
     /**
@@ -1085,7 +1085,7 @@ class ProcessManager {
      * @return string
      */
     public function getSwooleTableInfo(bool $simple = true) {
-        $swoole_table_info = "unenable swoole table(没启用)";
+        $swoole_table_info = "Disable swoole table(没启用)";
         if(defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
             $tableManager = \Workerfy\Memory\TableManager::getInstance();
             if($simple) {
@@ -1111,7 +1111,7 @@ class ProcessManager {
      * getSysvmsgInfo
      */
     public function getSysvmsgInfo() {
-        $msg_sysvmsg_info = 'unenable sysvmsg(没启用)';
+        $msg_sysvmsg_info = 'Disable sysvmsg(没启用)';
         $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
         if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
             $msg_queue_info = $sysvmsgManager->getAllMsgQueueWaitToPopNum();

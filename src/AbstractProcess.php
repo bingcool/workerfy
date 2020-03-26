@@ -130,8 +130,8 @@ abstract class AbstractProcess {
                 return false;
             }
             if($this->async) {
-                Event::add($this->swooleProcess->pipe, function() {
-                    try{
+                Event::add($this->swooleProcess->pipe, function () {
+                    try {
                         $msg = $this->swooleProcess->read(64 * 1024);
                         if (is_string($msg)) {
                             $message = json_decode($msg, true);
@@ -165,7 +165,7 @@ abstract class AbstractProcess {
                             }
                         }
                     }catch (\Throwable $throwable) {
-                        throw $throwable;
+                        $this->onHandleException($throwable);
                     }
                 });
             }
@@ -640,7 +640,7 @@ abstract class AbstractProcess {
                     $this->runtimeCoroutineWait($this->cycle_times);
                     $this->onShutDown();
                 }catch (\Throwable $throwable) {
-                    throw $throwable;
+                    $this->onHandleException($throwable);
                 }finally {
                     $this->kill($pid, SIGUSR1);
                 }
@@ -673,7 +673,7 @@ abstract class AbstractProcess {
                         $this->onShutDown();
                     }
                 }catch (\Throwable $throwable) {
-                    throw $throwable;
+                    $this->onHandleException($throwable);
                 }finally {
                     $this->kill($pid, SIGTERM);
                 }
@@ -689,7 +689,7 @@ abstract class AbstractProcess {
                     $this->runtimeCoroutineWait($this->cycle_times);
                     $this->onShutDown();
                 }catch (\Throwable $throwable) {
-                    throw $throwable;
+                    $this->onHandleException($throwable);
                 }finally {
                     $this->kill($pid, SIGTERM);
                 }
@@ -925,6 +925,6 @@ MSG;
      * @param  $throwable
      * @return mixed
      */
-    public function onHandleException($throwable) {}
+    public function onHandleException(\Throwable $throwable) {}
 
 }
