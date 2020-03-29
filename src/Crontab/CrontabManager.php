@@ -48,15 +48,15 @@ class CrontabManager {
      */
 	public function addRule(string $cron_name, string $expression, $func, int $msec = 1 * 1000) {
 	    if(!class_exists('Cron\\CronExpression')) {
-	        throw new \Exception("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ", 1);
+	        throw new \Exception("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
         }
 
 	    if(!CronExpression::isValidExpression($expression)) {
-            throw new \Exception("Crontab expression format is wrong, please check it", 1);
+            throw new \Exception("Crontab expression format is wrong, please check it");
         }
 
 	    if(!is_callable($func)) {
-            throw new \Exception("Params func must be callable", 1);
+            throw new \Exception("Params func must be callable");
         }
 
         $cron_name_key = md5($cron_name);
@@ -64,7 +64,7 @@ class CrontabManager {
         if(!isset($this->cron_tasks[$cron_name_key])) {
             $this->cron_tasks[$cron_name_key] = [$expression, $func];
         }else {
-            throw new \Exception("cron_name=$cron_name has been seted, you can not set again!", 1);
+            throw new \Exception("cron_name=$cron_name has been seted, you can not set again!");
         }
 
         if(is_array($func)) {
