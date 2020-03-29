@@ -24,10 +24,18 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
+        var_dump('worker_cid='.\Co::getCid());
         $this->tick_format = '*/1 * * * *';
         // 每分钟执行一次，时间格式类似于linux的crontab
-        CrontabManager::getInstance()->addRule("tick", $this->tick_format , function() {
-            var_dump('一分钟时间到了，执行任务:'.date('Y-m-d H:i:s', time()));
+        CrontabManager::getInstance()->addRule("tick", $this->tick_format , function($expression) {
+            // 一定要在最外为捕捉异常，否则tick定时器里面的异常无法捕捉处理
+            var_dump('tick_cid='.\Co::getCid());
+            try{
+                var_dump("一分钟时间到了,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
+                throw new \Exception('vvvvv');
+            }catch (\Throwable $throwable) {
+                $this->onHandleException($throwable);
+            }
         });
 
         $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
@@ -36,6 +44,7 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function onHandleException($t) {
+        var_dump('Exception_cid='.\Co::getCid());
         var_dump($t->getMessage());
     }
 }

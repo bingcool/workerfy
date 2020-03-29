@@ -61,39 +61,43 @@ class CrontabManager {
 
         $cron_name_key = md5($cron_name);
 
-        if(is_array($func)) {
-            if(!isset($this->cron_tasks[$cron_name_key])) {
-                $this->cron_tasks[$cron_name_key] = [$expression, $func];
-                $timer_id = \Swoole\Timer::tick($msec, $func, $expression);
-            }
+        if(!isset($this->cron_tasks[$cron_name_key])) {
+            $this->cron_tasks[$cron_name_key] = [$expression, $func];
         }else {
-            if(!isset($this->cron_tasks[$cron_name_key])) {
-                $this->cron_tasks[$cron_name_key] = [$expression, $func];
-                $timer_id = \Swoole\Timer::tick($msec, function ($timer_id, $expression) use ($func) {
-                    $expression_key = md5($expression);
-                    $cron = CronExpression::factory($expression);
-                    $now_time = time();
-                    $cron_next_datetime = strtotime($cron->getNextRunDate()->format('Y-m-d H:i:s'));
-                    if($cron->isDue()) {
-                        if (!isset($this->cron_next_datetime[$expression_key])) {
-                            $this->expression[$expression_key] = $expression;
-                            $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
-                        }
+            throw new \Exception("cron_name=$cron_name has been seted, you can not set again!", 1);
+        }
 
-                        if (($now_time >= $this->cron_next_datetime[$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second))) {
-                            $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
-                            if ($func instanceof \Closure) {
+        if(is_array($func)) {
+            $timer_id = \Swoole\Timer::tick($msec, $func, $expression);
+        }else {
+            $timer_id = \Swoole\Timer::tick($msec, function ($timer_id, $expression) use ($func) {
+                $expression_key = md5($expression);
+                $cron = CronExpression::factory($expression);
+                $now_time = time();
+                $cron_next_datetime = strtotime($cron->getNextRunDate()->format('Y-m-d H:i:s'));
+                if($cron->isDue()) {
+                    if (!isset($this->cron_next_datetime[$expression_key])) {
+                        $this->expression[$expression_key] = $expression;
+                        $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+                    }
+
+                    if (($now_time >= $this->cron_next_datetime[$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second))) {
+                        $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+                        if ($func instanceof \Closure) {
+                            try {
                                 call_user_func($func, $cron);
+                            }catch (\Throwable $throwable) {
+                                throw $throwable;
                             }
                         }
-
-                        // 防止万一出现的异常出现，比如没有命中任务， 19:05:00要命中的，由于其他网络或者服务器其他原因，阻塞了,造成延迟，现在时间已经到了19::05:05
-                        if ($now_time > $this->cron_next_datetime[$expression_key] || $now_time >= $cron_next_datetime) {
-                            $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
-                        }
                     }
-                }, $expression);
-            }
+
+                    // 防止万一出现的异常出现，比如没有命中任务， 19:05:00要命中的，由于其他网络或者服务器其他原因，阻塞了,造成延迟，现在时间已经到了19::05:05
+                    if ($now_time > $this->cron_next_datetime[$expression_key] || $now_time >= $cron_next_datetime) {
+                        $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+                    }
+                }
+            }, $expression);
         }
         isset($timer_id) && $this->timer_ids[$cron_name_key] = $timer_id;
         unset($cron_name_key);

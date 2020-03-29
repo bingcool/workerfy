@@ -1,5 +1,6 @@
 #!/usr/bin/php
 <?php
+ini_set('memory_limit','20M');
 define("START_SCRIPT_ROOT", __DIR__);
 define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
@@ -53,5 +54,7 @@ $processManager->onCreateDynamicProcess = function ($process_name, $process_num)
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);
 };
+
+var_dump(ini_get('memory_limit'));
 
 $master_pid = $processManager->start();
