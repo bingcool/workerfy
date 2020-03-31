@@ -703,12 +703,16 @@ class ProcessManager {
             'enable_coroutine' => false,
         ]);
         $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
-            $status = $this->getProcessStatus();
-            // save status
-            file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
-            // callable todo
-            if(is_callable($this->onReportStatus)) {
-                $this->onReportStatus->call($this, $status);
+            try {
+                $status = $this->getProcessStatus();
+                // save status
+                file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
+                // callable todo
+                if(is_callable($this->onReportStatus)) {
+                    $this->onReportStatus->call($this, $status);
+                }
+            }catch (\Throwable $throwable) {
+                $this->onHandleException($throwable);
             }
         });
         // master destroy before clear timer_id

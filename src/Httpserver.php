@@ -354,7 +354,15 @@ class ActionHandle {
         ];
         $this->response->header('Content-Type', 'application/json; charset=UTF-8');
         $json_str = json_encode($result, JSON_UNESCAPED_UNICODE);
-        $this->response->write($json_str);
+        if(strlen($json_str) > 2 * 1024 * 1024) {
+            $res = str_split($json_str, 1024 * 1024);
+            unset($json_str);
+            foreach($res as $content) {
+                $this->response->write($content);
+            }
+        }else {
+            $this->end($json_str);
+        }
     }
 
 }
