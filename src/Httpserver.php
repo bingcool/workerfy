@@ -17,7 +17,7 @@ define('PID_FILE_ROOT', PID_ROOT);
 //日志错误目录
 define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 
-$http = new Swoole\Http\Server("*", 9502);
+$http = new Swoole\Http\Server("*", 9502, SWOOLE_PROCESS);
 
 $http->set([
     'worker_num' => 1,

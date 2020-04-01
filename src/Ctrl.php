@@ -9,16 +9,8 @@
 +----------------------------------------------------------------------
  */
 
-define('START', 'start');
-define('STOP', 'stop');
-define('RELOAD', 'reload');
-define('RESTART','restart');
-define('STATUS', 'status');
-define('PIPE', 'pipe');
-define('ADD','add');
-define('REMOVE', 'remove');
-
-define('WORKERFY_VERSION', '1.0.0');
+include_once __DIR__.'/WorkerfyConst.php';
+include_once __DIR__.'/EachColor.php';
 
 if(!version_compare(phpversion(),'7.1.0', '>=')) {
     write_info("--------------【Warning】php version require >= php7.1+ --------------");
@@ -429,32 +421,4 @@ function getCtlPipeFile() {
     $pipe_file = $path_dir.'/'.$pipe_file_name;
     return $pipe_file;
 }
-
-/**
- * 是否是在主进程环境中
- * @return bool
- */
-function inMasterProcessEnv() {
-    $pid = posix_getpid();
-    if($pid == MASTER_PID) {
-        return true;
-    }
-    return false;
-}
-
-/**
- * 是否是在子进程环境中
- * @return bool
- */
-function inChildrenProcessEnv() {
-    return !inMasterProcessEnv();
-}
-
-/**
- * @return string
- */
-function workerfy_version() {
-    return WORKERFY_VERSION;
-}
-
 

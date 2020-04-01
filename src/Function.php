@@ -1,6 +1,4 @@
 <?php
-include_once __DIR__.'/EachColor.php';
-
 /**
  * @param string $str
  * @return bool
@@ -14,8 +12,7 @@ function json_validate(string $str) {
 }
 
 // 随机获取一个监听的端口(php_socket模式)
-function get_one_free_port()
-{
+function get_one_free_port() {
     $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
     if (!socket_bind($socket, '0.0.0.0', 0)) {
         return false;
@@ -32,8 +29,7 @@ function get_one_free_port()
 }
 
 // 随机获取一个监听的端口(swoole_coroutine模式)
-function get_one_free_port_coro()
-{
+function get_one_free_port_coro() {
     $socket = new \Swoole\Coroutine\Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     $socket->bind('0.0.0.0');
     $socket->listen();
@@ -41,4 +37,31 @@ function get_one_free_port_coro()
     $socket->close();
     unset($socket);
     return $port;
+}
+
+/**
+ * 是否是在主进程环境中
+ * @return bool
+ */
+function inMasterProcessEnv() {
+    $pid = posix_getpid();
+    if(defined(MASTER_PID) && $pid == MASTER_PID) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 是否是在子进程环境中
+ * @return bool
+ */
+function inChildrenProcessEnv() {
+    return !inMasterProcessEnv();
+}
+
+/**
+ * @return string
+ */
+function workerfy_version() {
+    return WORKERFY_VERSION;
 }

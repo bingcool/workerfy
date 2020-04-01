@@ -31,12 +31,13 @@
     "ext-sysvmsg": "*"
   },
   "autoload": {
+    "files": ["src/Ctrl.php","src/function.php"],
     "psr-4": {
       "Workerfy\\": "src/"
     }
   },
   "autoload-dev": {
-    "files": ["src/function.php"],
+    "files": ["src/Ctrl.php","src/function.php"],
     "psr-4": {
       "Workerfy\\Tests\\": "tests/"
     }

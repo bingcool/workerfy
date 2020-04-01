@@ -22,8 +22,6 @@ define("WORKERFY_REPORT_TICK_TIME", 2);
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);
 
-include $root_path.'/src/Ctrl.php';
-
 include $root_path."/vendor/autoload.php";
 
 $config_file_path = $dir_config."/Config/config.php";
