@@ -7,7 +7,7 @@ if(PHP_OS == 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }else {
-    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/bingcool/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }
 
@@ -260,19 +260,21 @@ class ActionHandle {
 
     public function isRunning(string $pid_filename) {
         $pid_file_path = $this->getPidFile($pid_filename);
+        $isRunning = true;
         if(file_exists($pid_file_path)) {
             $master_pid = file_get_contents($pid_file_path);
             if(is_numeric($master_pid)) {
                 $master_pid = (int) $master_pid;
-                if(\Swoole\Process::kill($master_pid, 0)) {
-                    return true;
-                }else {
-                    return false;
+                if(!\Swoole\Process::kill($master_pid, 0)) {
+                    $isRunning = false;
                 }
             }else {
-                return false;
+                $isRunning = false;
             }
+        }else {
+            $isRunning = false;
         }
+        return $isRunning;
     }
 
     public function showLog(string $pid_filename, int $n = 100) {
@@ -361,7 +363,7 @@ class ActionHandle {
                 $this->response->write($content);
             }
         }else {
-            $this->end($json_str);
+            $this->response->end($json_str);
         }
     }
 
