@@ -916,14 +916,14 @@ MSG;
 
     /**
      * onShutDown
-     * @return mixed
+     * @return void
      */
     public function onShutDown() {}
 
     /**
      * onHandleException
      * @param  $throwable
-     * @return mixed
+     * @return void
      */
     public function onHandleException(\Throwable $throwable) {}
 

@@ -27,7 +27,7 @@ class ConfigLoad {
 	 * 加载配置文件
 	 * @param  string|null $config_file_path
      * @throws \Exception
-	 * @return mixed
+	 * @return void
 	 */
 	public function loadConfig(string $config_file_path = null) {
 	    if(empty($config_file_path)) {
@@ -37,11 +37,11 @@ class ConfigLoad {
             throw new \Exception("Load config path is not a file");
         }
         $config = require $config_file_path;
-        if(is_array($config)) {
-            $this->config = array_merge_recursive($this->config, $config);
-        }else {
+        if(!is_array($config)) {
             throw new \Exception("Config file {$config_file_path} is not return array");
         }
+
+        $this->config = array_merge_recursive($this->config, $config);
 	}
 
 	/**

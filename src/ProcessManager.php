@@ -88,7 +88,7 @@ class ProcessManager {
         bool $enable_coroutine = true
     ) {
         $key = md5($process_name);
-        if (isset($this->process_lists[$key])) {
+        if(isset($this->process_lists[$key])) {
             throw new \Exception(__CLASS__ . " Error : you can not add the same process : $process_name", 1);
         }
         if(!$enable_coroutine) {
