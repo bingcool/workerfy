@@ -13,6 +13,8 @@ namespace Workerfy\Crontab;
 
 use Cron\CronExpression;
 
+use \Exception;
+
 class CrontabManager {
 
     use \Workerfy\Traits\SingletonTrait;
@@ -44,7 +46,8 @@ class CrontabManager {
      * @param string $expression
      * @param mixed  $func
      * @param int    $msec
-     * @throws \Exception
+     * @throws Exception
+     * @return mixed
      */
 	public function addRule(string $cron_name, string $expression, $func, int $msec = 1 * 1000) {
 	    if(!class_exists('Cron\\CronExpression')) {

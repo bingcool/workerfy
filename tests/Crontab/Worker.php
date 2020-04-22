@@ -3,6 +3,7 @@ namespace Workerfy\Tests\Crontab;
 
 use Workerfy\Crontab\CrontabManager;
 use Workerfy\ProcessManager;
+use \Workerfy\Coroutine\Context;
 
 class Worker extends \Workerfy\AbstractProcess {
 
@@ -24,6 +25,9 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
+
+        Context::set('name','bingcool');
+
         var_dump('worker_cid='.\Co::getCid());
         $this->tick_format = '*/1 * * * *';
         // 每分钟执行一次，时间格式类似于linux的crontab
@@ -36,6 +40,13 @@ class Worker extends \Workerfy\AbstractProcess {
             }catch (\Throwable $throwable) {
                 $this->onHandleException($throwable);
             }
+        });
+
+        var_dump(Context::get('name'));
+
+        Context::defer(function() {
+            var_dump('hello');
+            var_dump(Context::get('name'));
         });
 
         $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');

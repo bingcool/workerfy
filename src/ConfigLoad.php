@@ -11,6 +11,8 @@
 
 namespace Workerfy;
 
+use Exception;
+
 class ConfigLoad {
 
 	use \Workerfy\Traits\SingletonTrait;
@@ -26,8 +28,8 @@ class ConfigLoad {
 	/**
 	 * 加载配置文件
 	 * @param  string|null $config_file_path
-     * @throws \Exception
-	 * @return void
+     * @throws Exception
+	 * @return mixed
 	 */
 	public function loadConfig(string $config_file_path = null) {
 	    if(empty($config_file_path)) {
@@ -42,6 +44,8 @@ class ConfigLoad {
         }
 
         $this->config = array_merge_recursive($this->config, $config);
+
+        return $this->config;
 	}
 
 	/**

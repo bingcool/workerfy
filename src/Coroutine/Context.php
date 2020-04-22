@@ -12,11 +12,12 @@
 namespace Workerfy\Coroutine;
 
 use ArrayObject;
+use Exception;
 
 class Context {
     /**
+     * @throws Exception
      * @return ArrayObject|null
-     * @throws \Exception
      */
     public static function getContext() {
         if(\Swoole\Coroutine::getCid() > 0) {
@@ -43,7 +44,6 @@ class Context {
     /**
      * @param $name
      * @return bool
-     * @throws \Exception
      */
     public static function get($name) {
         $context = self::getContext();
@@ -56,7 +56,6 @@ class Context {
     /**
      * @param $name
      * @return bool
-     * @throws \Exception
      */
     public static function has($name) {
         $context = self::getContext();
@@ -67,5 +66,19 @@ class Context {
             return false;
         }
         return false;
+    }
+
+    /**
+     * @return mixed
+     */
+    public static function getCid() {
+        return \Swoole\Coroutine::getCid();
+    }
+
+    /**
+     * @param callable $func
+     */
+    public static function defer(callable $func) {
+        \Swoole\Coroutine::defer($func);
     }
 }
