@@ -38,7 +38,7 @@ class TableManager {
             return $this->swoole_tables[$table_name];
         }
 
-        $size = $setting['size'] ?? 1024;
+        $size = $setting['size'] ?? 128;
         $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
 
         $table = new \Swoole\Table($size, $conflict_proportion);

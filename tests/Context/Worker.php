@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\WhileTest;
+namespace Workerfy\Tests\Context;
 
 class Worker extends \Workerfy\AbstractProcess {
 
@@ -18,7 +18,13 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
 
+        defer(function () {
+            $cid = \Co::getCid();
+            var_dump($cid);
+        });
+
         while (1) {
+
             if($this->isRebooting() == true) {
                 return ;
             }
@@ -26,6 +32,7 @@ class Worker extends \Workerfy\AbstractProcess {
             if(time() - $this->startTime > $this->runTime) {
                 $this->reboot(5);
             }
+
             // 模拟处理业务
             \Co::sleep(1);
             $process_name = $this->getProcessName().'@'.$this->getProcessWorkerId();
@@ -34,7 +41,7 @@ class Worker extends \Workerfy\AbstractProcess {
             $db = \Workerfy\Tests\Db::getMasterMysql();
             $query = $db->query("select sleep(1)");
             $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-            var_dump($res);
+
             usleep(10000);
 
         }

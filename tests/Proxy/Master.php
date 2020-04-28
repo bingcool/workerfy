@@ -52,7 +52,9 @@ $processManager->onStart = function ($pid) {
 //        $to_process_worker_id
 //    ];
 //    var_dump("父进程已收到代理转发信息");
-//    $this->writeByMasterProxy($msg, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id);
+//    $this->writeByMasterProxy($msg, $from_process_name, $from_procesarticle\ArticleBatchOperater($userId);
+//        $articleBatchObj->setParams($params);
+//        $articleBatchObj->updateGroupIds($group_id);s_worker_id, $to_process_name, $to_process_worker_id);
 //    var_dump('父进程开始转发给子进程：'.$to_process_name.'@'.$to_process_worker_id);
 //};
 

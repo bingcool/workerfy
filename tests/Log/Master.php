@@ -5,7 +5,7 @@ define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
-define("PID_FILE_ROOT", '/tmp/workerfy/log/Whiletest3');
+define("PID_FILE_ROOT", '/tmp/workerfy/log/log');
 // 不存在则创建
 define("PID_FILE", PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid');
 
@@ -19,10 +19,13 @@ $config_file_path = $dir_config."/Config/config.php";
 $Config = \Workerfy\ConfigLoad::getInstance();
 $Config->loadConfig($config_file_path);
 
+// 注册log操作对象
+$logManager = \Workerfy\Log\LogManager::getInstance()->registerLogger('workerfy', __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log');
+
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-while-test';
-$process_class = \Workerfy\Tests\WhileTest\Worker::class;
+$process_name = 'test-logger-test';
+$process_class = \Workerfy\Tests\Log\Worker::class;
 
 $process_worker_num = getenv('num') ?: 1;
 
@@ -37,22 +40,18 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) {
+    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger();
+    $logger->info('中国有{num}人口',['num'=>10000000000],false);
     file_put_contents(PID_FILE, $pid);
-};
 
-// 父进程收到某个子进程的信息，同时向该子进程回复信息
-//$processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id) use($processManager) {
-//    $array = [
-//        $msg,
-//        $from_process_name,
-//        $from_process_worker_id,
-//    ];
-//    var_dump("父进程收到信息 : ". $msg);
-//
-//    $processManager->writeByProcessName($from_process_name, '子进程'.$from_process_name.'@'.$from_process_worker_id. ' 你好，我已收到你的信息');
-//
-//    var_dump("父进程开始向子进程回复信息.....");
-//};
+    go(function () use($pid) {
+        //sleep(5);
+        $db = \Workerfy\Tests\Db::getMasterMysql();
+        $query = $db->query("select * from user limit 1");
+        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        var_dump($res);
+    });
+};
 
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);

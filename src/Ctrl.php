@@ -32,6 +32,10 @@ if(!defined('PID_FILE')) {
     exit(0);
 }
 
+if(!is_dir($pid_file_root = pathinfo(PID_FILE)['dirname'])) {
+    mkdir($pid_file_root,0777,true);
+}
+
 if(!defined('CTL_LOG_FILE')) {
     define('CTL_LOG_FILE', str_replace('.pid', '.log', PID_FILE));
     if(!file_exists(CTL_LOG_FILE)) {
@@ -227,7 +231,7 @@ function status() {
     }
 
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信获取状态信息 --------------");
         exit(0);
     }
 
