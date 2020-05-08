@@ -22,6 +22,7 @@ class Worker extends \Workerfy\AbstractProcess {
             return [];
 
         };
+
         foreach($func($start) as $k=>$item) {
             var_dump($k);
             foreach($item as $value) {

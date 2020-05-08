@@ -42,6 +42,8 @@ class ProcessManager {
 
     private $cli_pipe_fd;
 
+    private $closure;
+
     public $onStart;
     public $onPipeMsg;
     public $onProxyMsg;
@@ -133,6 +135,9 @@ class ProcessManager {
             if(!empty($this->process_lists)) {
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
+                if($this->closure instanceof \Closure) {
+                    $this->closure->call($this);
+                }
                 foreach ($this->process_lists as $key => $list) {
                     $process_worker_num = $list['process_worker_num'] ?? 1;
                     for ($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
@@ -290,6 +295,17 @@ class ProcessManager {
         \Swoole\Process::signal(SIGCHLD, function($signo) {
   			$this->rebootOrExitHandle();
 		});
+    }
+
+    /**
+     * @param string $name
+     */
+    public function setCliMasterName($name = '') {
+        $this->closure = function() use($name) {
+            if($name) {
+                cli_set_process_title($name);
+            }
+        };
     }
 
     /**
@@ -1055,6 +1071,7 @@ class ProcessManager {
         if(!isset($this->master_pid)) {
             $this->master_pid = posix_getpid();
         }
+        cli_set_process_title("php-master:".START_SCRIPT_FILE);
         defined('MASTER_PID') OR define('MASTER_PID', $this->master_pid);
     }
 
