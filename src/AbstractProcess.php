@@ -925,6 +925,9 @@ MSG;
      * @param  $throwable
      * @return void
      */
-    public function onHandleException(\Throwable $throwable) {}
+    public function onHandleException(\Throwable $throwable) {
+        $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::ERROR_TYPE);
+        $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
+    }
 
 }

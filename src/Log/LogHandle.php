@@ -137,10 +137,10 @@ class LogHandle {
         try {
             if($enable_continue) {
                 go(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::INFO);
+                    $this->insertLog($logInfo, $context, Logger::NOTICE);
                 });
             }else {
-                $this->insertLog($logInfo, $context, Logger::INFO);
+                $this->insertLog($logInfo, $context, Logger::NOTICE);
             }
         }catch (\Throwable $e) {
             $this->insertLog($logInfo, $context, Logger::NOTICE);
@@ -157,10 +157,10 @@ class LogHandle {
         try {
             if($enable_continue) {
                 go(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::INFO);
+                    $this->insertLog($logInfo, $context, Logger::WARNING);
                 });
             }else {
-                $this->insertLog($logInfo, $context, Logger::INFO);
+                $this->insertLog($logInfo, $context, Logger::WARNING);
             }
         }catch (\Throwable $e) {
             $this->insertLog($logInfo, $context, Logger::WARNING);
@@ -177,10 +177,10 @@ class LogHandle {
         try{
             if($enable_continue) {
                 go(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::INFO);
+                    $this->insertLog($logInfo, $context, Logger::ERROR);
                 });
             }else {
-                $this->insertLog($logInfo, $context, Logger::INFO);
+                $this->insertLog($logInfo, $context, Logger::ERROR);
             }
         }catch (\Throwable $e) {
             $this->insertLog($logInfo, $context, Logger::ERROR);

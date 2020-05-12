@@ -11,6 +11,7 @@
 
 namespace Workerfy\Coroutine;
 
+use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 
 class GoWaitGroup {
@@ -39,11 +40,15 @@ class GoWaitGroup {
     /**
      * add
      */
-    public function go(\Closure $go_func = null) {
-        $this->count++;
-        if($go_func instanceof \Closure) {
-            go($go_func);
-        }
+    public function go(\Closure $callBack) {
+        Coroutine::create(function () use($callBack) {
+            try{
+                $this->count++;
+                $callBack->call($this);
+            }catch (\Throwable $throwable) {
+                $this->count--;
+            }
+        });
     }
 
     /**

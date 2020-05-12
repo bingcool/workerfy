@@ -54,9 +54,12 @@ class Worker extends \Workerfy\AbstractProcess {
                 'Accept-Encoding' => 'gzip',
             ]);
             $ret = $cli->get('/');
-            $wait_group->done('www.163.com', 'g2-test-wait-group');
+            $this->done('www.163.com', 'g2-test-wait-group');
         });
+
         $result = $wait_group->wait();
+
+        var_dump($result);
 
         $end_time = microtime(true);
 

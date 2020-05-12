@@ -53,6 +53,7 @@ class ProcessManager {
     public $onReportStatus;
     public $onHandleException;
     public $onExit;
+    public $onRegisterRuntimeLog;
 
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 3;
@@ -66,7 +67,10 @@ class ProcessManager {
      */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
-        $this->onHandleException = function (\Throwable $e) {};
+        $this->onHandleException = function (\Throwable $e) {
+            $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::ERROR_TYPE);
+            $logger->error(sprintf("%s on File %s on Line %d", $e->getMessage(), $e->getFile(), $e->getLine()), [], false);
+        };
     }
 
     /**
@@ -135,6 +139,7 @@ class ProcessManager {
             if(!empty($this->process_lists)) {
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
+                $this->registerRuntimeLog();
                 if($this->closure instanceof \Closure) {
                     $this->closure->call($this);
                 }
@@ -1149,6 +1154,25 @@ class ProcessManager {
         list($msgmax, $msgmnb, $msgmni) = $sysKernelInfo;
         $sysKernel = "[单个消息体最大字节msgmax:{$msgmax},队列的最大容量msgmnb:{$msgmnb},队列最大个数:{$msgmni}]";
         return [$msg_sysvmsg_info, $sysKernel];
+    }
+
+    /**
+     * @return Log\LogHandle
+     */
+    protected function registerRuntimeLog() {
+
+        if($this->onRegisterRuntimeLog instanceof \Closure) {
+            return $this->onRegisterRuntimeLog->call($this);
+        }
+
+        $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::ERROR_TYPE);
+        if(!is_object($logger)) {
+            $pid_file_root = pathinfo(PID_FILE)['dirname'];
+            $runtime_log = $pid_file_root.'/runtime.log';
+           $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::ERROR_TYPE, $runtime_log);
+        }
+        $logger->info("Runtime日志注册成功",[],false);
+        return $logger;
     }
 
     /**

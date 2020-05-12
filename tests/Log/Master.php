@@ -20,7 +20,7 @@ $Config = \Workerfy\ConfigLoad::getInstance();
 $Config->loadConfig($config_file_path);
 
 // 注册log操作对象
-$logManager = \Workerfy\Log\LogManager::getInstance()->registerLogger('workerfy', __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log');
+$logManager = \Workerfy\Log\LogManager::getInstance()->registerLogger('default', __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log');
 
 $processManager = \Workerfy\processManager::getInstance();
 
@@ -43,6 +43,8 @@ $processManager->onStart = function ($pid) {
     $logger = \Workerfy\Log\LogManager::getInstance()->getLogger();
     $logger->info('中国有{num}人口',['num'=>10000000000],false);
     file_put_contents(PID_FILE, $pid);
+
+    //throw new \RuntimeException("ffffffff");
 
     go(function () use($pid) {
         //sleep(5);
