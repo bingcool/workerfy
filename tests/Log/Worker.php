@@ -25,6 +25,11 @@ class Worker extends \Workerfy\AbstractProcess {
             var_dump($cid);
         });
 
+        \Workerfy\Coroutine\GoCoroutine::go(function () {
+            var_dump("mmmmmmmmmmmmmmm");
+            throw new \RuntimeException("fffffffffffffff");
+        });
+
         throw new \RuntimeException("错误");
 
     }

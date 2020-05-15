@@ -17,7 +17,7 @@ class LogManager {
 
     const DEFAULT_TYPE = 'default';
 
-    const ERROR_TYPE = 'runtime';
+    const RUNTIME_ERROR_TYPE = 'runtime';
 
     protected $logger = [];
 

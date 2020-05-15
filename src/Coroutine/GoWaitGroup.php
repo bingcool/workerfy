@@ -47,6 +47,8 @@ class GoWaitGroup {
                 $callBack->call($this);
             }catch (\Throwable $throwable) {
                 $this->count--;
+                $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+                $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
             }
         });
     }

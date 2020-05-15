@@ -41,18 +41,54 @@ class ProcessManager {
     private $is_create_pipe = true;
 
     private $cli_pipe_fd;
-
-    private $closure;
-
+    /**
+     * @var \Closure
+     */
     public $onStart;
+
+    /**
+     * @var \Closure
+     */
     public $onPipeMsg;
+
+    /**
+     * @var \Closure
+     */
     public $onProxyMsg;
+
+    /**
+     * @var \Closure
+     */
     public $onCliMsg;
+
+    /**
+     * @var \Closure
+     */
     public $onCreateDynamicProcess;
+
+    /**
+     * @var \Closure
+     */
     public $onDestroyDynamicProcess;
+
+    /**
+     * @var \Closure
+     */
     public $onReportStatus;
+
+    /**
+     * @var \Closure
+     */
     public $onHandleException;
+
+    /**
+     * @var \Closure
+     */
     public $onExit;
+
+    /**
+     * @var \Closure
+     */
     public $onRegisterRuntimeLog;
 
     const NUM_PEISHU = 8;
@@ -68,7 +104,7 @@ class ProcessManager {
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
         $this->onHandleException = function (\Throwable $e) {
-            $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::ERROR_TYPE);
+            $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
             $logger->error(sprintf("%s on File %s on Line %d", $e->getMessage(), $e->getFile(), $e->getLine()), [], false);
         };
     }
@@ -140,9 +176,6 @@ class ProcessManager {
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
                 $this->registerRuntimeLog();
-                if($this->closure instanceof \Closure) {
-                    $this->closure->call($this);
-                }
                 foreach ($this->process_lists as $key => $list) {
                     $process_worker_num = $list['process_worker_num'] ?? 1;
                     for ($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
@@ -153,6 +186,9 @@ class ProcessManager {
                             $args = $list['args'] ?? [];
                             $extend_data = $list['extend_data'] ?? null;
                             $enable_coroutine = $list['enable_coroutine'] ?? true;
+                            /**
+                             * @var AbstractProcess $process
+                             */
                             $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                             $process->setProcessWorkerId($worker_id);
                             $process->setMasterPid($this->master_pid);
@@ -372,6 +408,9 @@ class ProcessManager {
                                     $args = $list['args'] ?? [];
                                     $extend_data = $list['extend_data'] ?? null;
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
+                                    /**
+                                     * @var AbstractProcess $new_process
+                                     */
                                     $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                                     $new_process->setProcessWorkerId($process_worker_id);
                                     $new_process->setMasterPid($this->master_pid);
@@ -748,7 +787,7 @@ class ProcessManager {
      * getProcessByName 通过名称获取一个进程
      * @param string $process_name
      * @param int $process_worker_id
-     * @throws
+     * @throws \Exception
      * @return mixed|null
      */
 	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
@@ -1160,19 +1199,22 @@ class ProcessManager {
      * @return Log\LogHandle
      */
     protected function registerRuntimeLog() {
-
-        if($this->onRegisterRuntimeLog instanceof \Closure) {
-            return $this->onRegisterRuntimeLog->call($this);
+        if(!$this->onRegisterRuntimeLog instanceof \Closure) {
+            // 定义注册默认runtimelog
+            $this->onRegisterRuntimeLog = function() {
+                $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+                if(!is_object($logger)) {
+                    $pid_file_root = pathinfo(PID_FILE)['dirname'];
+                    $runtime_log = $pid_file_root.'/runtime.log';
+                    $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtime_log);
+                }
+                $logger->info("Runtime日志注册成功",[],false);
+                return $logger;
+            };
         }
 
-        $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::ERROR_TYPE);
-        if(!is_object($logger)) {
-            $pid_file_root = pathinfo(PID_FILE)['dirname'];
-            $runtime_log = $pid_file_root.'/runtime.log';
-           $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::ERROR_TYPE, $runtime_log);
-        }
-        $logger->info("Runtime日志注册成功",[],false);
-        return $logger;
+        return $this->onRegisterRuntimeLog->call($this);
+
     }
 
     /**

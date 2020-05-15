@@ -27,7 +27,7 @@ $processManager = \Workerfy\processManager::getInstance();
 $process_name = 'test-logger-test';
 $process_class = \Workerfy\Tests\Log\Worker::class;
 
-$process_worker_num = getenv('num') ?: 1;
+$process_worker_num = getenv('num') ?: 2;
 
 $async = true;
 $args = [
