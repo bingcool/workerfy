@@ -16,37 +16,126 @@ use Swoole\Process;
 use Workerfy\ProcessManager;
 
 abstract class AbstractProcess {
+
+    /**
+     * @var AbstractProcess
+     */
+    protected static $processInstance;
+
+    /**
+     * @var Process
+     */
     private $swooleProcess;
+
+    /**
+     * @var string
+     */
     private $process_name;
+
+    /**
+     * @var bool|null
+     */
     private $async = null;
+
+    /**
+     * @var array
+     */
     private $args = [];
+
+    /**
+     * @var null
+     */
     private $extend_data;
+
+    /**
+     * @var bool
+     */
     private $enable_coroutine = false;
+
+    /**
+     * @var int
+     */
     private $pid;
+
+    /**
+     * @var int
+     */
     private $master_pid;
+
+    /**
+     * @var int
+     */
     private $process_worker_id = 0;
+
+    /**
+     * @var mixed
+     */
     private $user;
+
+    /**
+     * @var mixed
+     */
     private $group;
+
+    /**
+     * @var bool
+     */
     private $is_reboot = false;
+
+    /**
+     * @var bool
+     */
     private $is_exit = false;
+
+    /**
+     * @var bool
+     */
     private $is_force_exit = false;
+
+    /**
+     * @var int
+     */
     private $process_type = 1;// 1-静态进程，2-动态进程
+
+    /**
+     * @var int|float
+     */
     private $wait_time = 30;
+
+    /**
+     * @var int
+     */
     private $reboot_timer_id;
+
+    /**
+     * @var int
+     */
     private $exit_timer_id;
+
+    /**
+     * @var int
+     */
     private $coroutine_id;
+
+    /**
+     * @var string
+     */
     private $start_time;
+
+    /**
+     * @var int
+     */
     private $master_live_timer_id;
 
     /**
      * 动态进程正在销毁时，原则上在一定时间内不能动态创建进程，常量DYNAMIC_DESTROY_PROCESS_TIME
-     * @var boolean
+     * @var bool
      */
     private $is_dynamic_destroy = false;
 
     /**
      * 自动重启次数
-     * @var integer
+     * @var int
      */
     private $reboot_count = 0;
 
@@ -75,13 +164,19 @@ abstract class AbstractProcess {
 
     /**
      * AbstractProcess constructor.
-     * @param string $processName
+     * @param string $process_name
      * @param bool   $async
      * @param array  $args
      * @param null   $extend_data
      * @param bool   $enable_coroutine
      */
-    public function __construct(string $process_name, bool $async = true, array $args = [], $extend_data = null, bool $enable_coroutine = true) {
+    public function __construct(
+        string $process_name,
+        bool $async = true,
+        array $args = [],
+        $extend_data = null,
+        bool $enable_coroutine = true
+    ) {
         $this->async = $async;
         $this->args = $args;
         $this->extend_data = $extend_data;
@@ -111,7 +206,6 @@ abstract class AbstractProcess {
                 $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
             }
         }
-
         $this->swooleProcess = new \Swoole\Process([$this,'__start'], false, 2, $enable_coroutine);
     }
 
@@ -123,6 +217,7 @@ abstract class AbstractProcess {
     public function __start(Process $swooleProcess) {
         try {
             \Swoole\Runtime::enableCoroutine(true);
+            static::$processInstance = $this;
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();
             $this->setUserAndGroup();
@@ -209,7 +304,7 @@ abstract class AbstractProcess {
                 }
             });
 
-            // 子进程会复制父进程的信号注册，这里子进程不需要SIGUSR2，需要移除信号监听
+            // 这里子进程不需要SIGUSR2，需要移除信号监听
             @Process::signal(SIGUSR2, null);
 
             if(PHP_OS != 'Darwin') {
@@ -232,11 +327,12 @@ abstract class AbstractProcess {
 
     /**
      * writeByProcessName worker进程向某个进程写数据
-     * @param  string $name
-     * @param  mixed $data
-     * @param  int    $process_worker_id
-     * @throws
-     * @return boolean
+     * @param string $process_name
+     * @param $data
+     * @param int $process_worker_id
+     * @param bool $is_use_master_proxy
+     * @return bool
+     * @throws \Exception
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = true) {
         $processManager = \Workerfy\processManager::getInstance();
@@ -298,6 +394,7 @@ abstract class AbstractProcess {
      * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
+     * @return void
      */
     public function writeToWorkerByMasterProxy(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = true;
@@ -308,6 +405,7 @@ abstract class AbstractProcess {
      * notifyMasterCreateDynamicProcess 通知master进程动态创建进程
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
+     * @return void
      */
     public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
         if(!$this->is_dynamic_destroy) {
@@ -722,6 +820,7 @@ abstract class AbstractProcess {
     /**
      * @param $pid
      * @param $signal
+     * @return void
      */
     public function kill($pid, $signal) {
         if(Process::kill($pid, 0)){
@@ -769,6 +868,7 @@ abstract class AbstractProcess {
      * 对于运行态的协程，还没有执行完的，设置一个再等待时间$re_wait_time
      * @param int $cycle_times 轮询次数
      * @param int $re_wait_time 每次2s轮询
+     * @return void
      */
     private function runtimeCoroutineWait(int $cycle_times = 5, int $re_wait_time = 2) {
         if($cycle_times <= 0) {
@@ -788,10 +888,33 @@ abstract class AbstractProcess {
     }
 
     /**
+     * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
+     * @param $execfile
+     * @param array $args
+     * @return array
+     */
+    protected function exec($execfile, array $args = []) {
+        $parmas = '';
+        if($args) {
+            $parmas = implode(' ', $args);
+        }
+        $command = $execfile.' '.$parmas;
+        exec($command,$output,$return);
+        return [$command, $output, $return];
+    }
+
+    /**
+     * @return AbstractProcess
+     */
+    public static function processInstance() {
+        return self::$processInstance;
+    }
+
+    /**
      * setUserAndGroup Set unix user and group for current process.
      * @return boolean
      */
-    private function setUserAndGroup() {
+    protected function setUserAndGroup() {
         if(!isset($this->user)) {
             return false;
         }
@@ -901,7 +1024,6 @@ MSG;
 
     /**
      * run 进程创建后的run方法
-     * @param  Process $process
      * @return void
      */
     public abstract function run();

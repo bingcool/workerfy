@@ -12,6 +12,7 @@ class Worker extends \Workerfy\AbstractProcess {
 //            sleep(10);
 //        });
         // 模拟处理业务
+        var_dump("start workerId:".$this->getProcessWorkerId());
         sleep(1);
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {

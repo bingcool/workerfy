@@ -1,8 +1,6 @@
 <?php
 namespace Workerfy\tests\Log;
 
-use http\Exception\RuntimeException;
-
 class Worker extends \Workerfy\AbstractProcess {
 
 

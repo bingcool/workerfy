@@ -28,16 +28,18 @@ class ConfigLoad {
 	/**
 	 * 加载配置文件
 	 * @param  string|null $config_file_path
+     * @return array
      * @throws Exception
-	 * @return mixed
 	 */
 	public function loadConfig(string $config_file_path = null) {
 	    if(empty($config_file_path)) {
-	        return false;
+	        return [];
         }
+
         if(!is_file($config_file_path)) {
             throw new \Exception("Load config path is not a file");
         }
+
         $config = require $config_file_path;
         if(!is_array($config)) {
             throw new \Exception("Config file {$config_file_path} is not return array");
