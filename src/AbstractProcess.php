@@ -295,12 +295,16 @@ abstract class AbstractProcess {
                 $this->swooleProcess->exit(SIGUSR1);
             });
 
-            // 定时检测父进程是否存活
+            // 定时检测父进程是否存活,否则自身要退出
             $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 10)) * 1000, function($timer_id) {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
                     $this->exit(true, 1);
+                }
+
+                if($this->getProcessWorkerId() == 0 && $this->master_pid) {
+                    $this->saveMasterId($this->master_pid);
                 }
             });
 
@@ -839,6 +843,18 @@ abstract class AbstractProcess {
             }else {
                 return false;
             }
+        }
+    }
+
+    /**
+     * worker0会定时设置master_pid在文件，防止误删该文件后找不到master_pid
+     * @param int $master_pid
+     */
+    protected function saveMasterId(int $master_pid) {
+        if($master_pid == $this->master_pid) {
+            \Workerfy\Coroutine\GoCoroutine::go(function () use($master_pid) {
+                @file_put_contents(PID_FILE, $master_pid);
+            });
         }
     }
 
