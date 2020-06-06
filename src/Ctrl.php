@@ -37,7 +37,7 @@ if(!is_dir($pid_file_root = pathinfo(PID_FILE)['dirname'])) {
 }
 
 if(!defined('CTL_LOG_FILE')) {
-    define('CTL_LOG_FILE', str_replace('.pid', '.log', PID_FILE));
+    define('CTL_LOG_FILE', getCtlLogFile());
     if(!file_exists(CTL_LOG_FILE)) {
         touch(CTL_LOG_FILE);
         chmod(CTL_LOG_FILE, 0666);
@@ -424,5 +424,13 @@ function getCtlPipeFile() {
     $pipe_file_name = 'ctl.pipe';
     $pipe_file = $path_dir.'/'.$pipe_file_name;
     return $pipe_file;
+}
+
+function getCtlLogFile() {
+    $path_info = pathinfo(PID_FILE);
+    $path_dir = $path_info['dirname'];
+    $ctl_log_file = 'ctl.log';
+    $ctl_log_file = $path_dir.'/'.$ctl_log_file;
+    return $ctl_log_file;
 }
 

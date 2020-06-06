@@ -38,7 +38,7 @@ class GoWaitGroup {
     }
 
     /**
-     * add
+     * go
      */
     public function go(\Closure $callBack) {
         Coroutine::create(function () use($callBack) {

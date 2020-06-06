@@ -321,11 +321,11 @@ abstract class AbstractProcess {
                 $this->init();
                 $this->run();
             }catch(\Throwable $throwable) {
-                throw $throwable;
+                $this->onHandleException($throwable);
             }
 
-        }catch(\Throwable $t) {
-            $this->onHandleException($t);
+        }catch(\Throwable $throwable) {
+            $this->onHandleException($throwable);
         }
     }
 
@@ -653,6 +653,7 @@ abstract class AbstractProcess {
 
     /**
      * 是否启用协程
+     * @return boolean
      */
     public function isEnableCoroutine() {
         return $this->enable_coroutine;

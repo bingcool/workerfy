@@ -35,4 +35,12 @@ class GoCoroutine {
             }
         });
     }
+
+    /**
+     * @param callable $callback
+     */
+    public static function create(callable $callback) {
+        self::go($callback);
+    }
+
 }

@@ -103,6 +103,7 @@ class ProcessManager {
      */
 	public function __construct(...$args) {
         \Swoole\Runtime::enableCoroutine(true);
+        $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
             $logger->error(sprintf("%s on File %s on Line %d", $e->getMessage(), $e->getFile(), $e->getLine()), [], false);
@@ -175,7 +176,6 @@ class ProcessManager {
             if(!empty($this->process_lists)) {
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
-                $this->registerRuntimeLog();
                 foreach ($this->process_lists as $key => $list) {
                     $process_worker_num = $list['process_worker_num'] ?? 1;
                     for ($worker_id = 0; $worker_id < $process_worker_num; $worker_id++) {
@@ -281,6 +281,9 @@ class ProcessManager {
         fwrite($ctl_pipe, $master_info);
         foreach($this->process_wokers as $key => $processes) {
             ksort($processes);
+            /**
+             * @var AbstractProcess $process
+             */
             foreach($processes as $process_worker_id => $process) {
                 $process_name = $process->getProcessName();
                 $worker_id = $process->getProcessWorkerId();
@@ -366,6 +369,7 @@ class ProcessManager {
                     case 0       :
                     case SIGTERM :
                     case SIGKILL :
+                        /**@var AbstractProcess $process */
                         $process = $this->getProcessByPid($pid);
                         $process_name = $process->getProcessName();
                         $process_worker_id = $process->getProcessWorkerId();
@@ -1208,7 +1212,7 @@ class ProcessManager {
                     $runtime_log = $pid_file_root.'/runtime.log';
                     $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtime_log);
                 }
-                $logger->info("Runtime日志注册成功",[],false);
+                $logger->info("默认Runtime日志注册成功",[],false);
                 return $logger;
             };
         }

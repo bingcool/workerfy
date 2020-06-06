@@ -11,6 +11,7 @@
 
 namespace Workerfy\Log;
 
+use Swoole\Coroutine;
 use Workerfy\Log\Formatter\LineFormatter;
 
 class LogHandle {
@@ -115,7 +116,7 @@ class LogHandle {
     public function info($logInfo, array $context = [], $enable_continue = true) {
         try {
             if($enable_continue) {
-                go(function() use($logInfo, $context) {
+                Coroutine::create(function() use($logInfo, $context) {
                     $this->insertLog($logInfo, $context, Logger::INFO);
                 });
             }else {
@@ -136,7 +137,7 @@ class LogHandle {
     public function notice($logInfo, array $context = [], $enable_continue = true) {
         try {
             if($enable_continue) {
-                go(function() use($logInfo, $context) {
+                Coroutine::create(function() use($logInfo, $context) {
                     $this->insertLog($logInfo, $context, Logger::NOTICE);
                 });
             }else {
@@ -156,7 +157,7 @@ class LogHandle {
     public function warning($logInfo, array $context = [], $enable_continue = true) {
         try {
             if($enable_continue) {
-                go(function() use($logInfo, $context) {
+                Coroutine::create(function() use($logInfo, $context) {
                     $this->insertLog($logInfo, $context, Logger::WARNING);
                 });
             }else {
@@ -176,7 +177,7 @@ class LogHandle {
     public function error($logInfo, array $context = [], $enable_continue = true) {
         try{
             if($enable_continue) {
-                go(function() use($logInfo, $context) {
+                Coroutine::create(function() use($logInfo, $context) {
                     $this->insertLog($logInfo, $context, Logger::ERROR);
                 });
             }else {
