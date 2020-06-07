@@ -13,6 +13,9 @@ class Worker extends \Workerfy\AbstractProcess {
     public function init() {
         var_dump('ggggggggggggggggggggggg');
         $this->startTime = time();
+        register_shutdown_function(function () {
+            var_dump('shutdown shutdown shutdown');
+        });
     }
 
 
@@ -32,10 +35,7 @@ class Worker extends \Workerfy\AbstractProcess {
                 $process_name = $this->getProcessName().'@'.$this->getProcessWorkerId();
                 var_dump($process_name);
                 try {
-                    $db = \Workerfy\Tests\Db::getMasterMysql();
-                    $query = $db->query("select sleep(1)");
-                    $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-                    var_dump($res);
+                    var_dump('vvvvvv');
                 }catch (\Exception $exception) {
                     throw $exception;
                 }

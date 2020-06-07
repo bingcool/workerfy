@@ -277,7 +277,13 @@ abstract class AbstractProcess {
                 if($this->master_live_timer_id) {
                     @\Swoole\Timer::clear($this->master_live_timer_id);
                 }
-                $this->swooleProcess->exit(SIGTERM);
+
+                if(version_compare(SWOOLE_VERSION,'4.5.0','<')) {
+                    $this->swooleProcess->exit(SIGTERM);
+                }else {
+                    exit(SIGTERM);
+                }
+
             });
 
             // reboot
@@ -292,7 +298,12 @@ abstract class AbstractProcess {
                 if(method_exists($this,'__destruct')) {
                     $this->__destruct();
                 }
-                $this->swooleProcess->exit(SIGUSR1);
+
+                if(version_compare(SWOOLE_VERSION,'4.5.0','<')) {
+                    $this->swooleProcess->exit(SIGUSR1);
+                }else {
+                    exit(SIGUSR1);
+                }
             });
 
             // 定时检测父进程是否存活,否则自身要退出

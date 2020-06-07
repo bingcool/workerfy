@@ -776,7 +776,7 @@ class ProcessManager {
                     $this->onReportStatus->call($this, $status);
                 }
             }catch (\Throwable $throwable) {
-                $this->onHandleException($throwable);
+                $this->onHandleException->call($this, $throwable);
             }
         });
         // master destroy before clear timer_id
