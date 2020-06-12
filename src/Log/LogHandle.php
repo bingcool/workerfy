@@ -35,7 +35,7 @@ class LogHandle {
 
     /**
      * $formatter 格式化对象
-     * @var null
+     * @var LineFormatter
      */
     protected $formatter = null;
 
@@ -51,7 +51,6 @@ class LogHandle {
         $this->channel = $channel;
         $this->logFilePath = $logFilePath;
         $output && $this->output = $output;
-        //$formatter对象
         $this->formatter = new LineFormatter($this->output, $dateformat);
     }
 
@@ -114,17 +113,7 @@ class LogHandle {
      * @param bool $enable_continue
      */
     public function info($logInfo, array $context = [], $enable_continue = true) {
-        try {
-            if($enable_continue) {
-                Coroutine::create(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::INFO);
-                });
-            }else {
-                $this->insertLog($logInfo, $context, Logger::INFO);
-            }
-        }catch (\Throwable $e) {
-            $this->insertLog($logInfo, $context, Logger::INFO);
-        }
+        $this->logHandle($logInfo, $context, $enable_continue, Logger::INFO);
     }
 
     /**
@@ -135,17 +124,7 @@ class LogHandle {
      * @param \Throwable
      */
     public function notice($logInfo, array $context = [], $enable_continue = true) {
-        try {
-            if($enable_continue) {
-                Coroutine::create(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::NOTICE);
-                });
-            }else {
-                $this->insertLog($logInfo, $context, Logger::NOTICE);
-            }
-        }catch (\Throwable $e) {
-            $this->insertLog($logInfo, $context, Logger::NOTICE);
-        }
+        $this->logHandle($logInfo, $context, $enable_continue, Logger::NOTICE);
     }
 
     /**
@@ -155,17 +134,7 @@ class LogHandle {
      * @param array $context
      */
     public function warning($logInfo, array $context = [], $enable_continue = true) {
-        try {
-            if($enable_continue) {
-                Coroutine::create(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::WARNING);
-                });
-            }else {
-                $this->insertLog($logInfo, $context, Logger::WARNING);
-            }
-        }catch (\Throwable $e) {
-            $this->insertLog($logInfo, $context, Logger::WARNING);
-        }
+        $this->logHandle($logInfo, $context, $enable_continue, Logger::WARNING);
     }
 
     /**
@@ -175,13 +144,23 @@ class LogHandle {
      * @param array $context
      */
     public function error($logInfo, array $context = [], $enable_continue = true) {
+        $this->logHandle($logInfo, $context, $enable_continue, Logger::ERROR);
+    }
+
+    /**
+     * @param $logInfo
+     * @param array $context
+     * @param bool $enable_continue
+     * @param $logType
+     */
+    public function logHandle($logInfo, $context = [], $enable_continue = true, $logType) {
         try{
             if($enable_continue) {
-                Coroutine::create(function() use($logInfo, $context) {
-                    $this->insertLog($logInfo, $context, Logger::ERROR);
+                Coroutine::create(function() use($logInfo, $context, $logType) {
+                    $this->insertLog($logInfo, $context, $logType);
                 });
             }else {
-                $this->insertLog($logInfo, $context, Logger::ERROR);
+                $this->insertLog($logInfo, $context, $logType);
             }
         }catch (\Throwable $e) {
             $this->insertLog($logInfo, $context, Logger::ERROR);

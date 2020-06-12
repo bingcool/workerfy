@@ -39,6 +39,7 @@ class AtomicManager {
      * addAtomicLong
      * @param string      $atomic_name
      * @param int|integer $init_value
+     * @return mixed
      */
     public function addAtomicLong(string $atomic_name, int $init_value = 0) {
         if(!isset($this->swoole_atomic_long[$atomic_name])){

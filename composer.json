@@ -26,6 +26,7 @@
     "ext-pcntl" : "*",
     "ext-posix" : "*",
     "ext-json": "*",
+    "ext-sysvmsg": "*",
     "ext-sockets": "*"
   },
   "require-dev": {

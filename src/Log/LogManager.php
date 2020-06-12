@@ -11,15 +11,17 @@
 
 namespace Workerfy\Log;
 
+use Workerfy\Traits\SingletonTrait;
+
 class LogManager {
 
-    use \Workerfy\Traits\SingletonTrait;
+    use SingletonTrait;
 
     const DEFAULT_TYPE = 'default';
 
     const RUNTIME_ERROR_TYPE = 'runtime';
 
-    protected $logger = [];
+    protected $loggers = [];
 
     /**
      * __construct
@@ -43,10 +45,10 @@ class LogManager {
         string $dateformat = null
     ) {
         if($channel && $logFilePath) {
-            $this->logger[$type] = new LogHandle($channel, $logFilePath, $output, $dateformat);
+            $this->loggers[$type] = new LogHandle($channel, $logFilePath, $output, $dateformat);
         }
 
-        return $this->logger[$type];
+        return $this->loggers[$type];
     }
 
     /**
@@ -56,7 +58,8 @@ class LogManager {
      * @return mixed
      */
     public function registerLoggerByClosure(\Closure $func, string $type = self::DEFAULT_TYPE) {
-        $this->logger[$type] = call_user_func($func, $type);
+        $this->loggers[$type] = call_user_func($func, $type);
+        return $this->loggers[$type];
     }
 
     /**
@@ -64,6 +67,6 @@ class LogManager {
      * @return LogHandle
      */
     public function getLogger($type = self::DEFAULT_TYPE) {
-        return $this->logger[$type] ?? null;
+        return $this->loggers[$type] ?? null;
     }
 }
