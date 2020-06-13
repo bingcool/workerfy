@@ -31,7 +31,8 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $start_time = microtime(true);
 
-        $wait_group->go(function () use($wait_group) {
+        $wait_group->go(function($name) use($wait_group) {
+            var_dump($name);
             $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
             $cli->set(['timeout' => 10]);
             $cli->setHeaders([
@@ -42,7 +43,7 @@ class Worker extends \Workerfy\AbstractProcess {
             ]);
             $ret = $cli->get('/');
             $wait_group->done('www.baidu.com', 'g1-test-wait-group');
-        });
+        }, 'nnnnnn');
 
         $wait_group->go(function () use ($wait_group){
             $cli = new \Swoole\Coroutine\Http\Client('www.163.com', 80);

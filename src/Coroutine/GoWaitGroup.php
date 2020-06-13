@@ -40,17 +40,17 @@ class GoWaitGroup {
     /**
      * go
      */
-    public function go(\Closure $callBack) {
-        Coroutine::create(function () use($callBack) {
+    public function go(\Closure $callBack, ...$params) {
+        Coroutine::create(function (...$params) use($callBack) {
             try{
                 $this->count++;
-                $callBack->call($this);
+                $callBack->call($this, ...$params);
             }catch (\Throwable $throwable) {
                 $this->count--;
                 $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
                 $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
             }
-        });
+        }, ...$params);
     }
 
     /**

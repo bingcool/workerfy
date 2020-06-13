@@ -34,6 +34,11 @@ class Worker extends \Workerfy\AbstractProcess {
         CrontabManager::getInstance()->addRule("tick", $this->tick_format , function($cron_name, $expression) {
             // 一定要在最外为捕捉异常，否则tick定时器里面的异常无法捕捉处理
             var_dump('tick_cid='.\Co::getCid());
+
+            defer(function () {
+                var_dump("defer defer");
+            });
+
             try{
 
                // $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
@@ -41,6 +46,30 @@ class Worker extends \Workerfy\AbstractProcess {
                 //var_dump($timer_id);
 
                 var_dump("一分钟时间到了,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
+
+                if(date('Y-m-d H:i:s') == '2020-06-13 21:17:00') {
+                    $this->reboot();
+                    //CrontabManager::getInstance()->cancelCrontabTask($cron_name);
+                }
+
+            }catch (\Throwable $throwable) {
+                $this->onHandleException($throwable);
+            }
+        }, 0);
+
+        sleep(2);
+
+        // 每分钟执行一次，时间格式类似于linux的crontab
+        CrontabManager::getInstance()->addRule("tick1", '*/2 * * * *' , function($cron_name, $expression) {
+            // 一定要在最外为捕捉异常，否则tick定时器里面的异常无法捕捉处理
+            var_dump('tick_cid='.\Co::getCid());
+            try{
+
+                // $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
+
+                //var_dump($timer_id);
+
+                var_dump("一分钟时间到了ddddddddd,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
 
                 if(date('Y-m-d H:i:s') == '2020-06-13 00:13:00') {
                     CrontabManager::getInstance()->cancelCrontabTask($cron_name);

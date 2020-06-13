@@ -25,15 +25,15 @@ class GoCoroutine {
     /**
      * @param callable $callback
      */
-    public static function go(callable $callback) {
-        Coroutine::create(function() use($callback){
+    public static function go(callable $callback, ...$params) {
+        Coroutine::create(function(...$params) use($callback){
             try{
-                $callback();
+                $callback(...$params);
             }catch(\Throwable $throwable) {
                 $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
                 $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
             }
-        });
+        }, ...$params);
     }
 
     /**
