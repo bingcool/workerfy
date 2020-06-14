@@ -18,29 +18,66 @@ class ProcessManager {
 
     use \Workerfy\Traits\SingletonTrait;
 
+    /**
+     * @var array
+     */
     private $process_lists = [];
 
+    /**
+     * @var array
+     */
 	private $process_wokers = [];
 
+    /**
+     * @var array
+     */
 	private $process_pid_map = [];
 
+    /**
+     * @var int
+     */
 	private $master_pid;
 
+    /**
+     * @var int
+     */
     private $master_worker_id = 0;
 
+    /**
+     * @var array
+     */
     private $signal = [];
 
+    /**
+     * @var bool
+     */
     private $is_daemon = false;
 
+    /**
+     * @var bool
+     */
     private $is_exit = false;
 
+    /**
+     * @var
+     */
     private $start_time;
 
+    /**
+     * @var bool
+     */
     private $is_running = false;
 
+    /**
+     * @var bool
+     */
     private $is_create_pipe = true;
 
+    /**
+     * @var
+     */
     private $cli_pipe_fd;
+
     /**
      * @var \Closure
      */
@@ -274,6 +311,7 @@ class ProcessManager {
 
     /**
      * 父进程的status通过fifo有名管道信号回传
+     * @param $ctl_pipe_file
      */
     private function masterStatusToCliFifoPipe($ctl_pipe_file) {
         $ctl_pipe = fopen($ctl_pipe_file,'w+');
@@ -542,6 +580,7 @@ class ProcessManager {
      * dynamicCreateProcess 动态创建临时进程
      * @param string $process_name
      * @param int $process_num
+     * @throws \Exception
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
         if($this->isMasterExiting()) {
@@ -582,6 +621,7 @@ class ProcessManager {
 
         for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
             try {
+                /** @var AbstractProcess $process */
                 $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                 $process->setProcessWorkerId($worker_id);
                 $process->setMasterPid($this->master_pid);
@@ -602,6 +642,7 @@ class ProcessManager {
      * destroyDynamicProcess 销毁动态创建的进程
      * @param string $process_name
      * @param int $process_num
+     * @throws \Exception
      */
     public function destroyDynamicProcess(string $process_name, $process_num = -1) {
         $process_workers = $this->getProcessByName($process_name, -1);
@@ -617,8 +658,9 @@ class ProcessManager {
 
     /**
      * getDynamicProcessNum
-     * @param  string $process_name
+     * @param string $process_name
      * @return int
+     * @throws \Exception
      */
     public function getDynamicProcessNum(string $process_name) {
         $dynamic_process_num = 0;
@@ -791,8 +833,8 @@ class ProcessManager {
      * getProcessByName 通过名称获取一个进程
      * @param string $process_name
      * @param int $process_worker_id
-     * @throws \Exception
      * @return mixed|null
+     * @throws \Exception
      */
 	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
         $key = md5($process_name);
@@ -830,6 +872,7 @@ class ProcessManager {
      * @param string $process_name
      * @param int $process_worker_id
      * @return mixed
+     * @throws \Exception
      */
     public function getPidByName(string $process_name, int $process_worker_id) {
         $process = $this->getProcessByName($process_name, $process_worker_id);
@@ -896,6 +939,7 @@ class ProcessManager {
      * @param string $to_process_name
      * @param int $to_process_worker_id
      * @return bool
+     * @throws \Exception
      */
     public function writeByMasterProxy($data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id) {
         if($this->isMaster($to_process_name)) {
@@ -1032,6 +1076,7 @@ class ProcessManager {
      * addProcessByCli
      * @param string $process_name
      * @param int $num
+     * @throws \Exception
      */
     private function addProcessByCli(string $process_name, int $num = 1) {
         $key = md5($process_name);
@@ -1047,6 +1092,7 @@ class ProcessManager {
      * removeProcessByCli
      * @param string $process_name
      * @param int $num
+     * @throws \Exception
      */
     private function removeProcessByCli(string $process_name, int $num = 1) {
         $key = md5($process_name);

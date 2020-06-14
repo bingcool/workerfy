@@ -389,6 +389,7 @@ abstract class AbstractProcess {
      * @param mixed $data
      * @param int $process_worker_id
      * @return bool
+     * @throws \Exception
      */
     public function writeToMasterProcess(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = false;
@@ -401,6 +402,7 @@ abstract class AbstractProcess {
      * @param mixed $data
      * @param int $process_worker_id
      * @return void
+     * @throws \Exception
      */
     public function writeToWorkerByMasterProxy(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = true;
@@ -412,6 +414,7 @@ abstract class AbstractProcess {
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
      * @return void
+     * @throws \Exception
      */
     public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
         if(!$this->is_dynamic_destroy) {
@@ -428,6 +431,7 @@ abstract class AbstractProcess {
      * notifyMasterDestroyDynamicProcess 通知master销毁动态创建的进程
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
+     * @throws \Exception
      */
     public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1) {
         if(!$this->is_dynamic_destroy) {
