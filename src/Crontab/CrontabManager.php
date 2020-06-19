@@ -225,11 +225,19 @@ class CrontabManager {
         if($loop_type == self::loopChannelType) {
             $channel = $this->channels[$cron_name];
             $channel->push(true);
+            $channel->close();
+            unset($this->channels[$cron_name]);
         }else if($loop_type = self::loopTickType) {
             $tick_id = $this->timer_ids[$cron_name];
             \Swoole\Timer::clear($tick_id);
+            unset($this->timer_ids[$cron_name]);
         }
+
         write_info("tickName={$cron_name} has been cancel");
+
+        if(count($this->channels) == 0 && count($this->timer_ids) == 0) {
+            write_info("Process had not exit tick task");
+        }
     }
 
     /**
@@ -244,6 +252,17 @@ class CrontabManager {
             }
         }
         return null;
+    }
+
+    /**
+     * 是否存在正在执行任务
+     * @return bool
+     */
+    public function hasRunningCrontabTask() {
+        if(count($this->channels) > 0 || count($this->timer_ids) > 0) {
+            return true;
+        }
+        return false;
     }
 
 }

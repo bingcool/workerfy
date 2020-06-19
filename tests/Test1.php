@@ -46,4 +46,4 @@ var_dump($str_json);
 
 list($name, ) = $arr;
 
-var_dump($name);
+$a = 4;

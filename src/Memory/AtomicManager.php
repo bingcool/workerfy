@@ -77,7 +77,7 @@ class AtomicManager {
 
     /**
      * 获取以定义的Atomic的名称
-     * @param int $type
+     * @param  int $type
      * @return array
      */
     public function getAllAtomicName(int $type = self::ATOMIC_SHORT) {
