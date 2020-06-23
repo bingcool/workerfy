@@ -37,7 +37,10 @@ class Worker extends \Workerfy\AbstractProcess {
 
         if($this->getProcessWorkerId() == 2) {
             // 自身可以发起创建动态进程
-            $this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
+            try {
+                $this->notifyMasterCreateDynamicProcess($this->getProcessName(), 1);
+            } catch (\Exception $e) {
+            }
         }
 
 

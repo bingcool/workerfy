@@ -31,6 +31,7 @@ class Context {
     /**
      * @param $name
      * @param $value
+     * @throws Exception
      */
     public static function set($name, $value) {
         $context = self::getContext();
@@ -44,6 +45,7 @@ class Context {
     /**
      * @param $name
      * @return bool
+     * @throws Exception
      */
     public static function get($name) {
         $context = self::getContext();
@@ -56,6 +58,7 @@ class Context {
     /**
      * @param $name
      * @return bool
+     * @throws Exception
      */
     public static function has($name) {
         $context = self::getContext();

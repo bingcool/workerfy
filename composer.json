@@ -30,7 +30,7 @@
     "ext-sockets": "*"
   },
   "require-dev": {
-    "ext-sysvmsg": "*"
+    "swoole/ide-helper": "@dev"
   },
   "autoload": {
     "files": ["src/Ctrl.php","src/function.php"],

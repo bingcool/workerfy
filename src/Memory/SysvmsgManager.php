@@ -307,6 +307,7 @@ class SysvmsgManager {
      * getMsgQueueWaitToPopNum 获取队列里面待读取消息体数量
      * @param string $msg_queue_name
      * @return mixed
+     * @throws \Exception
      */
     public function getMsgQueueWaitToPopNum(string $msg_queue_name) {
         $msg_queue = $this->getMsgQueue($msg_queue_name);
@@ -323,6 +324,7 @@ class SysvmsgManager {
      * 队列容量大小，单位字节
      * @param string $msg_queue_name
      * @return mixed
+     * @throws \Exception
      */
     public function getMsgQueueSize(string $msg_queue_name) {
         if(isset($this->sys_kernel_msgmnb)) {
@@ -339,6 +341,7 @@ class SysvmsgManager {
     /**
      * @param string|null $msg_queue_name
      * @return bool
+     * @throws \Exception
      */
     public function destroyMSgQueue(string $msg_queue_name = null) {
         if($msg_queue_name) {

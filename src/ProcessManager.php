@@ -156,7 +156,7 @@ class ProcessManager {
      * @param array $args
      * @param null $extend_data
      * @param bool $enable_coroutine
-     * @throws \Exception
+     * @throws Exception
      */
 	public function addProcess(
 	    string $process_name,
