@@ -871,9 +871,7 @@ abstract class AbstractProcess {
      */
     public function getCurrentRunCoroutineNum() {
         $coroutine_info = \Swoole\Coroutine::stats();
-        if(isset($coroutine_info['coroutine_num'])) {
-            return $coroutine_info['coroutine_num'];
-        }
+        return $coroutine_info['coroutine_num'] ?? null;
     }
 
     /**
@@ -882,9 +880,7 @@ abstract class AbstractProcess {
      */
     public function getCurrentCcoroutineLastCid() {
         $coroutine_info = \Swoole\Coroutine::stats();
-        if(isset($coroutine_info['coroutine_last_cid'])) {
-            return $coroutine_info['coroutine_last_cid'];
-        }
+        return $coroutine_info['coroutine_last_cid'] ?? null;
     }
 
     /**
@@ -912,16 +908,16 @@ abstract class AbstractProcess {
 
     /**
      * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
-     * @param $execfile
+     * @param $execFile
      * @param array $args
      * @return array
      */
-    protected function exec($execfile, array $args = []) {
-        $parmas = '';
+    protected function exec($execFile, array $args = []) {
+        $params = '';
         if($args) {
-            $parmas = implode(' ', $args);
+            $params = implode(' ', $args);
         }
-        $command = $execfile.' '.$parmas;
+        $command = $execFile.' '.$params;
         exec($command,$output,$return);
         return [$command, $output, $return];
     }

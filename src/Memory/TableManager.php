@@ -157,7 +157,7 @@ class TableManager {
     /**
      * 返回table基本信息
      * @param string $table_name
-     * @return array 返回格式 = [$size, $momory, $setting]
+     * @return array 返回格式 = [$size, $memory, $setting]
      * @throws \Exception
      */
     public function getTableInfo(string $table_name) {
