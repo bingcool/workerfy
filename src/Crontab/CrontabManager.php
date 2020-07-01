@@ -82,7 +82,7 @@ class CrontabManager {
         if(!isset($this->cron_tasks[$cron_name])) {
             $this->cron_tasks[$cron_name] = [$expression, $func, $loop_type];
         }else {
-            throw new \Exception("cron_name=$cron_name has been seted, you can not set again!");
+            throw new \Exception("Cron_name=$cron_name had exist, you can not set same again");
         }
 
         if($loop_type == self::loopChannelType) {

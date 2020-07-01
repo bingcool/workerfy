@@ -248,7 +248,7 @@ class ProcessManager {
                 // process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
                 $this->running();
                 $this->installCliPipe();
-                $this->installSigchldsignal();
+                $this->installSigchldSignal();
                 $this->installMasterStopSignal();
                 $this->installMasterReloadSignal();
                 $this->installRegisterShutdownFunction();
@@ -371,9 +371,9 @@ class ProcessManager {
     }
 
     /**
-     * installSigchldsignal 注册回收子进程信号
+     * installSigchldSignal 注册回收子进程信号
      */
-    private function installSigchldsignal() {
+    private function installSigchldSignal() {
         \Swoole\Process::signal(SIGCHLD, function($signo) {
   			$this->rebootOrExitHandle();
 		});

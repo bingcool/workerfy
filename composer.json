@@ -39,7 +39,6 @@
     }
   },
   "autoload-dev": {
-    "files": ["src/Ctrl.php","src/function.php"],
     "psr-4": {
       "Workerfy\\Tests\\": "tests/"
     }
