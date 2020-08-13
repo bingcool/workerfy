@@ -256,7 +256,13 @@ abstract class AbstractProcess {
                                 }
                             }
                             if ($is_call_pipe === true) {
-                                $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
+                                \Swoole\Coroutine::create(function () use($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
+                                    try {
+                                        $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
+                                    }catch (\Throwable $throwable) {
+                                        $this->onHandleException($throwable);
+                                    }
+                                });
                             }
                         }
                     }catch (\Throwable $throwable) {
@@ -875,10 +881,10 @@ abstract class AbstractProcess {
     }
 
     /**
-     * getCurrentCcoroutineLastCid 获取当前进程的协程cid已分配到哪个值，可以根据这个值设置进程reboot,防止cid超出最大数
+     * getCurrentCoroutineLastCid 获取当前进程的协程cid已分配到哪个值，可以根据这个值设置进程reboot,防止cid超出最大数
      * @return int
      */
-    public function getCurrentCcoroutineLastCid() {
+    public function getCurrentCoroutineLastCid() {
         $coroutine_info = \Swoole\Coroutine::stats();
         return $coroutine_info['coroutine_last_cid'] ?? null;
     }

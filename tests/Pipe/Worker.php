@@ -10,7 +10,10 @@ class Worker extends \Workerfy\AbstractProcess {
         // 向父进程发送消息
         var_dump($process_name."子进程开始向父进程发信息.....");
         $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME, '您好，父进程，我是子进程：'.$this->getProcessName().'@'.$this->getProcessWorkerId());
-
+        while (true) {
+            var_dump("last_cid=".$this->getCurrentCoroutineLastCid());
+            sleep(3);
+        }
     }
 
     /**
@@ -22,6 +25,7 @@ class Worker extends \Workerfy\AbstractProcess {
      */
     public function onPipeMsg($msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master)
     {
+        var_dump("coroutine_id=".\Co::getCid());
         var_dump('子进程 '.$this->getProcessName().'@'.$this->getProcessWorkerId().' 收到父进程 '.$from_process_name.'@'.$from_process_worker_id.' 回复的msg : '.$msg);
     }
 }
