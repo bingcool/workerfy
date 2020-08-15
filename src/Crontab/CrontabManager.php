@@ -159,13 +159,13 @@ class CrontabManager {
         $now_time = time();
         $cron_next_datetime = strtotime($cron->getNextRunDate()->format('Y-m-d H:i:s'));
         if($cron->isDue()) {
-            if(!isset($this->cron_next_datetime[$expression_key])) {
-                $this->expression[$expression_key] = $expression;
-                $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+            if(!isset($this->cron_next_datetime[$cron_name][$expression_key])) {
+                $this->expression[$cron_name][$expression_key] = $expression;
+                $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
             }
 
-            if(($now_time >= $this->cron_next_datetime[$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second))) {
-                $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+            if(($now_time >= $this->cron_next_datetime[$cron_name][$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second))) {
+                $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
                 if ($func instanceof \Closure) {
                     try {
                         call_user_func($func, $cron_name, $cron);
@@ -176,8 +176,8 @@ class CrontabManager {
             }
 
             // 防止万一出现的异常出现，比如没有命中任务， 19:05:00要命中的，由于其他网络或者服务器其他原因，阻塞了,造成延迟，现在时间已经到了19::05:05
-            if($now_time > $this->cron_next_datetime[$expression_key] || $now_time >= $cron_next_datetime) {
-                $this->cron_next_datetime[$expression_key] = $cron_next_datetime;
+            if($now_time > $this->cron_next_datetime[$cron_name][$expression_key] || $now_time >= $cron_next_datetime) {
+                $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
             }
         }
     }

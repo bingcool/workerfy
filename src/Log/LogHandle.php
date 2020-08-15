@@ -173,15 +173,19 @@ class LogHandle {
      * @param int $type
      */
     public function insertLog($logInfo, array $context = [], $type = Logger::INFO) {
-        if(is_array($logInfo)) {
-            $logInfo = json_encode($logInfo, JSON_UNESCAPED_UNICODE);
+        try {
+            if(is_array($logInfo)) {
+                $logInfo = json_encode($logInfo, JSON_UNESCAPED_UNICODE);
+            }
+            $log = new Logger($this->channel);
+            $stream = new StreamHandler($this->logFilePath, $type);
+            $stream->setFormatter($this->formatter);
+            $log->pushHandler($stream);
+            // add records to the log
+            $log->addRecord($type, $logInfo, $context);
+        }catch (\Throwable $throwable) {
+
         }
-        $log = new Logger($this->channel);
-        $stream = new StreamHandler($this->logFilePath, $type);
-        $stream->setFormatter($this->formatter);
-        $log->pushHandler($stream);
-        // add records to the log
-        $log->addRecord($type, $logInfo, $context);
     }
 
 }
