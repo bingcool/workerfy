@@ -44,7 +44,8 @@ class GoWaitGroup {
         Coroutine::create(function (...$params) use($callBack) {
             try{
                 $this->count++;
-                $callBack->call($this, ...$params);
+                $args = func_get_args();
+                call_user_func($callBack, ...$args);
             }catch (\Throwable $throwable) {
                 $this->count--;
                 $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
