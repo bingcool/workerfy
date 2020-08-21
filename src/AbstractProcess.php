@@ -776,29 +776,17 @@ abstract class AbstractProcess {
         $is_process_exist = Process::kill($pid, 0);
         // 自定义退出等待时间
         $wait_time && $this->wait_time = $wait_time;
+
         if($is_process_exist && $is_force) {
             $this->is_exit = true;
             $this->is_force_exit = true;
             // 强制退出时，如果设置了reboot的定时器，需要清除
             $this->clearRebootTimer();
-            $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
-                try {
-                    if(!$this->is_reboot) {
-                        $this->runtimeCoroutineWait($this->cycle_times);
-                        $this->onShutDown();
-                    }
-                }catch (\Throwable $throwable) {
-                    $this->onHandleException($throwable);
-                }finally {
-                    $this->kill($pid, SIGTERM);
-                }
-            });
-            $this->exit_timer_id = $timer_id;
-            return true;
+        }else if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
+            $this->is_exit = true;
         }
 
-        if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
-            $this->is_exit = true;
+        if($this->is_exit && !$this->is_reboot) {
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycle_times);
@@ -812,6 +800,7 @@ abstract class AbstractProcess {
             $this->exit_timer_id = $timer_id;
             return true;
         }
+
     }
 
     /**
@@ -820,9 +809,9 @@ abstract class AbstractProcess {
      * @return void
      */
     public function clearRebootTimer() {
+        if($this->is_reboot) $this->is_reboot = false;
         if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id)) {
             \Swoole\Timer::clear($this->reboot_timer_id);
-            $this->is_reboot = false;
         }
     }
 

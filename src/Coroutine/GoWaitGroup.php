@@ -13,6 +13,7 @@ namespace Workerfy\Coroutine;
 
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
+use Workerfy\Log\LogManager;
 
 class GoWaitGroup {
     /**
@@ -48,7 +49,7 @@ class GoWaitGroup {
                 call_user_func($callBack, ...$args);
             }catch (\Throwable $throwable) {
                 $this->count--;
-                $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+                $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
             }
         }, ...$params);
@@ -102,7 +103,7 @@ class GoWaitGroup {
                     $goWait->done($key, $result, 3.0);
                 }catch (\Throwable $throwable) {
                     $goWait->count--;
-                    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+                    $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                     $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
                 }
             });

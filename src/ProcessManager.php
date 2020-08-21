@@ -451,19 +451,19 @@ class ProcessManager {
                                     $extend_data = $list['extend_data'] ?? null;
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
                                     /**
-                                     * @var AbstractProcess $new_process
+                                     * @var AbstractProcess $newProcess
                                      */
-                                    $new_process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
-                                    $new_process->setProcessWorkerId($process_worker_id);
-                                    $new_process->setMasterPid($this->master_pid);
-                                    $new_process->setProcessType($process_type);
-                                    $new_process->setRebootCount($process_reboot_count);
-                                    $new_process->setStartTime();
-                                    $this->process_wokers[$key][$process_worker_id] = $new_process;
+                                    $newProcess = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                                    $newProcess->setProcessWorkerId($process_worker_id);
+                                    $newProcess->setMasterPid($this->master_pid);
+                                    $newProcess->setProcessType($process_type);
+                                    $newProcess->setRebootCount($process_reboot_count);
+                                    $newProcess->setStartTime();
+                                    $this->process_wokers[$key][$process_worker_id] = $newProcess;
 
-                                    $new_process->start();
+                                    $newProcess->start();
 
-                                    $this->swooleEventAdd($new_process);
+                                    $this->swooleEventAdd($newProcess);
 
                                 } catch (\Throwable $throwable) {
                                     if(isset($this->process_wokers[$key][$process_worker_id])) {

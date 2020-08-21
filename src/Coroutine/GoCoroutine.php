@@ -12,6 +12,7 @@
 namespace Workerfy\Coroutine;
 
 use Swoole\Coroutine;
+use Workerfy\Log\LogManager;
 
 class GoCoroutine {
 
@@ -28,9 +29,10 @@ class GoCoroutine {
     public static function go(callable $callback, ...$params) {
         Coroutine::create(function(...$params) use($callback){
             try{
-                $callback(...$params);
+                $args = func_get_args();
+                call_user_func($callback, ...$args);
             }catch(\Throwable $throwable) {
-                $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+                $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
             }
         }, ...$params);
@@ -39,8 +41,9 @@ class GoCoroutine {
     /**
      * @param callable $callback
      */
-    public static function create(callable $callback) {
-        self::go($callback);
+    public static function create(callable $callback,...$params) {
+        $args = func_get_args();
+        self::go($callback, ...$args);
     }
 
 }

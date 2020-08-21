@@ -184,7 +184,7 @@ class LogHandle {
             // add records to the log
             $log->addRecord($type, $logInfo, $context);
         }catch (\Throwable $throwable) {
-
+            var_dump(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
         }
     }
 
