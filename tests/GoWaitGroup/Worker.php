@@ -26,6 +26,10 @@ class Worker extends \Workerfy\AbstractProcess {
         // 模拟处理业务
         sleep(1);
 
+        \Workerfy\Coroutine\GoCoroutine::create(function ($name) {
+            var_dump($name);
+        }, 'bingcool');
+
         // GoWaitGroup实例化
         $wait_group = new \Workerfy\Coroutine\GoWaitGroup();
 

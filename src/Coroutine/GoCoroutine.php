@@ -41,9 +41,8 @@ class GoCoroutine {
     /**
      * @param callable $callback
      */
-    public static function create(callable $callback,...$params) {
-        $args = func_get_args();
-        self::go($callback, ...$args);
+    public static function create(callable $callback, ...$params) {
+        self::go($callback, ...$params);
     }
 
 }
