@@ -12,12 +12,13 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         // GoWaitGroup并发处理
         if($this->getProcessWorkerId() == 1) {
-            $this->waitGroup();
+            //$this->waitGroup();
+            $this->parallel();
         }
 
         // 阻塞串行执行
         if($this->getProcessWorkerId() == 0) {
-            $this->blockRun();
+            //$this->blockRun();
         }
 
     }
@@ -109,6 +110,52 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $last_time = $end_time - $start_time;
         var_dump("阻塞串行请求时长:". $last_time);
+
+    }
+
+    public function parallel() {
+
+        $parallel = new \Workerfy\Coroutine\Parallel(5);
+
+        $parallel->add(function () {
+            sleep(2);
+            throw new \Exception('vvvvvvvvv');
+            return 'test1';
+        },'key1');
+
+        $parallel->add(function () {
+            sleep(2);
+            return 'test2';
+        },'key2');
+
+        $parallel->add(function () {
+            sleep(3);
+            throw new \Exception('gggggggg');
+            return 'test3';
+        },'key3');
+
+        $parallel->add(function () {
+            sleep(2);
+            return 'test4';
+        },'key4');
+
+        $start_time = microtime(true);
+        $parallel->ignoreCallbacks(['key3']);
+        $result = $parallel->wait(5);
+
+        $end_time = microtime(true);
+
+        $time = $end_time - $start_time;
+
+        var_dump('query-time:'.$time);
+
+        var_dump($result);
+
+    }
+
+    public function onHandleException(\Throwable $throwable)
+    {
+        parent::onHandleException($throwable);
 
     }
 }

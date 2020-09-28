@@ -41,6 +41,7 @@ echo 1600 > /proc/sys/kernel/msgmni
 namespace Workerfy\Memory;
 
 class SysvmsgManager {
+
     use \Workerfy\Traits\SingletonTrait;
 
     private $msg_queue = [];
@@ -193,6 +194,7 @@ class SysvmsgManager {
      */
     public function push(string $msg_queue_name, $msg, string $msg_type_name = null) {
         $msg_queue_name_key = md5($msg_queue_name);
+        $msg_type_flag_num = self::COMMON_MSG_TYPE;
         if($msg_type_name) {
             $msg_type_name_key = md5($msg_type_name);
             if(isset($this->msg_type[$msg_queue_name_key][$msg_type_name_key])) {
@@ -202,8 +204,6 @@ class SysvmsgManager {
                 write_info("-------------- $error_msg --------------");
                 throw new \Exception($error_msg);
             }
-        }else {
-            $msg_type_flag_num = self::COMMON_MSG_TYPE;
         }
 
         if(!isset($this->msg_queue[$msg_queue_name_key])) {

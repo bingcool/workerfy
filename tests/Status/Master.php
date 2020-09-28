@@ -7,13 +7,9 @@ date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
 define("PID_FILE_ROOT", '/tmp/workerfy/log/Status');
-// 不存在则创建
-if(!is_dir(PID_FILE_ROOT)) {
-    mkdir(PID_FILE_ROOT,0777,true);
-}
+
 $pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
 define("PID_FILE", $pid_file);
-
 
 $dir_config = dirname(__DIR__);
 $root_path = dirname($dir_config);

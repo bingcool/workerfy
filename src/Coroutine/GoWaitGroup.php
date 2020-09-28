@@ -104,7 +104,7 @@ class GoWaitGroup {
                 }catch (\Throwable $throwable) {
                     $goWait->count--;
                     $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                    $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
+                    $logger->error(sprintf("%s on File %s on Line %d about key=%s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $key));
                 }
             });
         }
@@ -142,7 +142,7 @@ class GoWaitGroup {
      * wait
      */
     public function wait(float $timeout = 0) {
-        while($this->count--) {
+        while($this->count-- > 0) {
             $this->channel->pop($timeout);
         }
         $result = $this->result;
