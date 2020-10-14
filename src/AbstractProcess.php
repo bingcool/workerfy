@@ -216,7 +216,7 @@ abstract class AbstractProcess {
      */
     public function __start(Process $swooleProcess) {
         try {
-            \Swoole\Runtime::enableCoroutine(true);
+            \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL | SWOOLE_HOOK_CURL);
             static::$processInstance = $this;
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();

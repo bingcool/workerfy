@@ -143,7 +143,6 @@ class SysvmsgManager {
             // 队列能存消息体的最大的数量个数
             $msgmni = @file_get_contents("/proc/sys/kernel/msgmni");
             $this->sys_kernel_info = ['msgmax'=>(int)$msg_max, 'msgmnb'=>(int)$msgmnb, 'msgmni'=>(int)$msgmni];
-
         }
         return $this->sys_kernel_info;
     }
