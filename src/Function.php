@@ -43,7 +43,7 @@ function get_one_free_port_coro() {
  * 是否是在主进程环境中
  * @return bool
  */
-function inMasterProcessEnv() {
+function in_master_process_env() {
     $pid = posix_getpid();
     if(defined(MASTER_PID) && $pid == MASTER_PID) {
         return true;
@@ -55,8 +55,8 @@ function inMasterProcessEnv() {
  * 是否是在子进程环境中
  * @return bool
  */
-function inChildrenProcessEnv() {
-    return !inMasterProcessEnv();
+function in_children_process_env() {
+    return !in_master_process_env();
 }
 
 /**

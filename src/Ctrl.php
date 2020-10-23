@@ -153,7 +153,7 @@ function stop() {
         }
         write_info("--------------【Info】Master and children process has stopped --------------",'green');
     }else {
-        write_info("--------------【Warning】Pid={$master_pid} 的进程不存在 --------------");
+        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
     }
     exit(0);
 }
@@ -183,7 +183,7 @@ function reload() {
         }
         write_info("--------------【Info】Children process has reloaded --------------", 'green');
     }else {
-        write_info("--------------【Warning】Pid={$master_pid} 的进程不存在，没法自动reload子进程 --------------");
+        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
     }
     exit(0);
 
@@ -231,7 +231,7 @@ function status() {
     }
 
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信获取状态信息 --------------");
+        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
         exit(0);
     }
 
@@ -277,7 +277,7 @@ function pipe() {
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
         exit(0);
     }
 
@@ -313,7 +313,7 @@ function add(int $wait_time = 5) {
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】 Pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】 Master Process of Pid={$master_pid} is not exist --------------");
         exit(0);
     }
 
@@ -354,7 +354,7 @@ function remove(int $wait_time = 5) {
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】 Pid={$master_pid} 的主进程不存在，无法进行管道通信 --------------");
+        write_info("--------------【Warning】 Master Process of Pid={$master_pid} is not exist --------------");
         exit(0);
     }
 

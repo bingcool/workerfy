@@ -40,8 +40,8 @@ class CrontabManager {
      * @throws \Exception
      */
 	protected function __construct() {
-	    if(function_exists('inChildrenProcessEnv')) {
-	        if(inChildrenProcessEnv() === false) {
+	    if(function_exists('in_children_process_env')) {
+	        if(in_children_process_env() === false) {
 	            throw new \Exception(__CLASS__." only use in children worker process");
             }
         }
