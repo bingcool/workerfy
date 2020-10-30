@@ -54,11 +54,14 @@ class SysvmsgManager {
 
     private $read_sys_kernel = true;
 
-    private $sys_kernel_msgmnb;//队列最大容量
+    //队列最大容量
+    private $sys_kernel_msgmnb;
 
-    private $sys_kernel_info = [];//读取sys_kernel
+    //读取sys_kernel
+    private $sys_kernel_info = [];
 
-    const COMMON_MSG_TYPE = 1; //默认公共消息类型
+    //默认公共消息类型
+    const COMMON_MSG_TYPE = 1;
 
     public function __construct($read_sys_kernel = true) {
         $this->read_sys_kernel = $read_sys_kernel;
@@ -75,13 +78,13 @@ class SysvmsgManager {
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project) {
         $is_success = true;
         if(!extension_loaded('sysvmsg')) {
-            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 缺少sysvmsg扩展，无法使用该功能';
+            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' missing sysvmsg extension';
             write_info("-------------- $error_msg --------------");
             throw new \Exception($error_msg);
         }
 
         if(strlen($project) !=1 ) {
-            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第三个参数project只能是一个字符串';
+            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' the params of project require string type';
             write_info("-------------- $error_msg --------------");
             $is_success = false;
         }
@@ -92,7 +95,7 @@ class SysvmsgManager {
         if(!isset($msg_project[$path_name_key][$project])) {
             $msg_project[$path_name_key][$project] = 1;
         }else {
-            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第三个参数project已经设置有相同的，不能重复设置';
+            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' the params of project is had setting';
             write_info("-------------- $error_msg --------------");
             $is_success = false;
         }
@@ -100,13 +103,13 @@ class SysvmsgManager {
         $msg_key = ftok($path_name, $project);
 
         if($msg_key < 0) {
-            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 创建msg key 失败';
+            $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' create msg_key failed';
             write_info("-------------- $error_msg --------------");
             $is_success = false;
         }
 
         if(!$is_success) {
-            throw new \Exception("【Warning】创建名为{$msg_queue_name}的sysvmsg的队列失败");
+            throw new \Exception("【Warning】create msg_queue_name={$msg_queue_name} of sysvmsg failed");
         }
 
         $msg_queue = msg_get_queue($msg_key,0666);

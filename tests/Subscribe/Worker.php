@@ -2,6 +2,8 @@
 
 namespace Workerfy\Tests\Subscribe;
 
+use Workerfy\Crontab\CrontabManager;
+
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run()
