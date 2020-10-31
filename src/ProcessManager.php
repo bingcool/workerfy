@@ -1160,6 +1160,7 @@ class ProcessManager {
 
     /**
      * setMasterPid
+     * @return void
      */
     private function setMasterPid() {
         if(!isset($this->master_pid)) {
@@ -1171,6 +1172,7 @@ class ProcessManager {
 
     /**
      * setStartTime 设置启动时间
+     * @return void
      */
     private function setStartTime() {
         $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
@@ -1224,6 +1226,7 @@ class ProcessManager {
 
     /**
      * getSysvmsgInfo
+     * @return array
      */
     public function getSysvmsgInfo() {
         $msg_sysvmsg_info = 'Disable sysvmsg(没启用)';
@@ -1254,7 +1257,7 @@ class ProcessManager {
             $this->onRegisterRuntimeLog = function() {
                 $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
                 if(!is_object($logger)) {
-                    $pid_file_root = pathinfo(PID_FILE)['dirname'];
+                    $pid_file_root = pathinfo(PID_FILE,PATHINFO_DIRNAME);
                     $runtime_log = $pid_file_root.'/runtime.log';
                     $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtime_log);
                 }

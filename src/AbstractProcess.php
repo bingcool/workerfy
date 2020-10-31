@@ -154,11 +154,13 @@ abstract class AbstractProcess {
 
     /**
      * 动态进程销毁间隔多少秒后，才能再次接受动态创建，防止频繁销毁和创建，最大300s
+     * @var int
      */
     const DYNAMIC_DESTROY_PROCESS_TIME = 300;
 
     /**
      * 定时检查master是否存活的轮询时间
+     * @var int
      */
     const CHECK_MASTER_LIVE_TICK_TIME = 60;
 
@@ -216,14 +218,14 @@ abstract class AbstractProcess {
      */
     public function __start(Process $swooleProcess) {
         try {
+            if($this->is_exit) {
+                return false;
+            }
             \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL | SWOOLE_HOOK_CURL);
             static::$processInstance = $this;
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();
             $this->setUserAndGroup();
-            if($this->is_exit) {
-                return false;
-            }
             if($this->async) {
                 Event::add($this->swooleProcess->pipe, function () {
                     try {
@@ -851,6 +853,7 @@ abstract class AbstractProcess {
     /**
      * worker0会定时设置master_pid在文件，防止误删该文件后找不到master_pid
      * @param int $master_pid
+     * @return void
      */
     protected function saveMasterId(int $master_pid) {
         if($master_pid == $this->master_pid) {
@@ -920,7 +923,7 @@ abstract class AbstractProcess {
     /**
      * @return AbstractProcess
      */
-    public static function processInstance() {
+    public static function getProcessInstance() {
         return self::$processInstance;
     }
 

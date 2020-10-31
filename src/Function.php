@@ -11,7 +11,10 @@ function json_validate(string $str) {
     return false;
 }
 
-// 随机获取一个监听的端口(php_socket模式)
+/**
+ * 随机获取一个监听的端口(php_socket模式)
+ * @return bool
+ */
 function get_one_free_port() {
     $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
     if (!socket_bind($socket, '0.0.0.0', 0)) {
@@ -28,7 +31,10 @@ function get_one_free_port() {
     return $port;
 }
 
-// 随机获取一个监听的端口(swoole_coroutine模式)
+/**
+ * 随机获取一个监听的端口(swoole_coroutine模式)
+ * @return mixed
+ */
 function get_one_free_port_coro() {
     $socket = new \Swoole\Coroutine\Socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     $socket->bind('0.0.0.0');
