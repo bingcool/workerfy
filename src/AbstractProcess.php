@@ -13,7 +13,7 @@ namespace Workerfy;
 
 use Swoole\Event;
 use Swoole\Process;
-use Workerfy\ProcessManager;
+use Swoole\Coroutine\Channel;
 
 abstract class AbstractProcess {
 
@@ -752,6 +752,7 @@ abstract class AbstractProcess {
         $pid = $this->getPid();
         if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
             $this->is_reboot = true;
+            $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycle_times);
@@ -763,6 +764,8 @@ abstract class AbstractProcess {
                 }
             });
             $this->reboot_timer_id = $timer_id;
+            // 阻塞等待reboot，防止父协程继续往下执行逻辑
+            $channel->pop(-1);
         }
         return true;
     }
@@ -789,6 +792,7 @@ abstract class AbstractProcess {
         }
 
         if($this->is_exit && !$this->is_reboot) {
+            $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycle_times);
@@ -800,6 +804,8 @@ abstract class AbstractProcess {
                 }
             });
             $this->exit_timer_id = $timer_id;
+            // 阻塞等待退出，防止父协程继续往下执行逻辑
+            $channel->pop(-1);
             return true;
         }
 
@@ -894,8 +900,8 @@ abstract class AbstractProcess {
         while($cycle_times > 0) {
             // 当前运行的coroutine
             $runCoroutineNum = $this->getCurrentRunCoroutineNum();
-            // 除了主协程，还有其他协程没唤醒，则再等待
-            if($runCoroutineNum > 1) {
+            // 除了主协程和runtimeCoroutineWait跑在协程中，所以等于2个协程，还有其他协程没唤醒，则再等待
+            if($runCoroutineNum > 2) {
                 --$cycle_times;
                 \Swoole\Coroutine::sleep($re_wait_time);
             }else {
