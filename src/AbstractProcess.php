@@ -482,10 +482,10 @@ abstract class AbstractProcess {
 
     /**
      * start
-     * @return void
+     * @return mixed
      */
     public function start() {
-        $this->swooleProcess->start();
+        return $this->swooleProcess->start();
     }
 
     /**

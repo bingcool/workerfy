@@ -49,6 +49,11 @@ class Worker extends AbstractProcess {
 
         $iv = substr($mdKey, 10, $ivLength);
 
+        go(function () {
+            var_dump("go exit");
+            $this->exit();
+        });
+
         // 加密
         $encrypted = openssl_encrypt($data, $encryptMethod, 'secret', 0, $iv);
 
@@ -60,7 +65,6 @@ class Worker extends AbstractProcess {
 
         var_dump(json_decode($decrypted, true));
 
-        $this->exit();
 
     }
 
