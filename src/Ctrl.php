@@ -63,7 +63,7 @@ array_reduce($argv_arr, function($result, $item) {
     if(in_array($item, ['-d', '-D'])) {
         putenv('daemon=1');
     }else {
-        $item = ltrim($item, '-');
+        $item = ltrim($item, '--');
         putenv($item);
     }
 });
@@ -293,10 +293,10 @@ function pipe() {
     }
     $msg = getenv("msg");
     if($msg) {
-        write_info("--------------【Info】Start write mseesge to master --------------",'green');
+        write_info("--------------【Info】Start write message={$msg} to master --------------",'green');
         fwrite($pipe, $msg);
     }else {
-        write_info("--------------【Warning】Please use pipe -msg=xxxxx --------------");
+        write_info("--------------【Warning】Please use pipe --msg=xxxxx --------------");
     }
     fclose($pipe);
     exit(0);
@@ -334,7 +334,7 @@ function add(int $wait_time = 5) {
         write_info("--------------【Info】 Master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】 Please use pipe -name=xxxxx -num=1 --------------");
+        write_info("--------------【Warning】 Please use pipe --name=xxxxx -num=1 --------------");
     }
     flock($pipe, LOCK_UN);
     fclose($pipe);
@@ -375,7 +375,7 @@ function remove(int $wait_time = 5) {
         write_info("--------------【Info】 Master process start to remova all dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】 Please use pipe -name=xxxxx --------------");
+        write_info("--------------【Warning】 Please use pipe --name=xxxxx --------------");
     }
     fclose($pipe);
     sleep($wait_time);
@@ -408,6 +408,11 @@ function write_info($msg, $foreground = "red", $background = "black") {
     }
 }
 
+/**
+ * master 进程启动时创建注册的有名管道，在master中将入Event::add()事件监听
+ * 终端或者外部程序只需要打开这个有名管道，网里面写数据，master的onCliMsg回调即可收到信息
+ * @return string
+ */
 function getCliPipeFile() {
     $path_info = pathinfo(PID_FILE);
     $path_dir = $path_info['dirname'];

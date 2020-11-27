@@ -245,17 +245,22 @@ abstract class AbstractProcess {
                                 switch ($msg) {
                                     case self::WORKERFY_PROCESS_REBOOT_FLAG :
                                         $is_call_pipe = false;
-                                        $this->reboot();
+                                        \Swoole\Coroutine::create(function () {
+                                            $this->reboot();
+                                        });
                                         break;
                                     case self::WORKERFY_PROCESS_EXIT_FLAG :
                                         $is_call_pipe = false;
-                                        if ($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
-                                            $this->exit(true);
-                                        } else {
-                                            $this->exit();
-                                        }
+                                        \Swoole\Coroutine::create(function () use($from_process_name) {
+                                            if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
+                                                $this->exit(true);
+                                            }else {
+                                                $this->exit();
+                                            }
+                                        });
                                         break;
                                 }
+
                             }
                             if ($is_call_pipe === true) {
                                 \Swoole\Coroutine::create(function () use($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
@@ -268,7 +273,9 @@ abstract class AbstractProcess {
                             }
                         }
                     }catch (\Throwable $throwable) {
-                        $this->onHandleException($throwable);
+                        \Swoole\Coroutine::create(function () use($throwable) {
+                            $this->onHandleException($throwable);
+                        });
                     }
                 });
             }
