@@ -11,7 +11,7 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump($process_name."子进程开始向父进程发信息.....");
         $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME, '您好，父进程，我是子进程：'.$this->getProcessName().'@'.$this->getProcessWorkerId());
         while (true) {
-            var_dump("last_cid=".$this->getCurrentCoroutineLastCid());
+            var_dump("last_cid=".$process_name);
             sleep(3);
         }
     }

@@ -15,6 +15,11 @@ use Swoole\Event;
 use Swoole\Process;
 use Swoole\Coroutine\Channel;
 
+/**
+ * Class AbstractProcess
+ * @package Workerfy
+ */
+
 abstract class AbstractProcess {
 
     /**
@@ -293,6 +298,10 @@ abstract class AbstractProcess {
                     @\Swoole\Timer::clear($this->master_live_timer_id);
                 }
 
+                $processName = $this->getProcessName();
+                $workerId = $this->getProcessWorkerId();
+                write_info("--------[Info] Start to exit process={$processName}, worker_id={$workerId} -------------");
+
                 $this->swooleProcess->exit(SIGTERM);
             });
 
@@ -309,6 +318,10 @@ abstract class AbstractProcess {
                     $this->__destruct();
                 }
 
+                $processName = $this->getProcessName();
+                $workerId = $this->getProcessWorkerId();
+                write_info("--------[Info] Start to reboot process={$processName}, worker_id={$workerId} -------------");
+
                 $this->swooleProcess->exit(SIGUSR1);
             });
 
@@ -317,6 +330,10 @@ abstract class AbstractProcess {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
+                    $processName = $this->getProcessName();
+                    $workerId = $this->getProcessWorkerId();
+                    $masterPid = $this->getMasterPid();
+                    write_info("--------[Warming] 定时检测到父进程master_pid={$masterPid}不存在，子进程process={$processName},worker_id={$workerId} start to exit -------------");
                     $this->exit(true, 1);
                 }
 
@@ -432,14 +449,16 @@ abstract class AbstractProcess {
      * @throws \Exception
      */
     public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
-        if(!$this->is_dynamic_destroy) {
-            $data = [
-                ProcessManager::CREATE_DYNAMIC_WORKER,
-                $dynamic_process_name,
-                $dynamic_process_num
-            ];
-            $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+        if($this->is_dynamic_destroy) {
+            write_info("-------------【Warming】rocess is destroying, forbidden dynamic create process -------------");
+            return;
         }
+        $data = [
+            ProcessManager::CREATE_DYNAMIC_WORKER,
+            $dynamic_process_name,
+            $dynamic_process_num
+        ];
+        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
     }
 
     /**

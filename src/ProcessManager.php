@@ -14,6 +14,11 @@ namespace Workerfy;
 use Swoole\Process;
 use Workerfy\Memory\AtomicManager;
 
+/**
+ * Class ProcessManager
+ * @package Workerfy
+ */
+
 class ProcessManager {
 
     use \Workerfy\Traits\SingletonTrait;
@@ -169,7 +174,7 @@ class ProcessManager {
     ) {
         $key = md5($process_name);
         if(isset($this->process_lists[$key])) {
-            throw new \Exception(__CLASS__ . " Error : you can not add the same process : $process_name", 1);
+            throw new \Exception("【Error】You can not add the same process={$process_name}");
         }
         if(!$enable_coroutine) {
             $enable_coroutine = true;
@@ -180,17 +185,19 @@ class ProcessManager {
 
         $cpu_num = swoole_cpu_num();
 
-        if($process_worker_num > $cpu_num * (self::NUM_PEISHU)) {
-            write_info("--------------【Warning】Params process_worker_num 大于最大的子进程限制数量=cpu_num * ".(self::NUM_PEISHU)."--------------");
-            exit(0);
-        }
+        $max_process_num = $cpu_num * (self::NUM_PEISHU);
 
         if(isset($args['max_process_num'])) {
-            if($args['max_process_num'] > $cpu_num * (self::NUM_PEISHU)) {
-                $args['max_process_num'] = $cpu_num * (self::NUM_PEISHU);
+            if($args['max_process_num'] > $max_process_num) {
+                $args['max_process_num'] = $max_process_num;
             }
         }else {
-            $args['max_process_num'] = $cpu_num * (self::NUM_PEISHU);
+            $args['max_process_num'] = $max_process_num;
+        }
+
+        if($process_worker_num > $max_process_num) {
+            write_info("--------------【Warning】Params process_worker_num 大于最大的子进程限制数量={$max_process_num} --------------");
+            $process_worker_num = $max_process_num;
         }
 
         $this->process_lists[$key] = [
@@ -297,13 +304,20 @@ class ProcessManager {
             switch ($signal) {
                 case SIGINT:
                 case SIGTERM:
-                    foreach ($this->process_wokers as $key => $processes) {
-                        foreach ($processes as $worker_id => $process) {
-                            $process_name = $process->getProcessName();
-                            $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                    if(!$this->is_exit) {
+                        $this->is_exit = true;
+                        foreach ($this->process_wokers as $key => $processes) {
+                            foreach ($processes as $worker_id => $process) {
+                                try {
+                                    $process_name = $process->getProcessName();
+                                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                                }catch (\Exception $exception) {
+                                    write_info("Process={$process_name},worker_id={$worker_id} exit failed, error=".$exception->getMessage());
+                                }
+                            }
                         }
+                        $this->is_exit = false;
                     }
-                    $this->is_exit = true;
                     break;
             }
         };
@@ -630,6 +644,7 @@ class ProcessManager {
                 $this->process_wokers[$key][$worker_id] = $process;
                 $process->start();
                 $this->swooleEventAdd($process);
+                write_info("--------------【Info】 子进程={$process_name},worker_id={$worker_id} 动态创建成功 --------------");
             }catch(\Throwable $throwable) {
                 unset($this->process_wokers[$key][$worker_id], $process);
                 $this->onHandleException->call($this, $throwable);
@@ -652,6 +667,7 @@ class ProcessManager {
                 $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                 // 动态进程销毁，需要自减
                 $this->process_lists[$key]['dynamic_process_worker_num']--;
+                write_info("--------------【Info】 子进程={$process_name},worker_id={$worker_id} 动态销毁成功 --------------");
             }
         }
     }
@@ -843,7 +859,7 @@ class ProcessManager {
         }else if($process_worker_id == -1) {
             return $this->process_wokers[$key];
         }else {
-            throw new \Exception("进程={$process_name}, worker_id={$process_worker_id} is missing ");
+            throw new \Exception("Missing and not found process_name={$process_name}, worker_id={$process_worker_id}");
         }
     }
 
@@ -974,7 +990,7 @@ class ProcessManager {
                     $process->getSwooleProcess()->write($message);
                 }
             }else {
-                $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist {$process_name}, please check it");
+                $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist process={$process_name}, please check it");
             }
         }else {
             $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
