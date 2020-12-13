@@ -949,7 +949,7 @@ abstract class AbstractProcess {
         }
         $command = $execFile.' '.$params;
         exec($command,$output,$return);
-        return [$command, $output, $return];
+        return [$command, $output ?? '', $return ?? ''];
     }
 
     /**
