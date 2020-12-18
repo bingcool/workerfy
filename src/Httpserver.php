@@ -56,12 +56,12 @@ $http->on('request', function ($request, $response) use($http) {
         $params = isset($request->post['params']) ? $request->post['params'] : null;
 
         if(empty($action) || empty($script_filename) || empty($pid_filename)) {
-            $handle->returnJson(1000, 'query params action or script_filename or pid_filename is missing');
+            $handle->returnJson(1000, 'Query params action or script_filename or pid_filename is missing');
             return false;
         }
 
         if($params !== null && !is_array($params)) {
-            $handle->returnJson(1001, 'params must be a array type');
+            $handle->returnJson(1001, 'Params must be a array type');
             return false;
         }
 

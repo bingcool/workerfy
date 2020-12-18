@@ -5,7 +5,7 @@ define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
 // 默认在当前目录runtime下
-define("PID_FILE_ROOT", '/tmp/workerfy/log/MqttSub');
+define("PID_FILE_ROOT", '/tmp/workerfy/log/MqttUnSub');
 // 不存在则创建
 if(!is_dir(PID_FILE_ROOT)) {
     mkdir(PID_FILE_ROOT,0777,true);
@@ -26,8 +26,8 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-master-matt_sub';
-$process_class = \Workerfy\Tests\MqttSub\Worker::class;
+$process_name = 'test-master-matt_unsub';
+$process_class = \Workerfy\Tests\MqttUnSub\Worker::class;
 $process_worker_num = 1;
 $async = true;
 $args = [

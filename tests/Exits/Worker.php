@@ -9,7 +9,7 @@ class Worker extends \Workerfy\AbstractProcess {
             try {
                 var_dump("2s后子进程开始自动退出");
                 sleep(2);
-                //$this->exit(); //可以观察到子进程最终销毁掉
+                $this->exit(); //可以观察到子进程最终销毁掉
                 Task::test();
             }catch (\Exception $e) {
                 $this->onHandleException($e);

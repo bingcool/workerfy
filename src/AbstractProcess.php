@@ -379,7 +379,7 @@ abstract class AbstractProcess {
         $from_process_worker_id = $this->getProcessWorkerId();
         
         if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id) {
-            throw new \Exception('Error can not write message to myself');
+            throw new \Exception('Process can\'t write message to myself');
         }
 
         if($isMaster) {
@@ -390,11 +390,11 @@ abstract class AbstractProcess {
         }
 
         $process_workers = [];
-        $to_process = $processManager->getProcessByName($process_name, $process_worker_id);
-        if(is_object($to_process) && $to_process instanceof AbstractProcess) {
-            $process_workers = [$process_worker_id => $to_process];
-        }else if(is_array($to_process)) {
-            $process_workers = $to_process;
+        $to_target_process = $processManager->getProcessByName($process_name, $process_worker_id);
+        if(is_object($to_target_process) && $to_target_process instanceof AbstractProcess) {
+            $process_workers = [$process_worker_id => $to_target_process];
+        }else if(is_array($to_target_process)) {
+            $process_workers = $to_target_process;
         }
 
         foreach($process_workers as $process_worker_id => $process) {
@@ -770,13 +770,18 @@ abstract class AbstractProcess {
             return false;
         }
 
+        // reboot or exit status
+        if($this->is_reboot || $this->is_exit) {
+            return false;
+        }
+
         // 自定义等待重启时间
         if($wait_time) {
             $this->wait_time = $wait_time;
         }
 
         $pid = $this->getPid();
-        if(Process::kill($pid, 0) && $this->is_reboot === false && $this->is_exit === false) {
+        if(Process::kill($pid, 0)) {
             $this->is_reboot = true;
             $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
@@ -803,21 +808,27 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function exit(bool $is_force = false, float $wait_time = null) {
-        $pid = $this->getPid();
-        $is_process_exist = Process::kill($pid, 0);
-        // 自定义退出等待时间
-        $wait_time && $this->wait_time = $wait_time;
-
-        if($is_process_exist && $is_force) {
-            $this->is_exit = true;
-            $this->is_force_exit = true;
-            // 强制退出时，如果设置了reboot的定时器，需要清除
-            $this->clearRebootTimer();
-        }else if($is_process_exist && $this->is_exit === false && $this->is_reboot === false) {
-            $this->is_exit = true;
+        // 设置强制退出后，不能再设置exit
+        if($this->is_force_exit) {
+            return false;
         }
 
-        if($this->is_exit && !$this->is_reboot) {
+        // reboot or exit status
+        if($this->is_reboot || $this->is_exit) {
+            return false;
+        }
+        $pid = $this->getPid();
+        if(Process::kill($pid, 0)) {
+            $this->is_exit = true;
+            if($is_force) {
+                $this->is_force_exit = true;
+            }
+            // 设置了reboot的定时器，需要清除
+            $this->clearRebootTimer();
+
+            // 自定义退出等待时间
+            $wait_time && $this->wait_time = $wait_time;
+
             $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
@@ -934,22 +945,6 @@ abstract class AbstractProcess {
                 break;
             }
         }
-    }
-
-    /**
-     * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
-     * @param $execFile
-     * @param array $args
-     * @return array
-     */
-    protected function exec($execFile, array $args = []) {
-        $params = '';
-        if($args) {
-            $params = implode(' ', $args);
-        }
-        $command = $execFile.' '.$params;
-        exec($command,$output,$return);
-        return [$command, $output ?? '', $return ?? ''];
     }
 
     /**

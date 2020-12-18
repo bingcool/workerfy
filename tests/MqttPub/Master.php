@@ -26,7 +26,7 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
-$process_name = 'test-master-sleep';
+$process_name = 'test-master-mqtt_pub';
 $process_class = \Workerfy\Tests\MqttPub\Worker::class;
 $process_worker_num = 1;
 $async = true;

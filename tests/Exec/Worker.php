@@ -1,6 +1,8 @@
 <?php
 namespace Workerfy\Tests\Exec;
 
+use Workerfy\CommandRunner;
+
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
@@ -13,16 +15,25 @@ class Worker extends \Workerfy\AbstractProcess {
 
         //
         go(function () {
-            list($command, $output, $return) = $this->exec("/bin/echo",['hello']);
-            var_dump($command);
+            //list($command, $output, $return) = CommandRunner::exec("/bin/echo",['hello']);
+            //var_dump($command);
+
+            $return = CommandRunner::procOpen(function ($pipe0, $pipe1, $pipe2) {
+                fwrite($pipe0, 'bingcool');
+                var_dump(fread($pipe1, 8192), fread($pipe2, 8192));
+                return 'zhongguo';
+            } ,"php --ri swoole");
+
+            var_dump($return);
+
         });
 
         var_dump($this->getProcessWorkerId());
         //$this->getProcess()->exec('/bin/echo', ['hello']);
 
-        var_dump("exec ");
+        //var_dump("exec ");
 
-        Service::test();
+        //Service::test();
 
     }
 }

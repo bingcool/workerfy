@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\MqttSub;
+namespace Workerfy\Tests\MqttUnSub;
 
 use Simps\MQTT\Client;
 
@@ -17,51 +17,22 @@ class Worker extends \Workerfy\AbstractProcess {
         ];
 
         $client = new Client($config, ['open_mqtt_protocol' => true, 'package_max_length' => 2 * 1024 * 1024]);
+
+        //$client = new \Simps\MQTT\ClientStream($config, ['open_mqtt_protocol' => true, 'package_max_length' => 2 * 1024 * 1024]);
+
         $will = [
             'topic' => 'simps-mqtt/user001/update',
             'qos' => 1,
             'retain' => 0,
             'message' => '' . time(),
         ];
-
-        while (! $client->connect(true, $will)) {
+        while (! $client->connect(false, $will)) {
             \Swoole\Coroutine::sleep(3);
             $client->connect(true, $will);
         }
-
-        $topics['simps-mqtt/user001/get'] = 0;
-        $topics['simps-mqtt/user001/update'] = 1;
-        $timeSincePing = time();
-        var_dump('start subscribe');
-        $response = $client->subscribe($topics);
-
-        var_dump($response);
-
-        while (true) {
-            try {
-                $buffer = $client->recv();
-                if($buffer !== true) {
-                    var_dump($buffer);
-                }
-            }catch (\Throwable $t) {
-                var_dump($t->getMessage().'trace='.$t->getTraceAsString());
-                continue;
-            }
-
-            if ($buffer && $buffer !== true) {
-                $timeSincePing = time();
-            }
-            if (isset($config['keep_alive']) && $timeSincePing < (time() - $config['keep_alive'])) {
-                $buffer = $client->ping();
-                if ($buffer) {
-                    echo 'send ping success' . PHP_EOL;
-                    $timeSincePing = time();
-                } else {
-                    $client->close();
-                    break;
-                }
-            }
-        }
+        $topics = ['simps-mqtt/user001/get'];
+        $res = $client->unsubscribe($topics);
+        var_dump($res);
     }
 
     public function onShutDown()
