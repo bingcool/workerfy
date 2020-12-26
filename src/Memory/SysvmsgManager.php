@@ -73,7 +73,7 @@ class SysvmsgManager {
      * @param string $path_name
      * @param string $project
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project) {
         $is_success = true;
@@ -155,7 +155,7 @@ class SysvmsgManager {
      * @param string $msg_queue_name
      * @param string $msg_type_name
      * @param int $msg_type_flag_num
-     * @throws \Exception
+     * @throws Exception
      */
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
@@ -192,7 +192,7 @@ class SysvmsgManager {
      * @param $msg
      * @param string|null $msg_type_name
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function push(string $msg_queue_name, $msg, string $msg_type_name = null) {
         $msg_queue_name_key = md5($msg_queue_name);
@@ -231,7 +231,7 @@ class SysvmsgManager {
      * @param string|null $msg_type_name
      * @param int $max_size
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function pop(string $msg_queue_name, string $msg_type_name = null, int $max_size = 65535) {
         $msg_queue_name_key = md5($msg_queue_name);
@@ -270,7 +270,7 @@ class SysvmsgManager {
      * getMsgQueue 获取队列实例
      * @param string $msg_queue_name
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getMsgQueue(string $msg_queue_name) {
         $msg_queue_name_key = md5($msg_queue_name);
@@ -287,7 +287,7 @@ class SysvmsgManager {
      * @param string $msg_queue_name
      * @param string|null $msg_type_name
      * @return int|mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getMsgType(string $msg_queue_name, string $msg_type_name = null) {
         $msg_queue_name_key = md5($msg_queue_name);
@@ -309,7 +309,7 @@ class SysvmsgManager {
      * getMsgQueueWaitToPopNum 获取队列里面待读取消息体数量
      * @param string $msg_queue_name
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getMsgQueueWaitToPopNum(string $msg_queue_name) {
         $msg_queue = $this->getMsgQueue($msg_queue_name);
@@ -326,7 +326,7 @@ class SysvmsgManager {
      * 队列容量大小，单位字节
      * @param string $msg_queue_name
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getMsgQueueSize(string $msg_queue_name) {
         if(isset($this->sys_kernel_msgmnb)) {

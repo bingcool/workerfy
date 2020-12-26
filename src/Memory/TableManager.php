@@ -91,7 +91,7 @@ class TableManager {
 
     /**
      * @param string $table_name
-     * @throws \Exception
+     * @throws Exception
      * @return mixed
      */
     public function getTable(string $table_name) {
