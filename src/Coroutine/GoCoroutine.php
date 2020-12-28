@@ -29,8 +29,7 @@ class GoCoroutine {
     public static function go(callable $callback, ...$params) {
         Coroutine::create(function(...$params) use($callback){
             try{
-                $args = func_get_args();
-                call_user_func($callback, ...$args);
+                call_user_func($callback, ...$params);
             }catch(\Throwable $throwable) {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));

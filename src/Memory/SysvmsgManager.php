@@ -79,13 +79,13 @@ class SysvmsgManager {
         $is_success = true;
         if(!extension_loaded('sysvmsg')) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' missing sysvmsg extension';
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
         if(strlen($project) !=1 ) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' the params of project require string type';
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             $is_success = false;
         }
 
@@ -96,7 +96,7 @@ class SysvmsgManager {
             $msg_project[$path_name_key][$project] = 1;
         }else {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' the params of project is had setting';
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             $is_success = false;
         }
 
@@ -104,7 +104,7 @@ class SysvmsgManager {
 
         if($msg_key < 0) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' create msg_key failed';
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             $is_success = false;
         }
 
@@ -160,7 +160,7 @@ class SysvmsgManager {
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__.' 第三个参数msg_flag_num必须大于0';
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
@@ -169,7 +169,7 @@ class SysvmsgManager {
 
         if(isset($this->msg_type[$msg_queue_name_key][$msg_type_name_key])) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 第二个参数msg_type_name={$msg_type_name}已经存在设置";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
@@ -177,7 +177,7 @@ class SysvmsgManager {
             $register_msg_flag_num = array_values($this->msg_type[$msg_queue_name_key]);
             if(in_array($msg_type_flag_num, $register_msg_flag_num)) {
                 $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 第三个参数msg_type_flag_num={$msg_type_flag_num}已经存在设置,不要重复设置";
-                write_info("-------------- $error_msg --------------");
+                write_info($error_msg);
                 throw new \Exception($error_msg);
             }
         }
@@ -203,14 +203,14 @@ class SysvmsgManager {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
                 $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 消息类型={$msg_type_name},不存在";
-                write_info("-------------- $error_msg --------------");
+                write_info($error_msg);
                 throw new \Exception($error_msg);
             }
         }
 
         if(!isset($this->msg_queue[$msg_queue_name_key])) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 队列名称：{$msg_queue_name},不存在";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
@@ -219,7 +219,7 @@ class SysvmsgManager {
 
         if($res === false) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." msg_send() 发送消息失败，返回错误码：{$errorcode}";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             return false;
         }
         return true;
@@ -237,7 +237,7 @@ class SysvmsgManager {
         $msg_queue_name_key = md5($msg_queue_name);
         if(!isset($this->msg_queue[$msg_queue_name_key])) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 队列名称：{$msg_queue_name},不存在";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
@@ -247,7 +247,7 @@ class SysvmsgManager {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
                 $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 消息类型={$msg_type_name},不存在";
-                write_info("-------------- $error_msg --------------");
+                write_info($error_msg);
                 throw new \Exception($error_msg);
             }
         }else {
@@ -258,7 +258,7 @@ class SysvmsgManager {
         $res = msg_receive($msg_queue, $msg_type_flag_num, $msg_type, $max_size, $msg, true, 0, $errorcode);
         if($res === false) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." msg_receive() 接收消息失败，返回错误码：{$errorcode}";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
 
@@ -276,7 +276,7 @@ class SysvmsgManager {
         $msg_queue_name_key = md5($msg_queue_name);
         if(!isset($this->msg_queue[$msg_queue_name_key])) {
             $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 队列名称：{$msg_queue_name},不存在";
-            write_info("-------------- $error_msg --------------");
+            write_info($error_msg);
             throw new \Exception($error_msg);
         }
         return $msg_queue = $this->msg_queue[$msg_queue_name_key];
@@ -298,7 +298,7 @@ class SysvmsgManager {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
                 $error_msg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 消息类型={$msg_type_name},不存在";
-                write_info("-------------- $error_msg --------------");
+                write_info($error_msg);
                 throw new \Exception($error_msg);
             }
         }

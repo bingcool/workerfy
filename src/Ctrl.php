@@ -13,22 +13,22 @@ include_once __DIR__.'/WorkerfyConst.php';
 include_once __DIR__.'/EachColor.php';
 
 if(!version_compare(phpversion(),'7.1.0', '>=')) {
-    write_info("--------------【Warning】php version require >= php7.1+ --------------");
+    write_info("【Warning】php version require >= php7.1+");
     exit(0);
 }
 
 if(!version_compare(swoole_version(),'4.4.5','>=')) {
-    write_info("--------------【Warning】swoole version require >= 4.4.5 --------------");
+    write_info("【Warning】swoole version require >= 4.4.5");
     exit(0);
 }
 
 if(!defined('START_SCRIPT_FILE')) {
-    write_info("--------------【Warning】Please define Constans START_SCRIPT_FILE --------------");
+    write_info("【Warning】Please define Constans START_SCRIPT_FILE");
     exit(0);
 }
 
 if(!defined('PID_FILE')) {
-    write_info("--------------【Warning】Please define Constans PID_FILE --------------");
+    write_info("【Warning】Please define Constans PID_FILE");
     exit(0);
 }
 
@@ -99,7 +99,7 @@ switch($command) {
         remove();
         break;
     default :
-        write_info("--------------【Warning】You must use 【start, stop, reload, status, pipe, add, remove】command --------------");
+        write_info("【Warning】You must use 【start, stop, reload, status, pipe, add, remove】command");
         exit(0);
 }
 
@@ -110,11 +110,11 @@ function start() {
             $master_pid = (int) $master_pid;
         }else {
             unlink(PID_FILE);
-            write_info("--------------【Warning】Master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
         if(\Swoole\Process::kill($master_pid, 0)) {
-            write_info("--------------【Warning】Master process has started, you can not start again --------------");
+            write_info("【Warning】Master process has started, you can not start again");
             exit(0);
         }
     }
@@ -124,7 +124,7 @@ function start() {
         define("WORKER_NUM", $worker_num);
     }
 
-    write_info("--------------【Info】Master && Children process ready to start, please wait a time ...... --------------",'green');
+    write_info("【Info】Master && Children process ready to start, please wait a time ......",'green');
 
 }
 
@@ -134,7 +134,7 @@ function stop() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】Master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
@@ -142,7 +142,7 @@ function stop() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGTERM);
         if($res) {
-            write_info("--------------【Info】Master and children process start to stop, please wait a time --------------",'green');
+            write_info("【Info】Master and children process start to stop, please wait a time",'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
@@ -151,9 +151,9 @@ function stop() {
             }
             sleep(1);
         }
-        write_info("--------------【Info】Master and children process has stopped --------------",'green');
+        write_info("【Info】Master and children process has stopped",'green');
     }else {
-        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
     }
     exit(0);
 }
@@ -164,7 +164,7 @@ function reload() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】Master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
@@ -172,7 +172,7 @@ function reload() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGUSR2);
         if($res) {
-            write_info("--------------【Info】Children process start to reload, please wait a time --------------", 'green');
+            write_info("【Info】Children process start to reload, please wait a time", 'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
@@ -181,9 +181,9 @@ function reload() {
             }
             sleep(1);
         }
-        write_info("--------------【Info】Children process has reloaded --------------", 'green');
+        write_info("【Info】Children process has reloaded", 'green');
     }else {
-        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
     }
     exit(0);
 
@@ -195,7 +195,7 @@ function restart() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】Master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
@@ -203,7 +203,7 @@ function restart() {
     if(\Swoole\Process::kill($master_pid, 0)) {
         $res = \Swoole\Process::kill($master_pid, SIGTERM);
         if($res) {
-            write_info("--------------【Info】master and children process start to stop, please wait a time --------------",'green');
+            write_info("【Info】Master and children process start to stop, please wait a time",'green');
         }
         $start_stop_time = time();
         while(\Swoole\Process::kill($master_pid, 0)) {
@@ -212,10 +212,10 @@ function restart() {
             }
             sleep(1);
         }
-        write_info("--------------【Info】master and children process has stopped --------------",'green');
+        write_info("【Info】Master and children process has stopped",'green');
     }
 
-    write_info("--------------【Info】master and children ready to restart, please wait a time --------------",'green');
+    write_info("【Info】Master and children ready to restart, please wait a time",'green');
 
 }
 
@@ -225,20 +225,20 @@ function status() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
 
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     $ctl_pipe_file = getCtlPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe, so can not show status --------------");
+        write_info("【Warning】 Master process is not enable cli pipe, so can not show status");
         exit(0);
     }
     $pipe = fopen($pipe_file,'r+');
@@ -272,31 +272,31 @@ function pipe() {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe--------------");
+        write_info("【Warning】 Master process is not enable cli pipe");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
     if(!flock($pipe, LOCK_EX)) {
-        write_info("--------------【Warning】 Get file flock fail --------------");
+        write_info("【Warning】 Get file flock failed");
         exit(0);
     }
     $msg = getenv("msg");
     if($msg) {
-        write_info("--------------【Info】Start write message={$msg} to master --------------",'green');
+        write_info("【Info】Start write message={$msg} to master",'green');
         fwrite($pipe, $msg);
     }else {
-        write_info("--------------【Warning】Please use pipe --msg=xxxxx --------------");
+        write_info("【Warning】Please use pipe --msg=xxxxx");
     }
     fclose($pipe);
     exit(0);
@@ -308,38 +308,38 @@ function add(int $wait_time = 5) {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】Master pid is invalid --------------");
+            write_info("【Warning】Master pid is invalid");
             exit(0);
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】 Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】 Master Process of Pid={$master_pid} is not exist");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe, can not add process --------------");
+        write_info("【Warning】 Master process is not enable cli pipe, can not add process");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
     if(!flock($pipe, LOCK_EX)) {
-        write_info("--------------【Warning】 Get file flock fail --------------");
+        write_info("【Warning】 Get file flock failed");
         exit(0);
     }
     $name = getenv("name");
     $num = getenv('num') ? getenv('num') : 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Info】 Master process start to create dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
+        write_info("【Info】 Master process start to create dynamic process, please wait a time(about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】 Please use pipe --name=xxxxx -num=1 --------------");
+        write_info("【Warning】 Please use pipe --name=xxxxx -num=1");
     }
     flock($pipe, LOCK_UN);
     fclose($pipe);
     sleep($wait_time);
-    write_info("--------------【Info】 Dynamic process add successful, you can show status to see --------------", 'green');
+    write_info("【Info】 Dynamic process add successful, you can show status to see", 'green');
     exit(0);
 }
 
@@ -349,37 +349,37 @@ function remove(int $wait_time = 5) {
         if(is_numeric($master_pid)) {
             $master_pid = (int) $master_pid;
         }else {
-            write_info("--------------【Warning】 Master pid is invalid --------------");
+            write_info("【Warning】 Master pid is invalid");
             exit(0);
         }
     }
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("--------------【Warning】 Master Process of Pid={$master_pid} is not exist --------------");
+        write_info("【Warning】 Master Process of Pid={$master_pid} is not exist");
         exit(0);
     }
 
     $pipe_file = getCliPipeFile();
     if(filetype($pipe_file) != 'fifo' || !file_exists($pipe_file)) {
-        write_info("--------------【Warning】 Master process is not enable cli pipe, can not remove process --------------");
+        write_info("【Warning】 Master process is not enable cli pipe, can not remove process");
         exit(0);
     }
     $pipe = fopen($pipe_file,'w+');
     if(!flock($pipe, LOCK_EX)) {
-        write_info("--------------【Warning】 Get file flock fail --------------");
+        write_info("【Warning】 Get file flock failed");
         exit(0);
     }
     $name = getenv("name");
     $num = getenv('num') ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("--------------【Info】 Master process start to remova all dynamic process, please wait a time(about {$wait_time}s) --------------",'green');
+        write_info("【Info】 Master process start to remova all dynamic process, please wait a time(about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("--------------【Warning】 Please use pipe --name=xxxxx --------------");
+        write_info("【Warning】 Please use pipe --name=xxxxx");
     }
     fclose($pipe);
     sleep($wait_time);
-    write_info("--------------【Info】 All process_name={$name} of dynamic process be removed, you can show status to see --------------", 'green');
+    write_info("【Info】 All process_name={$name} of dynamic process be removed, you can show status to see", 'green');
     exit(0);
 }
 
@@ -390,7 +390,8 @@ function write_info($msg, $foreground = "red", $background = "black") {
     if(!isset($colors)) {
         $colors = new \Workerfy\EachColor();
     }
-    echo $colors->getColoredString($msg, $foreground, $background) . "\n\n";
+    $formatMsg = "--------------{$msg} --------------";
+    echo $colors->getColoredString($formatMsg, $foreground, $background) . "\n\n";
     if(defined("CTL_LOG_FILE")) {
         if(defined('MAX_LOG_FILE_SIZE')) {
              $max_log_file_size = MAX_LOG_FILE_SIZE;
@@ -410,7 +411,7 @@ function write_info($msg, $foreground = "red", $background = "black") {
 
 /**
  * master 进程启动时创建注册的有名管道，在master中将入Event::add()事件监听
- * 终端或者外部程序只需要打开这个有名管道，网里面写数据，master的onCliMsg回调即可收到信息
+ * 终端或者外部程序只需要打开这个有名管道，往里面写数据，master的onCliMsg回调即可收到信息
  * @return string
  */
 function getCliPipeFile() {

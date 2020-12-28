@@ -196,7 +196,7 @@ class ProcessManager {
         }
 
         if($process_worker_num > $max_process_num) {
-            write_info("--------------【Warning】Params process_worker_num 大于最大的子进程限制数量={$max_process_num} --------------");
+            write_info("【Warning】Params process_worker_num 大于最大的子进程限制数量={$max_process_num}");
             $process_worker_num = $max_process_num;
         }
 
@@ -598,7 +598,7 @@ class ProcessManager {
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
         if($this->isMasterExiting()) {
-            write_info("--------------【Warning】 master进程正在处于exiting退出状态，不能再动态创建子进程 --------------");
+            write_info("【Warning】 Master进程正在处于exiting退出状态，不能再动态创建子进程");
             return false;
         }
 
@@ -629,7 +629,7 @@ class ProcessManager {
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
         // 超出限定总数，禁止动态创建
         if($running_process_worker_num >= $total_process_num) {
-            write_info("--------------【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程 --------------");
+            write_info("【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程");
             return false;
         }
 
@@ -644,7 +644,7 @@ class ProcessManager {
                 $this->process_wokers[$key][$worker_id] = $process;
                 $process->start();
                 $this->swooleEventAdd($process);
-                write_info("--------------【Info】 子进程={$process_name},worker_id={$worker_id} 动态创建成功 --------------");
+                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态创建成功");
             }catch(\Throwable $throwable) {
                 unset($this->process_wokers[$key][$worker_id], $process);
                 $this->onHandleException->call($this, $throwable);
@@ -667,7 +667,7 @@ class ProcessManager {
                 $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                 // 动态进程销毁，需要自减
                 $this->process_lists[$key]['dynamic_process_worker_num']--;
-                write_info("--------------【Info】 子进程={$process_name},worker_id={$worker_id} 动态销毁成功 --------------");
+                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态销毁成功 ");
             }
         }
     }
@@ -1099,7 +1099,7 @@ class ProcessManager {
         if(isset($this->process_lists[$key])) {
             $this->createDynamicProcess($process_name, $num);
         }else {
-            write_info("--------------【Warning】Not exist children_process_name = {$process_name}, add failed --------------");
+            write_info("【Warning】Not exist children_process_name = {$process_name}, add failed");
         }
 
     }
@@ -1115,7 +1115,7 @@ class ProcessManager {
         if(isset($this->process_lists[$key])) {
             $this->destroyDynamicProcess($process_name, $num);
         }else {
-            write_info("--------------【Warning】Not exist children_process_name = {$process_name}, remove failed --------------");
+            write_info("【Warning】Not exist children_process_name = {$process_name}, remove failed");
         }
     }
 
@@ -1169,7 +1169,7 @@ class ProcessManager {
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
             @\Swoole\Process::signal(SIGTERM, null);
-            write_info("--------------【Warning】 master进程stop, master_pid={$this->master_pid}--------------");
+            write_info("【Warning】master进程stop, master_pid={$this->master_pid}");
 
         });
     }

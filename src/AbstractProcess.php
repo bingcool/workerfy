@@ -300,7 +300,7 @@ abstract class AbstractProcess {
 
                 $processName = $this->getProcessName();
                 $workerId = $this->getProcessWorkerId();
-                write_info("--------[Info] Start to exit process={$processName}, worker_id={$workerId} -------------");
+                write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
 
                 $this->swooleProcess->exit(SIGTERM);
             });
@@ -320,7 +320,7 @@ abstract class AbstractProcess {
 
                 $processName = $this->getProcessName();
                 $workerId = $this->getProcessWorkerId();
-                write_info("--------[Info] Start to reboot process={$processName}, worker_id={$workerId} -------------");
+                write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
 
                 $this->swooleProcess->exit(SIGUSR1);
             });
@@ -333,7 +333,7 @@ abstract class AbstractProcess {
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
                     $masterPid = $this->getMasterPid();
-                    write_info("--------[Warming] 定时检测到父进程master_pid={$masterPid}不存在，子进程process={$processName},worker_id={$workerId} start to exit -------------");
+                    write_info("【Warming】定时检测到父进程master_pid={$masterPid}不存在，子进程process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
 
@@ -450,7 +450,7 @@ abstract class AbstractProcess {
      */
     public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
         if($this->is_dynamic_destroy) {
-            write_info("-------------【Warming】rocess is destroying, forbidden dynamic create process -------------");
+            write_info("【Warming】process is destroying, forbidden dynamic create process");
             return;
         }
         $data = [
@@ -965,7 +965,7 @@ abstract class AbstractProcess {
         // Get uid.
         $user_info = posix_getpwnam($this->user);
         if(!$user_info) {
-            write_info("--------------【Warning】User {$this->user} not exsits --------------");
+            write_info("【Warning】User {$this->user} not exist");
             $this->exit();
             return false;
         }
@@ -974,7 +974,7 @@ abstract class AbstractProcess {
         if($this->group) {
             $group_info = posix_getgrnam($this->group);
             if(!$group_info) {
-                write_info("--------------【Warning】Group {$this->group} not exsits --------------");
+                write_info("【Warning】Group {$this->group} not exist");
                 $this->exit();
                 return false;
             }
@@ -986,7 +986,7 @@ abstract class AbstractProcess {
         // Set uid and gid.
         if($uid !== posix_getuid() || $gid !== posix_getgid()) {
             if(!posix_setgid($gid) || !posix_initgroups($user_info['name'], $gid) || !posix_setuid($uid)) {
-                write_info("--------------【Warning】change gid or uid fail --------------");
+                write_info("【Warning】change gid or uid failed");
             }
         }
     }

@@ -12,7 +12,8 @@ function json_validate(string $str) {
 }
 
 /**
- * 随机获取一个监听的端口(php_socket模式)
+ * 随机获取一个监听的端口
+ * php_socket模式
  * @return bool
  */
 function get_one_free_port() {
@@ -32,7 +33,8 @@ function get_one_free_port() {
 }
 
 /**
- * 随机获取一个监听的端口(swoole_coroutine模式)
+ * 随机获取一个监听的端口
+ * swoole_coroutine模式
  * @return mixed
  */
 function get_one_free_port_coro() {

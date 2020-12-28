@@ -12,9 +12,11 @@
 namespace Workerfy\Memory;
 
 class AtomicManager {
+
     use \Workerfy\Traits\SingletonTrait;
 
     const ATOMIC_SHORT = 1;
+
     const ATOMIC_LONG = 2;
 
     private $swoole_atomic = [];

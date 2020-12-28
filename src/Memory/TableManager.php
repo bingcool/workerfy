@@ -58,7 +58,7 @@ class TableManager {
 
         $this->swoole_tables[$table_name] = $table;
 
-        // 标志启用
+        // flag enable
         defined('ENABLE_WORKERFY_SWOOLE_TABLE') or define('ENABLE_WORKERFY_SWOOLE_TABLE', 1);
 
         return $table;

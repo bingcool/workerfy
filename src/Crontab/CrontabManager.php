@@ -233,10 +233,10 @@ class CrontabManager {
             unset($this->timer_ids[$cron_name]);
         }
 
-        write_info("tickName={$cron_name} has been cancel");
+        write_info("【Info】tickName={$cron_name} has been cancel");
 
         if(count($this->channels) == 0 && count($this->timer_ids) == 0) {
-            write_info("Process had not exit tick task");
+            write_info("【Info】Process had not exit tick task");
         }
     }
 
