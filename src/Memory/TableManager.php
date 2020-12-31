@@ -28,7 +28,7 @@ class TableManager {
         'conflict_proportion' => 0.2,
         // 字段
         'fields'=> [
-            ['tick_tasks','string',8096]
+            ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
         ]
      ]
      * @throws \Exception

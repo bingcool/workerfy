@@ -31,9 +31,22 @@ class Worker extends \Workerfy\AbstractProcess {
             // 自身可以发起创建动态进程
             //$this->notifyMasterCreateDynamicProcess($this->getProcessName(),1);
         }
-        $tmp = str_repeat('http://www.nowamagic.net/', 40000);
-        var_dump(ini_get('memory_limit'));
-        var_dump('worker'.$this->getProcessWorkerId());
+
+//        swoole_timer_tick(3000, function () {
+//            var_dump('kkkkkk-cid='.\Co::getCid());
+//        });
+
+        while (true)
+        {
+            try {
+                var_dump("nmmmmmmmm");
+                throw new \Exception('vvvvvv');
+            }catch (\Exception $e) {
+                $this->onHandleException($e);
+            }
+
+            sleep(2);
+        }
 
     }
 

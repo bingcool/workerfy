@@ -333,9 +333,7 @@ class ProcessManager {
         fwrite($ctl_pipe, $master_info);
         foreach($this->process_wokers as $key => $processes) {
             ksort($processes);
-            /**
-             * @var AbstractProcess $process
-             */
+            /** @var AbstractProcess $process */
             foreach($processes as $process_worker_id => $process) {
                 $process_name = $process->getProcessName();
                 $worker_id = $process->getProcessWorkerId();
@@ -464,9 +462,7 @@ class ProcessManager {
                                     $args = $list['args'] ?? [];
                                     $extend_data = $list['extend_data'] ?? null;
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
-                                    /**
-                                     * @var AbstractProcess $newProcess
-                                     */
+                                    /** @var AbstractProcess $newProcess */
                                     $newProcess = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
                                     $newProcess->setProcessWorkerId($process_worker_id);
                                     $newProcess->setMasterPid($this->master_pid);

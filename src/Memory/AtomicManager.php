@@ -78,7 +78,7 @@ class AtomicManager {
     }
 
     /**
-     * 获取以定义的Atomic的名称
+     * getAllAtomicName
      * @param  int $type
      * @return array
      */
