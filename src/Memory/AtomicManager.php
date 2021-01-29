@@ -19,9 +19,9 @@ class AtomicManager {
 
     const ATOMIC_LONG = 2;
 
-    private $swoole_atomic = [];
+    private $swooleAtomic = [];
 
-    private $swoole_atomic_long = [];
+    private $swooleAtomicLong = [];
 
     /**
      * addAtomic
@@ -30,11 +30,11 @@ class AtomicManager {
      * @return mixed
      */
     public function addAtomic(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swoole_atomic[$atomic_name])) {
+        if(!isset($this->swooleAtomic[$atomic_name])) {
             $atomic = new \Swoole\Atomic($init_value);
-            $this->swoole_atomic[$atomic_name] = $atomic;
+            $this->swooleAtomic[$atomic_name] = $atomic;
         }
-        return $this->swoole_atomic[$atomic_name];
+        return $this->swooleAtomic[$atomic_name];
     }
 
     /**
@@ -44,11 +44,11 @@ class AtomicManager {
      * @return mixed
      */
     public function addAtomicLong(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swoole_atomic_long[$atomic_name])){
+        if(!isset($this->swooleAtomicLong[$atomic_name])){
             $atomic = new \Swoole\Atomic\Long($init_value);
-            $this->swoole_atomic_long[$atomic_name] = $atomic;
+            $this->swooleAtomicLong[$atomic_name] = $atomic;
         }
-        return $this->swoole_atomic_long[$atomic_name];
+        return $this->swooleAtomicLong[$atomic_name];
     }
 
     /**
@@ -58,7 +58,7 @@ class AtomicManager {
      */
     public function getAtomic(string $atomic_name) {
         if(isset($this->swoole_atomic[$atomic_name])){
-            return $this->swoole_atomic[$atomic_name];
+            return $this->swooleAtomic[$atomic_name];
         }else{
             return null;
         }
@@ -71,7 +71,7 @@ class AtomicManager {
      */
     public function getAtomicLong(string $atomic_name) {
         if(isset($this->swoole_atomic_long[$atomic_name])){
-            return $this->swoole_atomic_long[$atomic_name];
+            return $this->swooleAtomicLong[$atomic_name];
         }else{
             return null;
         }
@@ -83,16 +83,16 @@ class AtomicManager {
      * @return array
      */
     public function getAllAtomicName(int $type = self::ATOMIC_SHORT) {
-        $atomic_name = [];
+        $atomicName = [];
         if($type === self::ATOMIC_SHORT) {
-            if(isset($this->swoole_atomic) && !empty($this->swoole_atomic)) {
-                $atomic_name = array_keys($this->swoole_atomic);
+            if(isset($this->swooleAtomic) && !empty($this->swooleAtomic)) {
+                $atomicName = array_keys($this->swooleAtomic);
             }
         }else if($type === self::ATOMIC_LONG) {
-            if(isset($this->swoole_atomic_long) && !empty($this->swoole_atomic_long)) {
-                $atomic_name = array_keys($this->swoole_atomic_long);
+            if(isset($this->swooleAtomicLong) && !empty($this->swooleAtomicLong)) {
+                $atomicName = array_keys($this->swooleAtomicLong);
             }
         }
-        return $atomic_name;
+        return $atomicName;
     }
 }

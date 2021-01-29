@@ -9,24 +9,34 @@
 +----------------------------------------------------------------------
  */
 
-namespace Workerfy;
+namespace Workerfy\Command;
 
 class CommandRunner {
 
     /**
+     * 执行外部系统程序，包括php,shell,其他so on
      * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
      * @param $execFile
      * @param array $args
+     * @param bool $async
+     * @param string $log
      * @return array
      */
-    public static function exec($execFile, array $args = []) {
+    public static function exec($execFile, array $args = [], bool $async = false, string $log = '/dev/null') {
         $params = '';
         if($args) {
             $params = implode(' ', $args);
         }
-        $command = $execFile.' '.$params;
+        $path = $execFile.' '.$params;
+        $command = "{$path} >> {$log} 2>&1";
+        if($async)
+        {
+            $command = "nohup {$path} >> {$log} 2>&1 &";
+        }
+
         exec($command,$output,$return);
-        return [$command, $output ?? '', $return ?? ''];
+
+        return [$command, $output ?? [], $return ?? ''];
     }
 
     /**
@@ -59,4 +69,6 @@ class CommandRunner {
             proc_close($proc_process);
         }
     }
+
+
 }

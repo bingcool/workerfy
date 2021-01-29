@@ -17,7 +17,7 @@ class TableManager {
 
     use \Workerfy\Traits\SingletonTrait;
 
-    private $swoole_tables = [];
+    private $swooleTables = [];
 
     /**
      * @param string $table_name
@@ -34,20 +34,20 @@ class TableManager {
      * @throws \Exception
      */
     public function addTable(string $table_name, array $setting) {
-        if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
-            return $this->swoole_tables[$table_name];
+        if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {
+            return $this->swooleTables[$table_name];
         }
-
-        $size = $setting['size'] ?? 128;
-        $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
-
-        $table = new \Swoole\Table($size, $conflict_proportion);
 
         if(isset($setting['fields']) && is_array($setting['fields'])) {
             $fields = $setting['fields'];
         }else {
             throw new \Exception('Swoole table fields is not setting');
         }
+
+        $size = $setting['size'] ?? 128;
+        $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
+
+        $table = new \Swoole\Table($size, $conflict_proportion);
 
         $this->setTableColumn($table, $fields);
 
@@ -56,9 +56,9 @@ class TableManager {
         $table->setting = $setting;
         $table->table_name = $table_name;
 
-        $this->swoole_tables[$table_name] = $table;
+        $this->swooleTables[$table_name] = $table;
 
-        // flag enable
+        // enable flag
         defined('ENABLE_WORKERFY_SWOOLE_TABLE') or define('ENABLE_WORKERFY_SWOOLE_TABLE', 1);
 
         return $table;
@@ -95,8 +95,8 @@ class TableManager {
      * @return mixed
      */
     public function getTable(string $table_name) {
-        if(isset($this->swoole_tables[$table_name]) && $this->swoole_tables[$table_name] instanceof \Swoole\Table) {
-            return $this->swoole_tables[$table_name];
+        if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {
+            return $this->swooleTables[$table_name];
         }else {
             throw new \Exception("table name = {$table_name} is not create, please create it before using");
         }
@@ -108,8 +108,8 @@ class TableManager {
      */
     public function getAllTableName() {
         $table_names = [];
-        if(isset($this->swoole_tables) && !empty($this->swoole_tables)) {
-            $table_names = array_keys($this->swoole_tables);
+        if(isset($this->swooleTables) && !empty($this->swooleTables)) {
+            $table_names = array_keys($this->swooleTables);
         }
         return $table_names;
     }

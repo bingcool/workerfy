@@ -1,7 +1,7 @@
 <?php
 namespace Workerfy\Tests\Exec;
 
-use Workerfy\CommandRunner;
+use Workerfy\Command\CommandRunner;
 
 class Worker extends \Workerfy\AbstractProcess {
 
@@ -24,14 +24,20 @@ class Worker extends \Workerfy\AbstractProcess {
                 return 'zhongguo';
             } ,"php --ri swoole");
 
-            var_dump($return);
+            //var_dump($return);
 
         });
 
         var_dump($this->getProcessWorkerId());
-        //$this->getProcess()->exec('/bin/echo', ['hello']);
 
-        //var_dump("exec ");
+        //拉起一个进程阻塞执行
+        var_dump("start exec");
+        $execFile = 'php';
+        CommandRunner::exec($execFile,
+            ['/home/bingcool/wwwroot/workerfy/tests/Exec/TestCommand.php','hello'],
+            true
+        );
+        var_dump("exec end");
 
         //Service::test();
 

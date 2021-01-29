@@ -396,7 +396,7 @@ function write_info($msg, $foreground = "red", $background = "black") {
         if(defined('MAX_LOG_FILE_SIZE')) {
              $max_log_file_size = MAX_LOG_FILE_SIZE;
         }else {
-            $max_log_file_size = 2 * 1024 * 1024;
+            $max_log_file_size = 5 * 1024 * 1024;
         }
         if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
             unlink(CTL_LOG_FILE);

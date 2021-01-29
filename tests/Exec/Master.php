@@ -1,6 +1,5 @@
 #!/usr/bin/php
 <?php
-define("START_SCRIPT_ROOT", __DIR__);
 define("START_SCRIPT_FILE", __FILE__);
 date_default_timezone_set('Asia/Shanghai');
 
@@ -20,7 +19,9 @@ $config_file_path = $dir_config."/Config/config.php";
 $Config = \Workerfy\ConfigLoad::getInstance();
 $Config->loadConfig($config_file_path);
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\processManager::getInstance([
+    'report_status_tick_time' => 5
+]);
 
 $process_name = 'test-exec';
 $process_class = \Workerfy\Tests\Exec\Worker::class;

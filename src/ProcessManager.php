@@ -133,6 +133,11 @@ class ProcessManager {
      */
     public $onRegisterRuntimeLog;
 
+    /**
+     * @var
+     */
+    protected $config;
+
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 3;
     const MASTER_WORKER_NAME = 'master_worker';
@@ -143,7 +148,8 @@ class ProcessManager {
      * ProcessManager constructor.
      * @param mixed ...$args
      */
-	public function __construct(...$args) {
+	public function __construct(array $config = [], ...$args) {
+        $this->config = $config;
         \Swoole\Runtime::enableCoroutine(true);
         $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
@@ -807,8 +813,8 @@ class ProcessManager {
      */
     private function installReportStatus() {
         $default_tick_time = self::REPORT_STATUS_TICK_TIME;
-        if(defined('WORKERFY_REPORT_TICK_TIME')) {
-            $tick_time = WORKERFY_REPORT_TICK_TIME;
+        if(isset($this->config['report_status_tick_time'])) {
+            $tick_time = $this->config['report_status_tick_time'];
         }else {
             $tick_time = $default_tick_time;
         }
@@ -1269,9 +1275,9 @@ class ProcessManager {
             $this->onRegisterRuntimeLog = function() {
                 $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
                 if(!is_object($logger)) {
-                    $pid_file_root = pathinfo(PID_FILE,PATHINFO_DIRNAME);
-                    $runtime_log = $pid_file_root.'/runtime.log';
-                    $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtime_log);
+                    $pidFileRoot = pathinfo(PID_FILE,PATHINFO_DIRNAME);
+                    $runtimeLog = $pidFileRoot.'/runtime.log';
+                    $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
                 }
                 $logger->info("默认Runtime日志注册成功",[],false);
                 return $logger;
