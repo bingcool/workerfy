@@ -1031,7 +1031,7 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "stop children_process【{$process_type}】: $process_name@$worker_id stoped, Pid=$pid";
+        $logInfo = "stop children_process【{$process_type}】: $process_name@$worker_id stopped, Pid=$pid";
         write_info($logInfo,'red');
     }
 

@@ -252,8 +252,8 @@ class ProcessManager {
                         }
                     }
                 }
-                foreach ($this->process_wokers as $key => $process_woker) {
-                    foreach ($process_woker as $worker_id => $process) {
+                foreach ($this->process_wokers as $key => $workers) {
+                    foreach ($workers as $worker_id => $process) {
                         $process->start();
                         usleep(50000);
                     }
