@@ -22,14 +22,18 @@
     "php" : ">=7.1.0",
     "psr/log" : "*",
     "ext-swoole" : ">=4.4.5",
-    "dragonmantank/cron-expression" : "2.3.0",
     "ext-pcntl" : "*",
     "ext-posix" : "*",
     "ext-json": "*",
     "ext-sysvmsg": "*",
-    "ext-sockets": "*"
+    "ext-sockets": "*",
+    "ext-redis": "*",
+    "ext-pdo": "*",
+    "predis/predis": "2.0.x-dev",
+    "dragonmantank/cron-expression" : "2.3.0"
   },
   "require-dev": {
+    "kwn/php-rdkafka-stubs": "@dev",
     "swoole/ide-helper": "@dev"
   },
   "autoload": {

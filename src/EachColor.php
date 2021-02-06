@@ -1,7 +1,7 @@
 <?php
 /**
 +----------------------------------------------------------------------
-| swoolefy framework bases on swoole extension development, we can use it easily!
+| Daemon and Cli model about php process worker
 +----------------------------------------------------------------------
 | Licensed ( https://opensource.org/licenses/MIT )
 +----------------------------------------------------------------------
