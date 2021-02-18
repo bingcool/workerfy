@@ -823,9 +823,28 @@ class ProcessManager {
         }
         // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
         //出现unable to create Swoole\Process with async-io threads
-        \Swoole\Timer::set([
-            'enable_coroutine' => false,
-        ]);
+        if(version_compare(swoole_version(),'4.6.0','<'))
+        {
+            \Swoole\Timer::set([
+                'enable_coroutine' => false,
+            ]);
+        }else {
+            /**
+             * 4.6 统一改了，Async 相关的包括 Event、Timer、Process::signal,回调式的都属于Async模块
+             */
+            if(class_exists('Swoole\Async'))
+            {
+                \Swoole\Async::set([
+                        'enable_coroutine' => false,
+                    ]);
+            } else if(method_exists('Swoole\Timer', 'set'))
+            {
+                \Swoole\Timer::set([
+                    'enable_coroutine' => false,
+                ]);
+            }
+        }
+
         $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
             try {
                 $status = $this->getProcessStatus();
