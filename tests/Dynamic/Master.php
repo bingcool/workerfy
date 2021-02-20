@@ -60,18 +60,22 @@ $processManager->onStart = function ($pid) {
 // 父进程收到监控进程的动态创建业务进程指令
 $processManager->onCreateDynamicProcess = function($dynamic_process_name, $dynamic_process_num) {
     var_dump('master receive :'. 'start create 动态进程');
-    $this->createDynamicProcess($dynamic_process_name);
+    $this->createDynamicProcess($dynamic_process_name, $dynamic_process_num);
 };
 
 // 父进程收到监控进程的动态销毁进程命令
 $processManager->onDestroyDynamicProcess = function ($dynamic_process_name, $dynamic_process_num) {
     var_dump("master receive :". 'start destroy 动态进程');
-    $this->destroyDynamicProcess($dynamic_process_name);
+    $this->destroyDynamicProcess($dynamic_process_name, $dynamic_process_num);
 };
 
 // 父进程退出，只有子进程全部退出后，父进程才会退出
 $processManager->onExit = function() use($config_file_path) {
     //var_dump("master exit",$config_file_path);
+};
+
+$processManager->onHandleException = function(\Throwable $e) {
+    var_dump($e->getMessage());
 };
 
 $master_pid = $processManager->start();

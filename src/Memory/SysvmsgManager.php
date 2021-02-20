@@ -345,7 +345,7 @@ class SysvmsgManager {
      * @return bool
      * @throws \Exception
      */
-    public function destroyMSgQueue(string $msg_queue_name = null) {
+    public function destroyMsgQueue(string $msg_queue_name = null) {
         if($msg_queue_name) {
             $msg_queue = $this->getMsgQueue($msg_queue_name);
             is_resource($msg_queue) && msg_remove_queue($msg_queue);

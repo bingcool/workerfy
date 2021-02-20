@@ -13,7 +13,7 @@ namespace Workerfy\Crontab;
 
 use Cron\CronExpression;
 
-use \Exception;
+use Workerfy\Exception\CrontabException;
 use Workerfy\Coroutine\GoCoroutine;
 
 class CrontabManager {
@@ -42,7 +42,7 @@ class CrontabManager {
 	protected function __construct() {
 	    if(function_exists('in_children_process_env')) {
 	        if(in_children_process_env() === false) {
-	            throw new \Exception(__CLASS__." only use in children worker process");
+	            throw new CrontabException(__CLASS__." only use in children worker process");
             }
         }
     }
@@ -64,25 +64,25 @@ class CrontabManager {
         int $msec = 1 * 1000) {
 
 	    if(!class_exists('Cron\\CronExpression')) {
-	        throw new \Exception("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
+	        throw new CrontabException("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
         }
 
 	    if(!CronExpression::isValidExpression($expression)) {
-            throw new \Exception("Crontab expression format is wrong, please check it");
+            throw new CrontabException("Crontab expression format is wrong, please check it");
         }
 
 	    if(!is_callable($func)) {
-            throw new \Exception("Params func must be callable");
+            throw new CrontabException("Params func must be callable");
         }
 
 	    if(!in_array($loop_type, [self::loopChannelType, self::loopTickType])) {
-            throw new \Exception("Params of type error");
+            throw new CrontabException("Params of type error");
         }
 
         if(!isset($this->cron_tasks[$cron_name])) {
             $this->cron_tasks[$cron_name] = [$expression, $func, $loop_type];
         }else {
-            throw new \Exception("Cron_name=$cron_name had exist, you can not set same again");
+            throw new CrontabException("Cron_name=$cron_name had exist, you can not set same again");
         }
 
         if($loop_type == self::loopChannelType) {

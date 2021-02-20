@@ -11,8 +11,9 @@
 
 namespace Workerfy;
 
-use Swoole\Process;
-use Workerfy\Memory\AtomicManager;
+use Workerfy\Exception\RuntimeException;
+use Workerfy\Exception\BroadcastException;
+use Workerfy\Exception\DynamicException;
 
 /**
  * Class ProcessManager
@@ -180,7 +181,7 @@ class ProcessManager {
     ) {
         $key = md5($process_name);
         if(isset($this->process_lists[$key])) {
-            throw new \Exception("【Error】You can not add the same process={$process_name}");
+            throw new RuntimeException("【Error】You can not add the same process={$process_name}");
         }
         if(!$enable_coroutine) {
             $enable_coroutine = true;
@@ -247,8 +248,8 @@ class ProcessManager {
                                 $this->process_wokers[$key][$worker_id] = $process;
                             }
                             usleep(50000);
-                        } catch (\Throwable $t) {
-                            $this->onHandleException->call($this, $t);
+                        } catch (\Throwable $throwable) {
+                            $this->onHandleException->call($this, $throwable);
                         }
                     }
                 }
@@ -607,6 +608,13 @@ class ProcessManager {
         $key = md5($process_name);
         $this->getDynamicProcessNum($process_name);
 
+        if($this->process_lists[$key]['dynamic_process_destroying'] ?? false)
+        {
+            $msg = "【Warning】 已创建动态进程{$process_name}正在逐个退出，不能再动态创建子进程,稍后再通知创建";
+            write_info($msg);
+            throw new DynamicException($msg);
+        }
+
         if($process_num <= 0) {
             $process_num = 1;
         }
@@ -631,8 +639,9 @@ class ProcessManager {
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
         // 超出限定总数，禁止动态创建
         if($running_process_worker_num >= $total_process_num) {
-            write_info("【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程");
-            return false;
+            $msg = "【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程";
+            write_info($msg);
+            throw new DynamicException($msg);
         }
 
         for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
@@ -646,7 +655,7 @@ class ProcessManager {
                 $this->process_wokers[$key][$worker_id] = $process;
                 $process->start();
                 $this->swooleEventAdd($process);
-                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态创建成功");
+                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态创建成功",'green');
             }catch(\Throwable $throwable) {
                 unset($this->process_wokers[$key][$worker_id], $process);
                 $this->onHandleException->call($this, $throwable);
@@ -666,12 +675,18 @@ class ProcessManager {
         $key = md5($process_name);
         foreach($process_workers as $worker_id=>$process) {
             if($process->isDynamicProcess()) {
-                $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
-                // 动态进程销毁，需要自减
-                $this->process_lists[$key]['dynamic_process_worker_num']--;
-                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态销毁成功 ");
+                $this->process_lists[$key]['dynamic_process_destroying'] = true;
+                try {
+                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                    // 动态进程销毁，需要自减
+                    $this->process_lists[$key]['dynamic_process_worker_num']--;
+                    write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态销毁成功 ");
+                }catch (\Throwable $e) {
+                    write_info("destroyDynamicProcess error message=".$e->getMessage());
+                }
             }
         }
+        $this->process_lists[$key]['dynamic_process_destroying'] = false;
     }
 
     /**
@@ -880,7 +895,7 @@ class ProcessManager {
         }else if($process_worker_id == -1) {
             return $this->process_wokers[$key];
         }else {
-            throw new \Exception("Missing and not found process_name={$process_name}, worker_id={$process_worker_id}");
+            throw new RuntimeException("Missing and not found process_name={$process_name}, worker_id={$process_worker_id}");
         }
     }
 
@@ -949,10 +964,10 @@ class ProcessManager {
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0) {
         if($this->isMaster($process_name)) {
-            throw new \Exception("Master process can not write msg to master process self");
+            throw new RuntimeException("Master process can not write msg to master process self");
         }
         if(!$this->isRunning()) {
-            throw new \Exception("Master process is not start, you can not use writeByProcessName(), please checkout it");
+            throw new RuntimeException("Master process is not start, you can not use writeByProcessName(), please checkout it");
         }
         $process_workers = [];
         $process = $this->getProcessByName($process_name, $process_worker_id);
@@ -1011,10 +1026,19 @@ class ProcessManager {
                     $process->getSwooleProcess()->write($message);
                 }
             }else {
-                $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." not exist process={$process_name}, please check it");
+                $exception = new BroadcastException(sprintf(
+                    "%s::%s not exist process=%s, please check it",
+                    __CLASS__,
+                    __FUNCTION__,
+                    $process_name
+                ));
             }
         }else {
-            $exception = new \Exception(__CLASS__.'::'.__FUNCTION__." second param process_name is empty");
+            $exception = new BroadcastException(sprintf(
+                "%s::%s second param process_name is empty",
+                __CLASS__,
+                __FUNCTION__
+            ));
         }
 
         if(isset($exception) && $exception instanceof \Throwable) {
@@ -1071,7 +1095,7 @@ class ProcessManager {
         }
 
         if(!posix_mkfifo($pipe_file, 0777)) {
-            throw new \Exception("Create Cli Pipe failed");
+            throw new RuntimeException("Create Cli Pipe failed");
         }
 
         $this->cli_pipe_fd = fopen($pipe_file, 'w+');
@@ -1184,14 +1208,13 @@ class ProcessManager {
             }
             // remove sysvmsg queue
             $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
-            $sysvmsgManager->destroyMSgQueue();
+            $sysvmsgManager->destroyMsgQueue();
             unset($sysvmsgManager);
             // remove signal
             @\Swoole\Process::signal(SIGUSR1, null);
             @\Swoole\Process::signal(SIGUSR2, null);
             @\Swoole\Process::signal(SIGTERM, null);
-            write_info("【Warning】master进程stop, master_pid={$this->master_pid}");
-
+            write_info("【Warning】终端关闭，master进程stop, master_pid={$this->master_pid}");
         });
     }
 

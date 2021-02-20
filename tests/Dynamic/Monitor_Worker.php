@@ -13,13 +13,13 @@ class Monitor_Worker extends \Workerfy\AbstractProcess {
                 $dynamic_process_name = $this->getArgs()['monitor_process_name'];
 
                  // 创建
-                if(time() - $start_time > 2 && time() - $start_time < 4) {
+                if(time() - $start_time > 2 && time() - $start_time < 8) {
                     //var_dump($dynamic_process_name);
-                    $this->notifyMasterCreateDynamicProcess($dynamic_process_name, 2);
+                    $this->notifyMasterCreateDynamicProcess($dynamic_process_name, 5);
                 }
 
                 // 销毁
-                if(time() - $start_time > 5 && time() - $start_time < 8) {
+                if(time() - $start_time > 100 && time() - $start_time < 200) {
                     $this->notifyMasterDestroyDynamicProcess($dynamic_process_name);
                 }
 

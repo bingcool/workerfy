@@ -12,7 +12,7 @@
 namespace Workerfy\Coroutine;
 
 use ArrayObject;
-use Exception;
+use Workerfy\Exception\RuntimeException;
 
 class Context {
     /**
@@ -24,7 +24,7 @@ class Context {
             $context = \Swoole\Coroutine::getContext();
             return $context;
         }else {
-            throw new \Exception("Not in Coroutine Environment");
+            throw new RuntimeException("Not in Coroutine Environment");
         }
     }
 
