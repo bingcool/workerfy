@@ -398,12 +398,14 @@ abstract class AbstractProcess {
         }
 
         foreach($process_workers as $process_worker_id => $process) {
-            $to_process_name = $process->getProcessName();
-            $to_process_worker_id = $process->getProcessWorkerId();
             // 进程处于rebooting|Exiting时，不再发msg
             if($process->isRebooting() || $process->isExiting()) {
+                write_info("【Warming】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
                 continue;
             }
+            $to_process_name = $process->getProcessName();
+            $to_process_worker_id = $process->getProcessWorkerId();
+
             $message = json_encode([$data, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id], JSON_UNESCAPED_UNICODE);
             if($is_use_master_proxy) {
                 $this->getSwooleProcess()->write($message);
