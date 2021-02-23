@@ -287,42 +287,49 @@ abstract class AbstractProcess {
 
             // exit
             Process::signal(SIGTERM, function ($signo) {
-                Event::del($this->swooleProcess->pipe);
-                Event::exit();
-                if(method_exists($this,'__destruct')) {
-                    $this->__destruct();
+                try {
+                    if(method_exists($this,'__destruct')) {
+                        $this->__destruct();
+                    }
+                    $this->writeStopFormatInfo();
+                    // clear
+                    if($this->master_live_timer_id) {
+                        @\Swoole\Timer::clear($this->master_live_timer_id);
+                    }
+                    $processName = $this->getProcessName();
+                    $workerId = $this->getProcessWorkerId();
+                    write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
+                    $this->swooleProcess->exit(SIGTERM);
+                }catch (\Throwable $t)
+                {
+                }finally {
+                    Event::del($this->swooleProcess->pipe);
+                    Event::exit();
                 }
-                $this->writeStopFormatInfo();
-                // clear
-                if($this->master_live_timer_id) {
-                    @\Swoole\Timer::clear($this->master_live_timer_id);
-                }
-
-                $processName = $this->getProcessName();
-                $workerId = $this->getProcessWorkerId();
-                write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
-
-                $this->swooleProcess->exit(SIGTERM);
             });
 
             // reboot
             Process::signal(SIGUSR1, function ($signo) {
-                Event::del($this->swooleProcess->pipe);
-                Event::exit();
                 // clear
-                if($this->master_live_timer_id) {
-                    @\Swoole\Timer::clear($this->master_live_timer_id);
+                try {
+                    if($this->master_live_timer_id) {
+                        @\Swoole\Timer::clear($this->master_live_timer_id);
+                    }
+                    // destroy
+                    if(method_exists($this,'__destruct')) {
+                        $this->__destruct();
+                    }
+                    $processName = $this->getProcessName();
+                    $workerId = $this->getProcessWorkerId();
+                    var_dump("cid=".\Co::getCid());
+                    write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
+                    $this->swooleProcess->exit(SIGUSR1);
+                }catch (\Throwable $throwable)
+                {
+                }finally {
+                    Event::del($this->swooleProcess->pipe);
+                    Event::exit();
                 }
-                // destroy
-                if(method_exists($this,'__destruct')) {
-                    $this->__destruct();
-                }
-
-                $processName = $this->getProcessName();
-                $workerId = $this->getProcessWorkerId();
-                write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
-
-                $this->swooleProcess->exit(SIGUSR1);
             });
 
             // 定时检测父进程是否存活,否则自身要退出
