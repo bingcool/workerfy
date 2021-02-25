@@ -159,7 +159,7 @@ $http->on('request', function ($request, $response) use($http) {
         $error_msg = "【Error】{$message} in {$file} on line {$line}";
 	    if(defined('SYS_ERROR_LOG_ROOT')) {
             $date = date("Y_m_d", strtotime('now'));
-            $pre_date = date("Y_m_d", strtotime('-1 day'));
+            $pre_date = date("Y_m_d", strtotime('-7 day'));
             $pre_sys_error_log_file = rtrim(SYS_ERROR_LOG_ROOT, '/').'/sys_error_'.$pre_date.'.log';
             if(file_exists($pre_sys_error_log_file)) {
                 unlink($pre_sys_error_log_file);

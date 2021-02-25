@@ -3,10 +3,11 @@
  * @param string $str
  * @return bool
  */
-function json_validate(string $str) {
-    if (is_string($str)) {
-        @json_decode($str);
-        return (json_last_error() === JSON_ERROR_NONE);
+function json_validate(string $str, & $decodeData = null) {
+    $decodeData = json_decode($str, true);
+    if(is_array($decodeData))
+    {
+        return true;
     }
     return false;
 }

@@ -192,7 +192,7 @@ function reload() {
 function restart() {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
-        if(is_numeric($master_pid)) {
+        if(is_numeric($master_pid) && $master_pid > 0) {
             $master_pid = (int) $master_pid;
         }else {
             write_info("【Warning】Master pid is invalid");
@@ -231,7 +231,7 @@ function status() {
     }
 
     if(!\Swoole\Process::kill($master_pid, 0)) {
-        write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
+        write_info("【Warning】Master Process of Pid={$master_pid} is not running");
         exit(0);
     }
 

@@ -13,6 +13,14 @@ class Worker extends \Workerfy\AbstractProcess {
             if($request->server['request_uri'] == '/favicon.ico') {
                 return $response->end();
             }
+
+            $str ='{"name":"bingcool"}';
+
+            if(json_validate($str, $decodeData))
+            {
+                var_dump($decodeData);
+            }
+
             $type = $request->get['type'] ?? 0;
             go(function () use($request, $response, $type){
                 if($type == 1)
@@ -38,8 +46,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
             $this->reboot(1);
         });
-
-
+        
         $server->start();
     }
 

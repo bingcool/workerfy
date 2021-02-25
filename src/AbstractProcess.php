@@ -299,12 +299,13 @@ abstract class AbstractProcess {
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
                     write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
-                    $this->swooleProcess->exit(SIGTERM);
-                }catch (\Throwable $t)
+                }catch (\Throwable $throwable)
                 {
+                    write_info("【Error】process=$processName exit error:".$throwable->getMessage());
                 }finally {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
+                    $this->swooleProcess->exit(SIGTERM);
                 }
             });
 
@@ -323,12 +324,13 @@ abstract class AbstractProcess {
                     $workerId = $this->getProcessWorkerId();
                     var_dump("cid=".\Co::getCid());
                     write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
-                    $this->swooleProcess->exit(SIGUSR1);
                 }catch (\Throwable $throwable)
                 {
+                    write_info("【Error】process=$processName reboot error:".$throwable->getMessage());
                 }finally {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
+                    $this->swooleProcess->exit(SIGUSR1);
                 }
             });
 
@@ -343,7 +345,6 @@ abstract class AbstractProcess {
                     write_info("【Warming】定时检测到父进程master_pid={$masterPid}不存在，子进程process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
-
                 if($this->getProcessWorkerId() == 0 && $this->master_pid) {
                     $this->saveMasterId($this->master_pid);
                 }
