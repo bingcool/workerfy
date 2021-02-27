@@ -12,7 +12,6 @@ class Worker extends AbstractProcess {
 
     public function init()
     {
-        parent::init();
         $this->url = 'http://127.0.0.1:9502/index/testJson';
 
     }

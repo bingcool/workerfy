@@ -59,19 +59,24 @@ $new_argv = $_SERVER['argv'];
 $argv_arr = array_splice($new_argv, 2);
 unset($new_argv);
 
-array_reduce($argv_arr, function($result, $item) {
+$cli_params = [];
+array_reduce($argv_arr, function($result, $item) use(&$cli_params) {
     if(in_array($item, ['-d', '-D'])) {
         putenv('daemon=1');
     }else {
         $item = ltrim($item, '--');
         putenv($item);
+        list($param, $value) = explode('=', $item);
+        array_push($cli_params, $param);
     }
 });
 
-$is_daemon = getenv('daemon') ? true : false;
+// cli参数记录
+putenv('workerfy_cli_params='.json_encode($cli_params));
+unset($cli_params);
 
 // 定义是否守护进程模式
-defined('IS_DAEMON') or define('IS_DAEMON', $is_daemon);
+defined('IS_DAEMON') or define('IS_DAEMON', getenv('daemon') ? true : false);
 
 switch($command) {
     case START :

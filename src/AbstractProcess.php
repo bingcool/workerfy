@@ -150,6 +150,11 @@ abstract class AbstractProcess {
      */
     protected $cycle_times = 5;
 
+    /**
+     * @var array cli init params
+     */
+    protected $cli_init_params = [];
+
     const PROCESS_STATIC_TYPE = 1; //静态进程
     const PROCESS_DYNAMIC_TYPE = 2; //动态进程
     const PROCESS_STATIC_TYPE_NAME = 'static';
@@ -359,8 +364,16 @@ abstract class AbstractProcess {
             }
 
             $this->writeStartFormatInfo();
+
             try{
-                $this->init();
+                $targetAction = 'init';
+                if(method_exists($this,$targetAction))
+                {
+                    // init() method will accept cli params from cli,as --sleep=5 --name=bing
+                    list($method, $args) =  Helper::parseActionParams($this, $targetAction, Helper::getCliParams());
+                    $this->cli_init_params = $args;
+                    $this->{$targetAction}(...$args);
+                }
                 $this->run();
             }catch(\Throwable $throwable) {
                 $this->onHandleException($throwable);
@@ -741,7 +754,7 @@ abstract class AbstractProcess {
      * setStartTime
      */
     public function setStartTime() {
-        $this->start_time = date('Y-m-d H:i:s', strtotime('now'));
+        $this->start_time = strtotime('now');
     }
 
     /**
@@ -1058,11 +1071,6 @@ abstract class AbstractProcess {
             write_info($logInfo,'red');
         }
     }
-
-    /**
-     * 初始化函数
-     */
-    public function init() {}
 
     /**
      * run 进程创建后的run方法

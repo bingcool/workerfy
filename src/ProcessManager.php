@@ -336,7 +336,14 @@ class ProcessManager {
      */
     private function masterStatusToCliFifoPipe($ctl_pipe_file) {
         $ctl_pipe = fopen($ctl_pipe_file,'w+');
-        $master_info = $this->statusInfoFormat($this->getMasterWorkerName(), $this->getMasterWorkerId(), $this->getMasterPid(), 'running', $this->start_time);
+        $master_info = $this->statusInfoFormat(
+            $this->getMasterWorkerName(),
+            $this->getMasterWorkerId(),
+            $this->getMasterPid(),
+            'running',
+            $this->start_time
+        );
+
         fwrite($ctl_pipe, $master_info);
         foreach($this->process_wokers as $key => $processes) {
             ksort($processes);
@@ -346,6 +353,10 @@ class ProcessManager {
                 $worker_id = $process->getProcessWorkerId();
                 $pid = $process->getPid();
                 $start_time = $process->getStartTime();
+                if(!is_numeric($start_time))
+                {
+                    $start_time = date('Y-m-d H:i:s', $start_time);
+                }
                 $reboot_count = $process->getRebootCount();
                 $process_type = $process->getProcessType();
                 if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
@@ -360,7 +371,15 @@ class ProcessManager {
                 }else {
                     $status = 'stop';
                 }
-                $info = $this->statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time, $reboot_count, $process_type);
+                $info = $this->statusInfoFormat(
+                    $process_name,
+                    $worker_id,
+                    $pid,
+                    $status,
+                    $start_time,
+                    $reboot_count,
+                    $process_type
+                );
                 if($status == 'stop') {
                     write_info($info);
                 }else {
@@ -793,6 +812,10 @@ class ProcessManager {
                 $worker_id = $process->getProcessWorkerId();
                 $pid = $process->getPid();
                 $start_time = $process->getStartTime();
+                if(!is_numeric($start_time))
+                {
+                    $start_time = date('Y-m-d H:i:s', $start_time);
+                }
                 $reboot_count = $process->getRebootCount();
                 $process_type = $process->getProcessType();
                 if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
@@ -1340,8 +1363,17 @@ class ProcessManager {
      * @param int $reboot_count
      * @return string
      */
-    private function statusInfoFormat($process_name, $worker_id, $pid, $status, $start_time = null, $reboot_count = 0, $process_type = '') {
-        if($process_name == $this->getMasterWorkerName()) {
+    private function statusInfoFormat(
+        $process_name,
+        $worker_id,
+        $pid,
+        $status,
+        $start_time = null,
+        $reboot_count = 0,
+        $process_type = ''
+        ){
+        if($process_name == $this->getMasterWorkerName())
+        {
             $children_num = 0;
             foreach($this->process_wokers as $key=>$processes) {
                 $children_num += count($processes);
@@ -1354,7 +1386,24 @@ class ProcessManager {
             $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
             list($msg_sysvmsg_info, $sysKernel)= $this->getSysvmsgInfo();
             $swoole_table_info = $this->getSwooleTableInfo();
-
+            $workerfy_cli_params = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
+            $cli_params = '';
+            foreach($workerfy_cli_params as $param)
+            {
+                if($value = getenv($param))
+                {
+                    $cli_params .= '--'.$param.'='.$value.' ';
+                }
+            }
+            $cli_params = trim($cli_params);
+            if(strlen($cli_params) > 1000)
+            {
+                $cli_params = substr($cli_params, 0,1000).'...(参数过长,省略)';
+            }
+            if(empty($cli_params))
+            {
+                $cli_params = '(无)';
+            }
             $info =
 <<<EOF
  主进程status:
@@ -1363,7 +1412,8 @@ class ProcessManager {
         进程编号worker_id: $worker_id
         进程master_id: $pid
         进程状态status：$status
-        启动时间start_time：$start_time
+        启动时间start_time：$start_time,
+        cli参数：$cli_params,
         start_script_file: $start_script_file
         pid_file: $pid_file
         children_num: $children_num

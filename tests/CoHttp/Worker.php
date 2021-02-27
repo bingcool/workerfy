@@ -5,6 +5,11 @@ class Worker extends \Workerfy\AbstractProcess {
 
     protected $server;
 
+    public function init($name, int $clientId)
+    {
+       var_dump($name ?? '', $clientId);
+    }
+
     public function run() {
 
         $server = new \Co\Http\Server("*", 9502, false, true);

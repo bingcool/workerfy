@@ -31,14 +31,14 @@ $processManager = \Workerfy\processManager::getInstance();
 
 $process_name = 'test-cli-pipe';
 $process_class = \Workerfy\Tests\CoHttp\Worker::class;
-$process_worker_num = defined("WORKER_NUM") ? WORKER_NUM : 1;
-$process_worker_num = 3;
+$process_worker_num = getenv('worker_num') ? getenv('worker_num') : 1;
 $async = true;
 $args = [
     'wait_time' => 1,
     //'user' => 'bingcoolv',
     //'max_worker_num' => 10
 ];
+
 $extend_data = null;
 // 设置启用管道，默认不设置
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);

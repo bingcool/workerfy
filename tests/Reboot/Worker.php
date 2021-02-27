@@ -3,12 +3,29 @@ namespace Workerfy\Tests\Reboot;
 
 class Worker extends \Workerfy\AbstractProcess {
 
+    protected $sleep;
+
+    // 外部cli方式传入--sleep=5
+    public function init($sleep = 3)
+    {
+        var_dump($sleep);
+        $this->sleep = $sleep;
+    }
+
     public function run() {
 
-        // 模拟处理业务
-        var_dump("3s 后子进程开始 reboot start");
-        sleep(3);
-        $this->reboot(); //可以观察到子进程pid在变化
+        while (true)
+        {
+            if(time() - $this->getStartTime() > $this->sleep)
+            {
+                var_dump("子进程开始 reboot start");
+                $this->reboot();
+            }
+
+            // 模拟处理业务
+            sleep(1);
+
+        }
 
     }
 
