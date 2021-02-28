@@ -140,7 +140,7 @@ class ProcessManager {
     protected $config;
 
     const NUM_PEISHU = 8;
-    const REPORT_STATUS_TICK_TIME = 3;
+    const REPORT_STATUS_TICK_TIME = 5;
     const MASTER_WORKER_NAME = 'master_worker';
     const CREATE_DYNAMIC_WORKER = 'create_dynamic_process_worker';
     const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
