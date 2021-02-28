@@ -353,7 +353,7 @@ class ProcessManager {
                 $worker_id = $process->getProcessWorkerId();
                 $pid = $process->getPid();
                 $start_time = $process->getStartTime();
-                if(!is_numeric($start_time))
+                if(is_numeric($start_time))
                 {
                     $start_time = date('Y-m-d H:i:s', $start_time);
                 }
@@ -784,10 +784,12 @@ class ProcessManager {
         $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
         list($msg_sysvmsg_info, $sysKernel) = $this->getSysvmsgInfo();
         $swoole_table_info = $this->getSwooleTableInfo(false);
+        $cli_params = $this->getCliParams(true);
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
             'pid_file' => PID_FILE,
             'running_status' => $running_status,
+            'cli_params' => $cli_params,
             'master_pid' => $this->getMasterPid(),
             'cpu_num' => $cpu_num,
             'php_version' => $php_version,
@@ -812,7 +814,7 @@ class ProcessManager {
                 $worker_id = $process->getProcessWorkerId();
                 $pid = $process->getPid();
                 $start_time = $process->getStartTime();
-                if(!is_numeric($start_time))
+                if(is_numeric($start_time))
                 {
                     $start_time = date('Y-m-d H:i:s', $start_time);
                 }
@@ -1354,6 +1356,40 @@ class ProcessManager {
     }
 
     /**
+     * @param bool $showAll
+     * @return string
+     */
+    private function getCliParams($showAll = false)
+    {
+        $cli_params = '';
+        $workerfy_cli_params = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
+
+        foreach($workerfy_cli_params as $param)
+        {
+            if($value = getenv($param))
+            {
+                $cli_params .= '--'.$param.'='.$value.' ';
+            }
+        }
+
+        $cli_params = trim($cli_params);
+        if($showAll == false)
+        {
+            if(strlen($cli_params) > 1000)
+            {
+                $cli_params = substr($cli_params, 0,1000).'...(参数过长,省略)';
+            }
+        }
+
+        if(empty($cli_params))
+        {
+            $cli_params = '(无)';
+        }
+
+        return $cli_params;
+    }
+
+    /**
      * statusInfoFormat
      * @param $process_name
      * @param $worker_id
@@ -1371,7 +1407,7 @@ class ProcessManager {
         $start_time = null,
         $reboot_count = 0,
         $process_type = ''
-        ){
+        ) {
         if($process_name == $this->getMasterWorkerName())
         {
             $children_num = 0;
@@ -1386,24 +1422,7 @@ class ProcessManager {
             $enable_cli_pipe = is_resource($this->cli_pipe_fd) ? 1 : 0;
             list($msg_sysvmsg_info, $sysKernel)= $this->getSysvmsgInfo();
             $swoole_table_info = $this->getSwooleTableInfo();
-            $workerfy_cli_params = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
-            $cli_params = '';
-            foreach($workerfy_cli_params as $param)
-            {
-                if($value = getenv($param))
-                {
-                    $cli_params .= '--'.$param.'='.$value.' ';
-                }
-            }
-            $cli_params = trim($cli_params);
-            if(strlen($cli_params) > 1000)
-            {
-                $cli_params = substr($cli_params, 0,1000).'...(参数过长,省略)';
-            }
-            if(empty($cli_params))
-            {
-                $cli_params = '(无)';
-            }
+            $cli_params = $this->getCliParams(false);
             $info =
 <<<EOF
  主进程status:
