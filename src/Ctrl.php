@@ -23,12 +23,12 @@ if(!version_compare(swoole_version(),'4.4.5','>=')) {
 }
 
 if(!defined('START_SCRIPT_FILE')) {
-    write_info("【Warning】Please define Constans START_SCRIPT_FILE");
+    write_info("【Warning】Please define Constants START_SCRIPT_FILE");
     exit(0);
 }
 
 if(!defined('PID_FILE')) {
-    write_info("【Warning】Please define Constans PID_FILE");
+    write_info("【Warning】Please define Constants PID_FILE");
     exit(0);
 }
 
@@ -54,61 +54,58 @@ if(!defined('STATUS_FILE')) {
 
 $command = $_SERVER['argv'][1] ?? START;
 
-$new_argv = $_SERVER['argv'];
+function parseCliEnvParams() {
+    $cli_params = [];
+    $argv_arr = array_splice($_SERVER['argv'], 2);
+    array_reduce($argv_arr, function($result, $item) use(&$cli_params) {
+        if(in_array($item, ['-d', '-D'])) {
+            putenv('daemon=1');
+        }else {
+            $item = ltrim($item, '--');
+            list($param, $value) = explode('=', $item);
+            if($param && $value)
+            {
+                $cli_params[$param] = $value;
+            }
+        }
+    });
 
-$argv_arr = array_splice($new_argv, 2);
-unset($new_argv);
+    return $cli_params;
+}
 
-$cli_params = [];
-array_reduce($argv_arr, function($result, $item) use(&$cli_params) {
-    if(in_array($item, ['-d', '-D'])) {
-        putenv('daemon=1');
-    }else {
-        $item = ltrim($item, '--');
-        putenv($item);
-        list($param, $value) = explode('=', $item);
-        array_push($cli_params, $param);
-    }
-});
-
-// cli参数记录
-putenv('workerfy_cli_params='.json_encode($cli_params));
-unset($cli_params);
-
-// 定义是否守护进程模式
-defined('IS_DAEMON') or define('IS_DAEMON', getenv('daemon') ? true : false);
+$cli_params = parseCliEnvParams();
 
 switch($command) {
     case START :
-        start();
+        start($cli_params);
         break;
     case STOP :
-        stop();
+        stop($cli_params);
         break;
     case RELOAD :
-        reload();
+        reload($cli_params);
         break;
     case RESTART:
-        restart();
+        restart($cli_params);
         break;
     case STATUS :
-        status();
+        status($cli_params);
         break;
     case PIPE :
-        pipe();
+        pipe($cli_params);
         break;
     case ADD :
-        add();
+        add($cli_params);
         break;
     case REMOVE :
-        remove();
+        remove($cli_params);
         break;
     default :
         write_info("【Warning】You must use 【start, stop, reload, status, pipe, add, remove】command");
         exit(0);
 }
 
-function start() {
+function start($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -123,6 +120,16 @@ function start() {
             exit(0);
         }
     }
+
+    $param_keys = array_keys($cli_params);
+    foreach($cli_params as $param=>$value)
+    {
+        putenv("{$param}={$value}");
+    }
+    putenv('workerfy_cli_params='.json_encode($param_keys));
+    // 定义是否守护进程模式
+    defined('IS_DAEMON') or define('IS_DAEMON', getenv('daemon') ? true : false);
+
     // 通过cli命令行设置worker_num
     $worker_num = (int)getenv('worker_num');
     if(isset($worker_num) && $worker_num > 0) {
@@ -133,10 +140,10 @@ function start() {
 
 }
 
-function stop() {
+function stop($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
-        if(is_numeric($master_pid)) {
+        if(is_numeric($master_pid) && $master_pid > 0) {
             $master_pid = (int) $master_pid;
         }else {
             write_info("【Warning】Master pid is invalid");
@@ -163,7 +170,7 @@ function stop() {
     exit(0);
 }
 
-function reload() {
+function reload($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -191,10 +198,9 @@ function reload() {
         write_info("【Warning】Master Process of Pid={$master_pid} is not exist");
     }
     exit(0);
-
 }
 
-function restart() {
+function restart($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid) && $master_pid > 0) {
@@ -224,7 +230,7 @@ function restart() {
 
 }
 
-function status() {
+function status($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -271,7 +277,7 @@ function status() {
     exit(0);
 }
 
-function pipe() {
+function pipe($cli_params) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -296,7 +302,7 @@ function pipe() {
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $msg = getenv("msg");
+    $msg = $cli_params['msg'] ?? '';
     if($msg) {
         write_info("【Info】Start write message={$msg} to master",'green');
         fwrite($pipe, $msg);
@@ -307,7 +313,7 @@ function pipe() {
     exit(0);
 }
 
-function add(int $wait_time = 5) {
+function add($cli_params, int $wait_time = 5) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -332,10 +338,10 @@ function add(int $wait_time = 5) {
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $name = getenv("name");
-    $num = getenv('num') ? getenv('num') : 1;
+    $name = $cli_params['name'] ?? '';
+    $num = $cli_params['num'] ?? 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
-    if(isset($name)) {
+    if($name) {
         write_info("【Info】 Master process start to create dynamic process, please wait a time(about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
@@ -348,7 +354,7 @@ function add(int $wait_time = 5) {
     exit(0);
 }
 
-function remove(int $wait_time = 5) {
+function remove($cli_params, int $wait_time = 5) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -373,8 +379,8 @@ function remove(int $wait_time = 5) {
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $name = getenv("name");
-    $num = getenv('num') ?? 1;
+    $name = $cli_params['name'] ?? '';
+    $num = $cli_params['num'] ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
         write_info("【Info】 Master process start to remova all dynamic process, please wait a time(about {$wait_time}s)",'green');

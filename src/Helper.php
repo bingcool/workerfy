@@ -52,7 +52,7 @@ class Helper
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[] = $actionParams[$name] = $param->getDefaultValue();
             } else {
-                $missing[] = $name;
+                $missing[] = '--'.$name;
             }
         }
 

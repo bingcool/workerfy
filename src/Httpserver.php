@@ -289,8 +289,8 @@ class ActionHandle {
     }
 
     public function getCtlLogFile(string $pid_filename) {
-        $pid_filename = str_replace('.pid','.log', $pid_filename);
-        $ctl_log_file_path = rtrim(PID_FILE_ROOT, '/').'/'.trim($pid_filename);
+        list($dir,) = explode('/', $pid_filename);
+        $ctl_log_file_path = rtrim(PID_FILE_ROOT, '/')."/{$dir}/".'ctl.log';
         return $ctl_log_file_path;
     }
 
