@@ -231,7 +231,6 @@ abstract class AbstractProcess {
             if($this->is_exit) {
                 return false;
             }
-            \Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL | SWOOLE_HOOK_CURL);
             static::$processInstance = $this;
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();

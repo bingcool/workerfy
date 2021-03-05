@@ -151,13 +151,34 @@ class ProcessManager {
      */
 	public function __construct(array $config = [], ...$args) {
         $this->config = $config;
-        \Swoole\Runtime::enableCoroutine(true);
+        $this->setHookFlags($config['hook_flags'] ?? '');
         $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
             $logger->error(sprintf("%s on File %s on Line %d", $e->getMessage(), $e->getFile(), $e->getLine()), [], false);
         };
     }
+
+    /**
+     * setHookFlags
+     */
+    public function setHookFlags($hook_flags)
+    {
+        if(empty($hook_flags))
+        {
+            if(version_compare(swoole_version(),'4.6.0', '>='))
+            {
+                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
+            }else
+            {
+                $hook_flags = SWOOLE_HOOK_ALL;
+            }
+        }
+        \Swoole\Coroutine::set([
+            'hook_flags' => $hook_flags
+        ]);
+    }
+
 
     /**
      * addProcess

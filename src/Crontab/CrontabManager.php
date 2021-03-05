@@ -53,7 +53,7 @@ class CrontabManager {
      * @param mixed  $func
      * @param int    $type
      * @param int    $msec
-     * @throws Exception
+     * @throws CrontabException
      * @return mixed
      */
 	public function addRule(
