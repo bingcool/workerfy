@@ -98,7 +98,7 @@ class CurlHttpClient implements HttpClientInterface
         // Separate the raw headers from the raw body
         list($rawHeaders, $rawBody) = $this->extractResponseHeadersAndBody();
         $info = $this->baseCurl->getInfo();
-        
+
         $this->close();
 
         return new RawResponse($rawHeaders, $rawBody, $info);
