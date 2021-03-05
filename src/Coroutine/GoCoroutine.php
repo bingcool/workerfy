@@ -25,16 +25,24 @@ class GoCoroutine {
 
     /**
      * @param callable $callback
+     * @throws Throwable
      */
     public static function go(callable $callback, ...$params) {
-        Coroutine::create(function(...$params) use($callback){
-            try{
+        $exception = '';
+        Coroutine::create(function(...$params) use($callback, &$exception){
+            try {
                 call_user_func($callback, ...$params);
             }catch(\Throwable $throwable) {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                $logger->error(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
+                $logger->error(sprintf("%s on File %s on Line %d on trace %s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $throwable->getTraceAsString()));
+                $exception = $throwable;
             }
         }, ...$params);
+
+        if($exception instanceof \Throwable)
+        {
+            throw $exception;
+        }
     }
 
     /**

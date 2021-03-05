@@ -56,7 +56,7 @@ class CurlHttpClient implements HttpClientInterface
     /**
      * @return array
      */
-    public function getDefaultOptions()
+    protected function getDefaultOptions()
     {
         return $options = [
             CURLOPT_CONNECTTIMEOUT => 10,
@@ -67,6 +67,7 @@ class CurlHttpClient implements HttpClientInterface
             CURLOPT_SSL_VERIFYPEER => false,
         ];
     }
+
 
     /**
      * Sends a request to the server and returns the raw response.
@@ -86,13 +87,13 @@ class CurlHttpClient implements HttpClientInterface
         $body = null,
         int $timeOut = 10
     ) {
-
         $this->openConnection($url, $method, $body, $this->headers, $timeOut);
         $this->sendRequest();
-        if($curlErrorCode = $this->baseCurl->errno())
+        $curlErrorCode = $this->baseCurl->errno();
+        $this->curlErrorCode = $curlErrorCode;
+        $curlErrorCode && $this->curlErrorMessage = $this->baseCurl->error();
+        if($curlErrorCode)
         {
-            $this->curlErrorCode = $curlErrorCode;
-            $this->curlErrorMessage = $this->baseCurl->error();
             throw new CurlException($this->baseCurl->error(), $curlErrorCode);
         }
         // Separate the raw headers from the raw body
@@ -274,6 +275,30 @@ class CurlHttpClient implements HttpClientInterface
     public function setHeaderArray(array $headers)
     {
         $this->headers = $headers + $this->headers;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCurlErrorCode()
+    {
+        return $this->curlErrorCode;
+    }
+
+    /**
+     * @return string
+     */
+    public function getErrorMessage()
+    {
+        return $this->curlErrorMessage;
     }
 
     /**

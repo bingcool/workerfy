@@ -407,16 +407,16 @@ function write_info($msg, $foreground = "red", $background = "black") {
         if(defined('MAX_LOG_FILE_SIZE')) {
              $max_log_file_size = MAX_LOG_FILE_SIZE;
         }else {
-            $max_log_file_size = 5 * 1024 * 1024;
+            $max_log_file_size = 10 * 1024 * 1024;
         }
         if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
             unlink(CTL_LOG_FILE);
         }
-        $log_fd = fopen(CTL_LOG_FILE,'a+');
+        $logFd = fopen(CTL_LOG_FILE,'a+');
         $date = date("Y-m-d H:i:s");
-        $write_msg = "【{$date}】".$msg."\n\r";
-        fwrite($log_fd, $write_msg);
-        fclose($log_fd);
+        $writeMsg = "【{$date}】".$msg."\n\r";
+        fwrite($logFd, $writeMsg);
+        fclose($logFd);
     }
 }
 

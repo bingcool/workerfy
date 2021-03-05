@@ -21,6 +21,19 @@ $Config->loadConfig($config_file_path);
 
 $processManager = \Workerfy\processManager::getInstance();
 
+// 注册日志
+$processManager->onRegisterRuntimeLog = function ()
+{
+    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+    if(!is_object($logger)) {
+        $pidFileRoot = pathinfo(PID_FILE,PATHINFO_DIRNAME);
+        $runtimeLog = $pidFileRoot.'/runtime.log';
+        $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
+    }
+    $logger->info("默认Runtime日志注册成功",[],false);
+    return $logger;
+};
+
 $process_name = 'Dbtest';
 $process_class = \Workerfy\Tests\Curl\Worker::class;
 $process_worker_num = 3;
