@@ -22,42 +22,28 @@ class Worker extends AbstractProcess {
      */
     public function run()
     {
-        //var_dump('start start ......');
-//        go(function () {
-//            //swoole 4.5开始已经支持curl的协程化，通过使用Swoole\Coroutine\Http\Client模拟实现了curl的API，并在底层替换了curl_init等函数的C Handler
-//            $ch = curl_init($this->url);
-//            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//            curl_setopt($ch, CURLOPT_HEADER, 0);
-//            $output = curl_exec($ch);
-//            if ($output === FALSE) {
-//                echo "CURL Error:" . curl_error($ch);
-//            }
-//            curl_close($ch);
-//
-//            var_dump(json_decode($output, true));
-//        });
-
         if($this->getProcessWorkerId() == 0)
         {
-//            go(function () {
-//                try {
-//                    // 必须设置handler
-//                    DefaultHandler::setDefaultHandler(SwooleHandler::class);
-//                    //原理上GuzzleHttp 底层是使用curl实现的封装，curl已经实现自动协程化，那么GuzzleHttp也就实现协程了，可以直接使用,
-//                    //但是由于GuzzleHttp自身问题，会自动打印出response,所以需要设置handler
-//                    $client = new \GuzzleHttp\Client();
-//                    $response = $client->request('GET', $this->url);
-//                    //var_dump($response->getStatusCode());
-//                    $res = $response->getBody()->getContents();
-//                    var_dump('GuzzleHttp code='.$response->getStatusCode());
-//                }catch (\Throwable $e) {
-//                    var_dump($e->getMessage());
-//                }
-//            });
+            go(function () {
+                try {
+                    // 必须设置handler
+                    DefaultHandler::setDefaultHandler(SwooleHandler::class);
+                    //原理上GuzzleHttp 底层是使用curl实现的封装，curl已经实现自动协程化，那么GuzzleHttp也就实现协程了，可以直接使用,
+                    //但是由于GuzzleHttp自身问题，会自动打印出response,所以需要设置handler
+                    $client = new \GuzzleHttp\Client();
+                    $response = $client->request('GET', $this->url);
+                    //var_dump($response->getStatusCode());
+                    $res = $response->getBody()->getContents();
+                    var_dump('GuzzleHttp code='.$response->getStatusCode());
+                }catch (\Throwable $e) {
+                    var_dump($e->getMessage());
+                }
+            });
         } else if($this->getProcessWorkerId() == 1)
         {
             go(function ()
             {
+                // 协程里面需要捕捉异常，否则会不断重启
                 try {
                     $curlClient = new \Workerfy\Library\HttpClient\CurlHttpClient();
                     $curlClient->setOptionArray([
@@ -108,10 +94,10 @@ class Worker extends AbstractProcess {
             sleep(3);
             $cid = \Co::getCid();
             //var_dump($response->getDecodeBody());
-            var_dump("cid-$cid-".$response->getInfo('url'));
+            //var_dump("cid-$cid-".$response->getInfo('url'));
         });
 
-        var_dump("sleep sleep");
+        //var_dump("sleep sleep");
 
     }
 

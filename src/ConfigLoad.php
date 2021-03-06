@@ -25,12 +25,11 @@ class ConfigLoad {
 		$this->color = new \Workerfy\EachColor();
 	}
 
-	/**
-	 * 加载配置文件
-	 * @param  string|null $config_file_path
+    /**
+     * @param string|null $config_file_path
      * @return array
      * @throws Exception
-	 */
+     */
 	public function loadConfig(string $config_file_path = null) {
 	    if(empty($config_file_path)) {
 	        return [];

@@ -46,6 +46,7 @@ class Redis extends RedisConnection {
 
     /**
      * buildRedis
+     * @throws Exception
      */
     protected function buildRedis() {
         if(!extension_loaded('redis')) {

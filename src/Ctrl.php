@@ -23,8 +23,12 @@ if(!version_compare(swoole_version(),'4.4.5','>=')) {
 }
 
 if(!defined('START_SCRIPT_FILE')) {
-    write_info("【Warning】Please define Constants START_SCRIPT_FILE");
-    exit(0);
+    define("START_SCRIPT_FILE", $_SERVER['PWD'].'/'.$_SERVER['SCRIPT_FILENAME']);
+    if(!is_file(START_SCRIPT_FILE))
+    {
+        write_info("【Warning】Please define Constants START_SCRIPT_FILE");
+        exit(0);
+    }
 }
 
 if(!defined('PID_FILE')) {

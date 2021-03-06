@@ -1,29 +1,11 @@
 #!/usr/bin/php
 <?php
-define("START_SCRIPT_ROOT", __DIR__);
-define("START_SCRIPT_FILE", __FILE__);
-date_default_timezone_set('Asia/Shanghai');
-
-// 默认在当前目录runtime下
-define("PID_FILE_ROOT", '/tmp/workerfy/log/log');
-// 不存在则创建
-define("PID_FILE", PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid');
-
-$dir_config = dirname(__DIR__);
-$root_path = dirname($dir_config);
-
-include $root_path."/vendor/autoload.php";
-
-$config_file_path = $dir_config."/Config/config.php";
-
-$Config = \Workerfy\ConfigLoad::getInstance();
-$Config->loadConfig($config_file_path);
+require dirname(__DIR__).'/Common.php';
 
 // 用户业务注册log操作对象
 $logManager = \Workerfy\Log\LogManager::getInstance()->registerLogger('default', __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log');
 
 $processManager = \Workerfy\processManager::getInstance();
-
 $process_name = 'test-logger-test';
 $process_class = \Workerfy\Tests\Log\Worker::class;
 
@@ -63,8 +45,8 @@ $processManager->onRegisterRuntimeLog = function () {
     return $logger;
 };
 
-$processManager->onExit = function() use($config_file_path) {
-    //var_dump("master exit",$config_file_path);
+$processManager->onExit = function() use($configFilePath) {
+    //var_dump("master exit", $configFilePath);
 };
 
 $master_pid = $processManager->start();

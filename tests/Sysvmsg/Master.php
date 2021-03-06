@@ -1,20 +1,6 @@
 #!/usr/bin/php
 <?php
-date_default_timezone_set('Asia/Shanghai');
-
-define("START_SCRIPT_FILE", __FILE__);
-// 默认在当前目录runtime下
-define("PID_FILE_ROOT", '/tmp/workerfy/log/Sysvmsg/');
-$pid_file = PID_FILE_ROOT.'/'.pathinfo(__FILE__)['filename'].'.pid';
-define("PID_FILE", $pid_file);
-
-$dirConfigPath = dirname(__DIR__);
-$rootPath = dirname($dirConfigPath);
-include $rootPath."/vendor/autoload.php";
-$configFilePath = $dirConfigPath."/Config/config.php";
-
-$Config = \Workerfy\ConfigLoad::getInstance();
-$Config->loadConfig($configFilePath);
+require dirname(__DIR__).'/Common.php';
 
 // 设置进程间通信队列
 $msg_queue_name = 'order';
@@ -44,8 +30,8 @@ $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };
 
-$processManager->onExit = function() use($config_file_path) {
-    //var_dump("master exit",$config_file_path);
+$processManager->onExit = function() {
+    //var_dump("master exit");
 };
 
 $master_pid = $processManager->start();
