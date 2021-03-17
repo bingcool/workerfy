@@ -31,7 +31,7 @@ class TableManager {
             ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
         ]
      ]
-     * @throws \Exception
+     * @throws Exception
      */
     public function addTable(string $table_name, array $setting) {
         if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {

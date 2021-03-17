@@ -14,6 +14,7 @@ namespace Workerfy;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Coroutine\Channel;
+use Workerfy\Crontab\CrontabManager;
 
 /**
  * Class AbstractProcess
@@ -326,7 +327,6 @@ abstract class AbstractProcess {
                     }
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
-                    var_dump("cid=".\Co::getCid());
                     write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
                 }catch (\Throwable $throwable)
                 {
@@ -871,6 +871,44 @@ abstract class AbstractProcess {
     }
 
     /**
+     * registerTickReboot
+     * 注册定时重启, 一般在init()函数中注册
+     */
+    protected function registerTickReboot($cron_expression)
+    {
+        $tickSecond = 2;
+        $waitTime = 5;
+        if(is_numeric($cron_expression))
+        {
+            // eg: reboot/600s 启动后，每600s后重启
+            if($cron_expression < 120)
+            {
+                $sleep = 120;
+            }else
+            {
+                $sleep = $cron_expression;
+            }
+            \Swoole\Timer::tick(120 * 1000, function() use($sleep, $waitTime) {
+                if(time() - $this->getStartTime() >= $sleep)
+                {
+                    $this->reboot($waitTime);
+                }
+            });
+        }else {
+            // eg:crontab expression 定时重启
+            CrontabManager::getInstance()->addRule(
+                'register-tick-reboot',
+                $cron_expression,
+                function() use($waitTime) {
+                    $this->reboot($waitTime);
+                },
+                CrontabManager::loopChannelType,
+                $tickSecond * 1000);
+        }
+
+    }
+
+    /**
      * 强制退出时，需要清理reboot的定时器
      * clearRebootTimer
      * @return void
@@ -962,7 +1000,14 @@ abstract class AbstractProcess {
             // 除了主协程和runtimeCoroutineWait跑在协程中，所以等于2个协程，还有其他协程没唤醒，则再等待
             if($runCoroutineNum > 2) {
                 --$cycle_times;
-                \Swoole\Coroutine::sleep($re_wait_time);
+                if(\Swoole\Coroutine::getCid() > 0)
+                {
+                    \Swoole\Coroutine::sleep($re_wait_time);
+                }else
+                {
+                    sleep($re_wait_time);
+                }
+
             }else {
                 break;
             }

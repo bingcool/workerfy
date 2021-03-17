@@ -5,6 +5,7 @@ require dirname(__DIR__).'/Common.php';
 
 // 创建进程管理实例
 $processManager = \Workerfy\processManager::getInstance();
+
 // 注册日志
 $processManager->onRegisterRuntimeLog = function ()
 {

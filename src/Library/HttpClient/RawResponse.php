@@ -13,7 +13,6 @@ namespace Workerfy\Library\HttpClient;
 
 class RawResponse
 {
-
     /**
      * @var array The response headers in the form of an associative array.
      */

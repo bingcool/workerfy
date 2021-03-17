@@ -68,9 +68,9 @@ class Helper
      */
     public static function getCliParams()
     {
-        $workerfy_cli_params = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
+        $cliParams = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
         $params = [];
-        foreach($workerfy_cli_params as $param)
+        foreach($cliParams as $param)
         {
             if($value = getenv($param))
             {

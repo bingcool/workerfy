@@ -36,7 +36,7 @@ if(!defined('PID_FILE')) {
     exit(0);
 }
 
-if(!is_dir($pid_file_root = pathinfo(PID_FILE)['dirname'])) {
+if(!is_dir($pid_file_root = pathinfo(PID_FILE,PATHINFO_DIRNAME))) {
     mkdir($pid_file_root,0777,true);
 }
 

@@ -17,6 +17,7 @@ $table->set('redis_test_data', [
     'tick_tasks'=>$value
 ]);
 var_dump("父进程首次设置table的值: ".$value);
+
 $processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-swoole-table';
 $process_class = \Workerfy\Tests\Table\Worker::class;
