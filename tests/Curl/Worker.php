@@ -12,7 +12,7 @@ class Worker extends AbstractProcess {
 
     public function init()
     {
-       $this->url = 'http://bing:123456@127.0.0.1:9502/index/testJson';
+       $this->url = 'http://127.0.0.1:9502/index/testJson';
        //$this->url = 'http://www.baidu.com';
     }
 
@@ -45,7 +45,7 @@ class Worker extends AbstractProcess {
             {
                 // 协程里面需要捕捉异常，否则会不断重启
                 try {
-                    $curlClient = new \Workerfy\Library\HttpClient\CurlHttpClient();
+                    $curlClient = new \Common\Library\HttpClient\CurlHttpClient();
                     $curlClient->setOptionArray([
                         CURLOPT_TIMEOUT => 10,
                     ]);

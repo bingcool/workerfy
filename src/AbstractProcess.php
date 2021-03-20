@@ -156,11 +156,36 @@ abstract class AbstractProcess {
      */
     protected $cli_init_params = [];
 
-    const PROCESS_STATIC_TYPE = 1; //静态进程
-    const PROCESS_DYNAMIC_TYPE = 2; //动态进程
+    /**
+     * 静态进程
+     * @var int
+     */
+    const PROCESS_STATIC_TYPE = 1;
+
+    /**
+     * 动态进程
+     * @var int
+     */
+    const PROCESS_DYNAMIC_TYPE = 2;
+
+    /**
+     * @var string
+     */
     const PROCESS_STATIC_TYPE_NAME = 'static';
+
+    /**
+     * @var string
+     */
     const PROCESS_DYNAMIC_TYPE_NAME = 'dynamic';
+
+    /**
+     * @var string
+     */
     const WORKERFY_PROCESS_REBOOT_FLAG = "process::worker::action::reboot";
+
+    /**
+     * @var string
+     */
     const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
     /**
@@ -306,7 +331,7 @@ abstract class AbstractProcess {
                     write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
                 }catch (\Throwable $throwable)
                 {
-                    write_info("【Error】process=$processName exit error:".$throwable->getMessage());
+                    write_info("【Error】Exit error, Process=$processName, error:".$throwable->getMessage());
                 }finally {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
@@ -330,7 +355,7 @@ abstract class AbstractProcess {
                     write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
                 }catch (\Throwable $throwable)
                 {
-                    write_info("【Error】process=$processName reboot error:".$throwable->getMessage());
+                    write_info("【Error】Reboot error, Process=$processName error:".$throwable->getMessage());
                 }finally {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
@@ -491,7 +516,7 @@ abstract class AbstractProcess {
      */
     public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1) {
         if(!$this->is_dynamic_destroy) {
-            // 销毁默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
+            // 销毁进程，默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
             $dynamic_process_num = -1;
             $data = [
                 ProcessManager::DESTROY_DYNAMIC_PROCESS,
@@ -514,7 +539,7 @@ abstract class AbstractProcess {
             }else {
                 $dynamic_destroy_process_time = $this->wait_time + 10;
             }
-            // 等待
+            // wait sleep
             \Swoole\Coroutine::sleep($dynamic_destroy_process_time);
             $this->isDynamicDestroy(false);
         }
@@ -884,8 +909,7 @@ abstract class AbstractProcess {
             if($cron_expression < 120)
             {
                 $sleep = 120;
-            }else
-            {
+            }else {
                 $sleep = $cron_expression;
             }
             \Swoole\Timer::tick(120 * 1000, function() use($sleep, $waitTime) {

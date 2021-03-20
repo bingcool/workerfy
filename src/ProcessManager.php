@@ -339,8 +339,8 @@ class ProcessManager {
                                 try {
                                     $process_name = $process->getProcessName();
                                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
-                                }catch (\Exception $exception) {
-                                    write_info("Process={$process_name},worker_id={$worker_id} exit failed, error=".$exception->getMessage());
+                                }catch (\Throwable $exception) {
+                                    write_info("【Error】Master handle Signal (SIGINT,SIGTERM) error Process={$process_name},worker_id={$worker_id} exit failed, error=".$exception->getMessage());
                                 }
                             }
                         }
