@@ -12,7 +12,7 @@
 namespace Workerfy\Coroutine;
 
 use Swoole\Coroutine;
-use Workerfy\Log\LogManager;
+use Workerfy\AbstractProcess;
 
 class GoCoroutine {
 
@@ -33,9 +33,14 @@ class GoCoroutine {
             try {
                 call_user_func($callback, ...$params);
             }catch(\Throwable $throwable) {
-                $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                $logger->error(sprintf("%s on File %s on Line %d on trace %s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $throwable->getTraceAsString()));
-                $exception = $throwable;
+                $processInstance = AbstractProcess::getProcessInstance();
+                if($processInstance instanceof AbstractProcess)
+                {
+                    AbstractProcess::getProcessInstance()->onHandleException($throwable);
+                }else
+                {
+                    $exception = $throwable;
+                }
             }
         }, ...$params);
 

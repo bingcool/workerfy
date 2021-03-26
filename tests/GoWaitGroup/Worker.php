@@ -12,8 +12,8 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         // GoWaitGroup并发处理
         if($this->getProcessWorkerId() == 1) {
-            //$this->waitGroup();
-            $this->parallel();
+            $this->waitGroup();
+            //$this->parallel();
         }
 
         // 阻塞串行执行
@@ -32,11 +32,11 @@ class Worker extends \Workerfy\AbstractProcess {
         }, 'bingcool');
 
         // GoWaitGroup实例化
-        $wait_group = new \Workerfy\Coroutine\GoWaitGroup();
+        $waitGroup = new \Workerfy\Coroutine\GoWaitGroup();
 
         $start_time = microtime(true);
 
-        $wait_group->go(function($name) use($wait_group) {
+        $waitGroup->go(function($name) use($waitGroup) {
             var_dump($name);
             $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
             $cli->set(['timeout' => 10]);
@@ -46,24 +46,24 @@ class Worker extends \Workerfy\AbstractProcess {
                 'Accept' => 'text/html,application/xhtml+xml,application/xml',
                 'Accept-Encoding' => 'gzip',
             ]);
+            throw new \Exception("jjjjjjjjjjjjjj");
             $ret = $cli->get('/');
-            $wait_group->done('www.baidu.com', 'g1-test-wait-group');
+            $waitGroup->done('www.baidu.com', 'g1-test-wait-group');
         }, 'nnnnnn');
 
-        $wait_group->go(function () use ($wait_group){
+        $waitGroup->go(function () use ($waitGroup){
             $cli = new \Swoole\Coroutine\Http\Client('www.163.com', 80);
             $cli->set(['timeout' => 10]);
             $cli->setHeaders([
-                'Host' => "www.163.com",
                 "User-Agent" => 'Chrome/49.0.2587.3',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml',
                 'Accept-Encoding' => 'gzip',
             ]);
             $ret = $cli->get('/');
-            $this->done('www.163.com', 'g2-test-wait-group');
+            $waitGroup->done('www.163.com', 'g2-test-wait-group');
         });
 
-        $result = $wait_group->wait();
+        $result = $waitGroup->wait();
 
         var_dump($result);
 
@@ -155,6 +155,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function onHandleException(\Throwable $throwable)
     {
+        var_dump($throwable->getMessage());
         parent::onHandleException($throwable);
 
     }
