@@ -15,14 +15,14 @@ $processManager->createCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {
-
+    // onStart中不能存在协程，否则会造成reboot时存在异步io而无法启动进程
     file_put_contents(PID_FILE, $pid);
-
     // 模拟sleep
     // 然后子进程发送消息给父进程，看是否父进程能够收到动态创建进程指令，如果不能，说明主进程组塞住了
-    sleep(100);
+    //sleep(100);
 
     var_dump("master sleep end");
+
 };
 
 // 状态上报
@@ -33,6 +33,11 @@ $processManager->onReportStatus =  function ($status) {
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
 
     var_dump($status);
+
+    go(function () {
+        sleep(20);
+        var_dump('onReportStatus');
+    });
 
     // 需要运行在协程中
 //    go(function () {
@@ -50,6 +55,11 @@ $processManager->onCreateDynamicProcess = function ($process_name, $process_num)
 
 $processManager->onExit = function() use($configFilePath) {
     //var_dump("master exit",$configFilePath);
+};
+
+$processManager->onHandleException = function (\Throwable $e)
+{
+    var_dump($e->getMessage());
 };
 
 $master_pid = $processManager->start();

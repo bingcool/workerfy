@@ -57,7 +57,9 @@ class Helper
         }
 
         if (!empty($missing)) {
-            throw new InvalidArgumentException("Cli Missing method init() required parameters of name : " . implode(', ', $missing));
+            $msg = "【Error】Missing init() method cli parameters of name : " . implode(', ', $missing);
+            write_info($msg);
+            throw new InvalidArgumentException($msg);
         }
 
         return [$method, $args];
