@@ -16,8 +16,8 @@ use Workerfy\Exception\RuntimeException;
 
 class Context {
     /**
-     * @throws Exception
      * @return ArrayObject|null
+     * @throws Exception
      */
     public static function getContext() {
         if(\Swoole\Coroutine::getCid() > 0) {

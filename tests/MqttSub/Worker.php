@@ -2,21 +2,28 @@
 namespace Workerfy\Tests\MqttSub;
 
 use Simps\MQTT\Client;
+use Simps\MQTT\Config\ClientConfig;
 
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
-        $config = [
-            'host' => '127.0.0.1',
-            'port' => 1884,
-            'time_out' => 5,
-            'user_name' => 'user001',
-            'password' => 'hLXQ9ubnZGzkzf',
-            'client_id' => 'd812edc1-18da-2085-0edf-a4a588c296d1'.rand(1,1000),
-            'keep_alive' => 3,
-        ];
+        $host = '127.0.0.1';
+        $port = 1883;
+        $config = new ClientConfig();
+        $config->setUserName('bingcool')
+            ->setPassword('123456#@')
+            ->setClientId(Client::genClientID())
+            ->setKeepAlive(10)
+            ->setDelay(3000) // 3s
+            ->setMaxAttempts(5)
+            ->setSwooleConfig([
+                'open_mqtt_protocol' => true,
+                'package_max_length' => 2 * 1024 * 1024
+            ]);
 
-        $client = new Client($config, ['open_mqtt_protocol' => true, 'package_max_length' => 2 * 1024 * 1024]);
+
+        $client = new Client($host, $port, $config);
+
         $will = [
             'topic' => 'simps-mqtt/user001/update',
             'qos' => 1,
@@ -24,7 +31,7 @@ class Worker extends \Workerfy\AbstractProcess {
             'message' => '' . time(),
         ];
 
-        while (! $client->connect(true, $will)) {
+        while (!$client->connect(true, $will)) {
             \Swoole\Coroutine::sleep(3);
             $client->connect(true, $will);
         }
@@ -51,7 +58,10 @@ class Worker extends \Workerfy\AbstractProcess {
             if ($buffer && $buffer !== true) {
                 $timeSincePing = time();
             }
-            if (isset($config['keep_alive']) && $timeSincePing < (time() - $config['keep_alive'])) {
+
+            $keep_alive = $config->getKeepAlive();
+
+            if (isset($keep_alive) && $timeSincePing < (time() - $keep_alive)) {
                 $buffer = $client->ping();
                 if ($buffer) {
                     echo 'send ping success' . PHP_EOL;

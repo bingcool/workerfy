@@ -2,22 +2,29 @@
 namespace Workerfy\Tests\MqttPub;
 
 use Simps\MQTT\Client;
+use Simps\MQTT\Config\ClientConfig;
 use Swoole\Coroutine;
 
 class Worker extends \Workerfy\AbstractProcess {
 
-    public function run() {
-        $config = [
-            'host' => '127.0.0.1',
-            'port' => 1884,
-            'time_out' => 5,
-            'user_name' => 'user001',
-            'password' => 'hLXQ9ubnZGzkzf',
-            'client_id' => Client::genClientID(),
-            'keep_alive' => 20,
-        ];
+    public $client;
 
-        $client = new Client($config, ['open_mqtt_protocol' => true, 'package_max_length' => 2 * 1024 * 1024]);
+    public function run() {
+        $host = '127.0.0.1';
+        $port = 1883;
+        $config = new ClientConfig();
+        $config->setUserName('bingcool')
+            ->setPassword('123456#@')
+            ->setClientId(Client::genClientID())
+            ->setKeepAlive(10)
+            ->setDelay(3000) // 3s
+            ->setMaxAttempts(5)
+            ->setSwooleConfig([
+                'open_mqtt_protocol' => true,
+                'package_max_length' => 2 * 1024 * 1024
+            ]);
+
+        $this->client = $client = new Client($host, $port, $config);
 
         $response = $client->connect();
         while (!$response) {
@@ -31,10 +38,10 @@ class Worker extends \Workerfy\AbstractProcess {
         while ( time() <= $start + 5) {
             try {
                 $response = $client->publish('simps-mqtt/user001/update', '{"time":'. time() .'}', 1,0,1);
-                //var_dump($response);
+                var_dump($response);
                 sleep(1);
             }catch (\Exception $e) {
-                //var_dump($e->getCode(), $e->getMessage());
+                var_dump($e->getCode(), $e->getMessage());
             }
         }
 

@@ -13,8 +13,8 @@ namespace Workerfy\Crontab;
 
 use Cron\CronExpression;
 
-use Workerfy\Exception\CrontabException;
 use Workerfy\Coroutine\GoCoroutine;
+use Workerfy\Exception\CrontabException;
 
 class CrontabManager {
 
