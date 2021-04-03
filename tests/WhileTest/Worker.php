@@ -3,16 +3,10 @@ namespace Workerfy\Tests\WhileTest;
 
 class Worker extends \Workerfy\AbstractProcess {
 
-
-    public $callNum = 0;
-
-    public $startTime;
     public $runTime = 20;
-
 
     public function init() {
         var_dump('ggggggggggggggggggggggg');
-        $this->startTime = time();
         register_shutdown_function(function () {
             var_dump('shutdown shutdown shutdown');
         });
@@ -27,7 +21,7 @@ class Worker extends \Workerfy\AbstractProcess {
                     return ;
                 }
 
-                if(time() - $this->startTime > $this->runTime) {
+                if(time() - $this->getStartTime() > $this->runTime) {
                     $this->reboot(5);
                 }
                 // 模拟处理业务

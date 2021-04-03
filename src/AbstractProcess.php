@@ -468,7 +468,7 @@ abstract class AbstractProcess {
      * @param mixed $data
      * @param int $process_worker_id
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function writeToMasterProcess(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = false;

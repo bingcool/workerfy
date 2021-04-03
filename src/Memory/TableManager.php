@@ -117,7 +117,7 @@ class TableManager {
     /**
      * getAllTableKeyMapRowValue 获取所有table的key和value信息
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getAllTableKeyMapRowValue() {
         $table_infos = [];
@@ -131,7 +131,7 @@ class TableManager {
     /**
      * @param string $table_name
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function getTableSetting(string $table_name) {
         $table = $this->getTable($table_name);
@@ -158,7 +158,7 @@ class TableManager {
      * 返回table基本信息
      * @param string $table_name
      * @return array 返回格式 = [$size, $memory, $setting]
-     * @throws \Exception
+     * @throws Exception
      */
     public function getTableInfo(string $table_name) {
         $info = [];
@@ -186,7 +186,7 @@ class TableManager {
      * 获取已设置的key
      * @param $table
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getTableKeys($table) {
         $keys = [];
@@ -206,7 +206,7 @@ class TableManager {
      * 获取table的key映射的每一行数据rowValue
      * @param $table
      * @return array
-     * @throws \Exception
+     * @throws Exception
      */
     public function getKeyMapRowValue($table) {
         $table_rows = [];
