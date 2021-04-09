@@ -184,11 +184,11 @@ class TableManager {
 
     /**
      * 获取已设置的key
-     * @param $table
+     * @param string $table
      * @return array
      * @throws Exception
      */
-    public function getTableKeys($table) {
+    public function getTableKeys(string $table) {
         $keys = [];
         if(is_string($table)) {
             $table_name = $table;
@@ -204,11 +204,11 @@ class TableManager {
 
     /**
      * 获取table的key映射的每一行数据rowValue
-     * @param $table
+     * @param string $table
      * @return array
      * @throws Exception
      */
-    public function getKeyMapRowValue($table) {
+    public function getKeyMapRowValue(string $table) {
         $table_rows = [];
         if(is_string($table)) {
             $table_name = $table;
