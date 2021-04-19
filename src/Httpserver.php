@@ -177,7 +177,14 @@ $http->on('request', function ($request, $response) use($http) {
 
 class ActionHandle {
 
+    /**
+     * @var \Swoole\Http\Request
+     */
     private $request;
+
+    /**
+     * @var \Swoole\Http\Response
+     */
     private $response;
 
     public function __construct($request, $response) {

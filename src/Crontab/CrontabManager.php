@@ -61,8 +61,8 @@ class CrontabManager {
         string $expression,
         callable $func,
         int $loop_type = self::loopChannelType,
-        int $msec = 1 * 1000) {
-
+        int $msec = 1 * 1000)
+    {
 	    if(!class_exists('Cron\\CronExpression')) {
 	        throw new CrontabException("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
         }

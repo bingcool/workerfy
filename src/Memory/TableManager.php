@@ -11,8 +11,6 @@
 
 namespace Workerfy\Memory;
 
-use Cron\CronExpression;
-
 class TableManager {
 
     use \Workerfy\Traits\SingletonTrait;

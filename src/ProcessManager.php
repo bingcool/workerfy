@@ -215,10 +215,8 @@ class ProcessManager {
 
         $max_process_num = $cpu_num * (self::NUM_PEISHU);
 
-        if(isset($args['max_process_num'])) {
-            if($args['max_process_num'] > $max_process_num) {
-                $args['max_process_num'] = $max_process_num;
-            }
+        if(isset($args['max_process_num']) && $args['max_process_num'] > $max_process_num) {
+            $args['max_process_num'] = $max_process_num;
         }else {
             $args['max_process_num'] = $max_process_num;
         }
@@ -1209,9 +1207,11 @@ class ProcessManager {
      * @return string
      */
     public function getCliPipeFile() {
-        if(function_exists('getCliPipeFile')) {
+        if(function_exists('getCliPipeFile'))
+        {
             $pipe_file = getCliPipeFile();
-        }else {
+        }else
+        {
             $path_info = pathinfo(PID_FILE);
             $path_dir = $path_info['dirname'];
             $file_name = $path_info['basename'];
@@ -1318,7 +1318,7 @@ class ProcessManager {
             if($simple) {
                 $all_table_name = $tableManager->getAllTableName();
                 if(!empty($all_table_name) && is_array($all_table_name)) {
-                    $all_table_name_str = implode($all_table_name, ',');
+                    $all_table_name_str = implode(',', $all_table_name);
                     $swoole_table_info = "[{$all_table_name_str}]";
                 }
             }else {

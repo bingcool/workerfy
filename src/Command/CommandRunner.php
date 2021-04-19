@@ -11,6 +11,8 @@
 
 namespace Workerfy\Command;
 
+use Workerfy\Log\LogManager;
+
 class CommandRunner {
 
     /**
@@ -36,6 +38,11 @@ class CommandRunner {
 
         exec($command,$output,$return);
 
+        $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+        if(is_object($logger))
+        {
+            $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'return' => $return ?? '']);
+        }
         return [$command, $output ?? [], $return ?? ''];
     }
 
@@ -69,6 +76,5 @@ class CommandRunner {
             proc_close($proc_process);
         }
     }
-
 
 }

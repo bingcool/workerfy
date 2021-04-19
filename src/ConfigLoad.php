@@ -30,7 +30,7 @@ class ConfigLoad {
      * @return array
      * @throws Exception
      */
-	public function loadConfig(string $config_file_path = null) {
+	public function loadConfig(?string $config_file_path = null) {
 	    if(empty($config_file_path)) {
 	        return [];
         }

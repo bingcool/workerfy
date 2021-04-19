@@ -11,7 +11,7 @@ class Worker extends \Workerfy\AbstractProcess {
         //sleep(2);
         $result = \Swoole\Coroutine\System::getaddrinfo('www.baidu.com');
 
-        var_dump($result);
+        //var_dump($result);
 
         //
         go(function () {
@@ -20,7 +20,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
             $return = CommandRunner::procOpen(function ($pipe0, $pipe1, $pipe2) {
                 fwrite($pipe0, 'bingcool');
-                var_dump(fread($pipe1, 8192), fread($pipe2, 8192));
+                //var_dump(fread($pipe1, 8192), fread($pipe2, 8192));
                 return 'zhongguo';
             } ,"php --ri swoole");
 

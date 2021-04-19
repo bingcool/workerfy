@@ -17,7 +17,7 @@ use Workerfy\Exception\RuntimeException;
 class Context {
     /**
      * @return ArrayObject|null
-     * @throws Exception
+     * @throws RuntimeException
      */
     public static function getContext() {
         if(\Swoole\Coroutine::getCid() > 0) {
@@ -31,7 +31,7 @@ class Context {
     /**
      * @param $name
      * @param $value
-     * @throws Exception
+     * @throws RuntimeException
      */
     public static function set($name, $value) {
         $context = self::getContext();
@@ -45,7 +45,7 @@ class Context {
     /**
      * @param $name
      * @return bool
-     * @throws Exception
+     * @throws RuntimeException
      */
     public static function get($name) {
         $context = self::getContext();
@@ -58,7 +58,7 @@ class Context {
     /**
      * @param $name
      * @return bool
-     * @throws Exception
+     * @throws RuntimeException
      */
     public static function has($name) {
         $context = self::getContext();
