@@ -153,7 +153,7 @@ class LogHandle {
      * @param bool $enable_continue
      * @param $logType
      */
-    public function logHandle($logInfo, $context = [], $enable_continue = true, $logType) {
+    public function logHandle($logInfo, $context = [], $enable_continue = true, $logType = Logger::ERROR) {
         try{
             if($enable_continue) {
                 Coroutine::create(function() use($logInfo, $context, $logType) {

@@ -19,7 +19,8 @@ class GoCoroutine {
     /**
      * @return mixed
      */
-    public static function getCid() {
+    public static function getCid()
+    {
         return Coroutine::getCid();
     }
 
@@ -29,10 +30,13 @@ class GoCoroutine {
      */
     public static function go(callable $callback, ...$params) {
         $exception = '';
-        Coroutine::create(function(...$params) use($callback, &$exception){
-            try {
+        Coroutine::create(function(...$params) use($callback, &$exception)
+        {
+            try
+            {
                 call_user_func($callback, ...$params);
-            }catch(\Throwable $throwable) {
+            }catch(\Throwable $throwable)
+            {
                 $processInstance = AbstractProcess::getProcessInstance();
                 if($processInstance instanceof AbstractProcess)
                 {
