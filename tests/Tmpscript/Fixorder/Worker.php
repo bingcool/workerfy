@@ -4,7 +4,7 @@ namespace Workerfy\Tests\Tmpscript\Fixorder;
 /**
  * 此demo test主要是展示出来一些临时性的脚本的实现方法，比如修复某些数据啊等
  * php Master.php start -action=test1
- * Class Worker
+ * Class SubscribeWorker
  * @package Workerfy\Tests\Tmpscript
  */
 
