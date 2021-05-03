@@ -20,6 +20,7 @@ class SubscribeWorker extends \Workerfy\AbstractProcess {
                 'scheme' => 'tcp',
                 'host'   => '127.0.0.1',
                 'port'   => 6379,
+                'read_write_timeout' => -1
             ]);
             $pubSub = new \Common\Library\PubSub\PredisPubSub($redis);
             var_dump( 'use Predis driver');
@@ -37,14 +38,8 @@ class SubscribeWorker extends \Workerfy\AbstractProcess {
             try {
                 $pubSub->subscribe(['test1'], function($redis, $chan, $msg) {
                     //var_dump($this->getPid()."-receipe time =".date('Y-m-d H:i:s'));
-
                     var_dump($msg);
-
-                    // 协程达到一定数量后重启
-                    if($this->getCurrentCoroutineLastCid() > 10) {
-                        $this->reboot();
-                    }
-
+                    sleep(5);
                 });
             }catch (\Exception $e)
             {

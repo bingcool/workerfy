@@ -1,7 +1,9 @@
 <?php
 namespace Workerfy\Tests\Queue;
 
-class QueueConsumerWorker extends \Workerfy\AbstractProcess {
+use Workerfy\AbstractProcess;
+
+class QueueConsumerWorker extends AbstractProcess {
 
     protected $isPredisDriver = false;
 
@@ -23,8 +25,6 @@ class QueueConsumerWorker extends \Workerfy\AbstractProcess {
                 'host'   => '127.0.0.1',
                 'port'   => 6379,
             ]);
-
-            $redis->connect();
             var_dump("use Predis driver");
         }else
         {

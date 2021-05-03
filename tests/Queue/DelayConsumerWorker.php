@@ -25,7 +25,7 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
                 'host'   => '127.0.0.1',
                 'port'   => 6379,
             ]);
-            $redis->connect();
+
             $queue = new \Common\Library\Queues\PredisDelayQueue(
                 $redis,
                 'ali_delay_key'
