@@ -119,10 +119,10 @@ function start($cli_params) {
             write_info("【Warning】Master pid is invalid");
             exit(0);
         }
-//        if(\Swoole\Process::kill($master_pid, 0)) {
-//            write_info("【Warning】Master process has started, you can not start again");
-//            exit(0);
-//        }
+        if(\Swoole\Process::kill($master_pid, 0)) {
+            write_info("【Warning】Master process has started, you can not start again");
+            exit(0);
+        }
     }
 
     $param_keys = array_keys($cli_params);
@@ -139,18 +139,7 @@ function start($cli_params) {
     if(isset($worker_num) && $worker_num > 0) {
         define("WORKER_NUM", $worker_num);
     }
-
-    $child_pid = pcntl_fork();
-    var_dump($child_pid);
-    if($child_pid > 0)
-    {
-        exit();
-    }
-
-
-
     write_info("【Info】Master && Children process ready to start, please wait a time ......",'green');
-
 }
 
 function stop($cli_params) {

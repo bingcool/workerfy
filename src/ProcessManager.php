@@ -757,7 +757,7 @@ class ProcessManager {
 
         if($this->is_daemon) {
             if(!isset($this->start_daemon)) {
-                \Swoole\Process::daemon();
+                \Swoole\Process::daemon(true,false);
                 $this->start_daemon = true;
             }
         }

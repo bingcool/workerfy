@@ -76,9 +76,9 @@ $http->on('request', function ($request, $response) use($http) {
                 if(!$handle->isRunning($pid_filename)) {
                     $env_params = $handle->parseParams($params);
                     if(!empty($env_params)) {
-                        $command = "nohup php {$start_script_file_path} start -d {$env_params} >> /dev/null 2>&1 &";
+                        $command = "nohup php {$start_script_file_path} start {$env_params} >> /dev/null 2>&1 &";
                     }else {
-                        $command = "nohup php {$start_script_file_path} start -d >> /dev/null 2>&1 &";
+                        $command = "nohup php {$start_script_file_path} start >> /dev/null 2>&1 &";
                     }
                     $ret = $handle->startProcess($command);
                     if(is_array($ret) && $ret['code'] == 0) {
