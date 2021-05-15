@@ -3,7 +3,7 @@
 require dirname(__DIR__).'/Common.php';
 
 $processManager = \Workerfy\processManager::getInstance();
-$process_name = 'Dbtest';
+$process_name = 'test-openssl';
 $process_class = \Workerfy\Tests\Openssl\Worker::class;
 $process_worker_num = 1;
 $async = true;

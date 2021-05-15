@@ -8,9 +8,8 @@ $process_class = \Workerfy\Tests\UuidService\Worker::class;
 $process_worker_num = getenv('worker_num') ? getenv('worker_num') : 2;
 $async = true;
 $args = [
-    'wait_time' => 1,
-    //'user' => 'bingcoolv',
-    //'max_worker_num' => 10
+    // 快速重启
+    'wait_time' => 1
 ];
 
 $extend_data = null;

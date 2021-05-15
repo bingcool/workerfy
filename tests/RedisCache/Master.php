@@ -3,7 +3,7 @@
 require dirname(__DIR__).'/Common.php';
 
 $processManager = \Workerfy\ProcessManager::getInstance();
-$process_name = 'test-redis';
+$process_name = 'test-redis-cache';
 $process_class = \Workerfy\Tests\RedisCache\Worker::class;
 $process_worker_num = 2;
 $async = true;
