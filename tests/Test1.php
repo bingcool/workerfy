@@ -42,8 +42,16 @@ $arr = ['name'=>'bingcool','sex'=>'nan'];
 
 $str_json = json_encode($arr);
 
-var_dump($str_json);
-
 list($name, ) = $arr;
 
 $a = 4;
+
+\Swoole\Process::signal(SIGCHLD, function($signo) {
+    var_dump($signo);
+});
+
+var_dump('pre_pid='.posix_getpid());
+
+\Swoole\Process::daemon(true, false,256);
+
+var_dump('now_pid='.posix_getpid());

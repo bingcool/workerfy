@@ -17,7 +17,6 @@ class QueueConsumerWorker extends AbstractProcess {
 
     public function run() {
         // 模拟处理业务
-
         if($this->isPredisDriver)
         {
             $redis = new \Common\Library\Cache\Predis([
