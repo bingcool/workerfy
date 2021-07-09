@@ -11,7 +11,7 @@ class ConsumerWorker extends AbstractProcess
      */
     public function run()
     {
-        $metaBrokerList = '192.168.99.103:9092';
+        $metaBrokerList = '10.0.8.58:9092';
         $topicName = 'mykafka';
 
         $consumer =new \Common\Library\Kafka\Consumer($metaBrokerList, $topicName);

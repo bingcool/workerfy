@@ -16,15 +16,22 @@ use Workerfy\Log\LogManager;
 class CommandRunner {
 
     /**
-     * 执行外部系统程序，包括php,shell,其他so on
+     * 执行外部系统程序，包括php,shell so on
      * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
-     * @param $execFile
+     * @param string $execFile
      * @param array $args
      * @param bool $async
      * @param string $log
+     * @param bool $isExec
      * @return array
      */
-    public static function exec($execFile, array $args = [], bool $async = false, string $log = '/dev/null') {
+    public static function exec(
+        string $execFile,
+        array $args = [],
+        bool $async = false,
+        string $log = '/dev/null',
+        bool $isExec = true
+    ) {
         $params = '';
         if($args) {
             $params = implode(' ', $args);
@@ -36,12 +43,14 @@ class CommandRunner {
             $command = "nohup {$path} >> {$log} 2>&1 &";
         }
 
-        exec($command,$output,$return);
-
-        $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-        if(is_object($logger))
+        if($isExec)
         {
-            $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'return' => $return ?? '']);
+            exec($command,$output,$return);
+            $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+            if(is_object($logger))
+            {
+                $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'return' => $return ?? '']);
+            }
         }
         return [$command, $output ?? [], $return ?? ''];
     }

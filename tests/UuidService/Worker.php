@@ -18,30 +18,10 @@ class Worker extends \Workerfy\AbstractProcess {
         $server = new \Co\Http\Server("*", 9502, false, true);
         $total = 0;
 
-        swoole_timer_after(20*1000,function () use(&$total) {
-            $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
-            $logger->info('total='.$total);
-
-        });
-
         $server->handle('/generaUuid', function ($request, $response) use(&$total) {
             try {
                 // 模拟处理业务
-                if($this->isPredisDriver)
-                {
-                    $redis = new \Common\Library\Cache\Predis([
-                        'scheme' => 'tcp',
-                        'host'   => '127.0.0.1',
-                        'port'   => 6379,
-                    ]);
-                    //var_dump("use Predis driver");
-                }else
-                {
-                    $redis = new \Common\Library\Cache\Redis();
-                    $redis->connect('127.0.0.1');
-                    //var_dump('use Phpredis driver');
-                }
-
+                $redis = $this->getRedis();
                 $redisIncrement = new \Common\Library\Uuid\RedisIncrement($redis,'order_incr_id');
                 $uuid = $redisIncrement->getIncrId();
 
@@ -63,6 +43,26 @@ class Worker extends \Workerfy\AbstractProcess {
         });
 
         $server->start();
+    }
+
+    public function getRedis()
+    {
+        if($this->isPredisDriver)
+        {
+            $redis = new \Common\Library\Cache\Predis([
+                'scheme' => 'tcp',
+                'host'   => '127.0.0.1',
+                'port'   => 6379,
+            ]);
+            //var_dump("use Predis driver");
+        }else
+        {
+            $redis = new \Common\Library\Cache\Redis();
+            $redis->connect('127.0.0.1');
+            //var_dump('use Phpredis driver');
+        }
+
+        return $redis;
     }
 
     public function onShutDown()

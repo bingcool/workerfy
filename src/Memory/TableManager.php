@@ -15,6 +15,9 @@ class TableManager {
 
     use \Workerfy\Traits\SingletonTrait;
 
+    /**
+     * @var array
+     */
     private $swooleTables = [];
 
     /**
@@ -46,14 +49,11 @@ class TableManager {
         $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
 
         $table = new \Swoole\Table($size, $conflict_proportion);
-
         $this->setTableColumn($table, $fields);
-
         $table->create();
 
         $table->setting = $setting;
         $table->table_name = $table_name;
-
         $this->swooleTables[$table_name] = $table;
 
         // enable flag

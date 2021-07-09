@@ -1,0 +1,5 @@
+// 连接池相关
+https://www.elastic.co/guide/cn/elasticsearch/php/current/_connection_pool.html
+
+// 开始学习
+https://www.yht7.com/news/107724

@@ -15,7 +15,7 @@ $extend_data = null;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
-$processManager->onStart = function ($pid) use($config_file_path) {
+$processManager->onStart = function ($pid) {
     //var_dump("fffff");
     // file_put_contents 不能用在协程中，否则主进程存在异步IO,子进程reboot时无法重新创建
     //file_put_contents(PID_FILE, $pid);
@@ -23,9 +23,8 @@ $processManager->onStart = function ($pid) use($config_file_path) {
     // 需要运行在协程中
     go(function () use($pid) {
         sleep(5);
-        $db = \Workerfy\Tests\Db::getMasterMysql();
-        $query = $db->query("select * from user limit 1");
-        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        $db = \Workerfy\Tests\Make::makeCommonDb();
+        $res = $db->query("select * from `tbl_order` limit 1");
         var_dump($res);
     });
 };

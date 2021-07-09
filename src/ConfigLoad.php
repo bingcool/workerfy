@@ -39,7 +39,7 @@ class ConfigLoad {
             throw new \Exception("Load config path is not a file");
         }
 
-        $config = require $config_file_path;
+        $config = require_once $config_file_path;
         if(!is_array($config)) {
             throw new \Exception("Config file {$config_file_path} is not return array");
         }

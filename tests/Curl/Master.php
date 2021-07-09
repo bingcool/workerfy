@@ -19,7 +19,7 @@ $processManager->onRegisterRuntimeLog = function ()
     return $logger;
 };
 
-$process_name = 'Dbtest';
+$process_name = 'test-curl';
 $process_class = \Workerfy\Tests\Curl\Worker::class;
 $process_worker_num = 3;
 $async = true;

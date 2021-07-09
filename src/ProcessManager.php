@@ -32,7 +32,7 @@ class ProcessManager {
     /**
      * @var array
      */
-	private $process_wokers = [];
+	private $process_workers = [];
 
     /**
      * @var array
@@ -171,7 +171,7 @@ class ProcessManager {
                 $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
             }else
             {
-                $hook_flags = SWOOLE_HOOK_ALL;
+                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
             }
         }
         \Swoole\Coroutine::set([
@@ -263,8 +263,8 @@ class ProcessManager {
                             $process->setProcessWorkerId($worker_id);
                             $process->setMasterPid($this->master_pid);
                             $process->setStartTime();
-                            if (!isset($this->process_wokers[$key][$worker_id])) {
-                                $this->process_wokers[$key][$worker_id] = $process;
+                            if (!isset($this->process_workers[$key][$worker_id])) {
+                                $this->process_workers[$key][$worker_id] = $process;
                             }
                             usleep(50000);
                         } catch (\Throwable $throwable) {
@@ -272,7 +272,7 @@ class ProcessManager {
                         }
                     }
                 }
-                foreach ($this->process_wokers as $key => $workers) {
+                foreach ($this->process_workers as $key => $workers) {
                     foreach ($workers as $worker_id => $process) {
                         $process->start();
                         usleep(50000);
@@ -332,7 +332,7 @@ class ProcessManager {
                 case SIGTERM:
                     if(!$this->is_exit) {
                         $this->is_exit = true;
-                        foreach ($this->process_wokers as $key => $processes) {
+                        foreach ($this->process_workers as $key => $processes) {
                             foreach ($processes as $worker_id => $process) {
                                 try {
                                     $process_name = $process->getProcessName();
@@ -362,9 +362,8 @@ class ProcessManager {
             'running',
             $this->start_time
         );
-
         fwrite($ctl_pipe, $master_info);
-        foreach($this->process_wokers as $key => $processes) {
+        foreach($this->process_workers as $key => $processes) {
             ksort($processes);
             /** @var AbstractProcess $process */
             foreach($processes as $process_worker_id => $process) {
@@ -417,7 +416,7 @@ class ProcessManager {
      */
     private function installMasterReloadSignal() {
         \Swoole\Process::signal(SIGUSR2, function($signo) {
-            foreach($this->process_wokers as $key => $processes) {
+            foreach($this->process_workers as $key => $processes) {
                 foreach($processes as $worker_id => $process) {
                     $process_name = $process->getProcessName();
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_REBOOT_FLAG, $worker_id);
@@ -469,13 +468,13 @@ class ProcessManager {
                         $process_name = $process->getProcessName();
                         $process_worker_id = $process->getProcessWorkerId();
                         $key = md5($process_name);
-                        if (isset($this->process_wokers[$key][$process_worker_id])) {
-                            unset($this->process_wokers[$key][$process_worker_id]);
-                            if (count($this->process_wokers[$key]) == 0) {
-                                unset($this->process_wokers[$key]);
+                        if (isset($this->process_workers[$key][$process_worker_id])) {
+                            unset($this->process_workers[$key][$process_worker_id]);
+                            if (count($this->process_workers[$key]) == 0) {
+                                unset($this->process_workers[$key]);
                             }
                         }
-                        if (count($this->process_wokers) == 0) {
+                        if (count($this->process_workers) == 0) {
                             $this->saveStatusToFile();
                             exit(0);
                         }
@@ -492,7 +491,7 @@ class ProcessManager {
                             $key = md5($process_name);
                             $list = $this->process_lists[$key];
                             \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                            unset($this->process_wokers[$key][$process_worker_id]);
+                            unset($this->process_workers[$key][$process_worker_id]);
                             if(is_array($list)) {
                                 try {
                                     $process_name = $list['process_name'];
@@ -508,15 +507,15 @@ class ProcessManager {
                                     $newProcess->setProcessType($process_type);
                                     $newProcess->setRebootCount($process_reboot_count);
                                     $newProcess->setStartTime();
-                                    $this->process_wokers[$key][$process_worker_id] = $newProcess;
+                                    $this->process_workers[$key][$process_worker_id] = $newProcess;
 
                                     $newProcess->start();
 
                                     $this->swooleEventAdd($newProcess);
 
                                 } catch (\Throwable $throwable) {
-                                    if(isset($this->process_wokers[$key][$process_worker_id])) {
-                                        unset($this->process_wokers[$key][$process_worker_id]);
+                                    if(isset($this->process_workers[$key][$process_worker_id])) {
+                                        unset($this->process_workers[$key][$process_worker_id]);
                                     }
                                     $this->onHandleException->call($this, $throwable);
                                 }
@@ -547,7 +546,7 @@ class ProcessManager {
                 return false;
             }
         }else {
-            $process_workers = $this->process_wokers;
+            $process_workers = $this->process_workers;
         }
 
         foreach($process_workers as $key => $processes) {
@@ -684,12 +683,12 @@ class ProcessManager {
                 $process->setMasterPid($this->master_pid);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
                 $process->setStartTime();
-                $this->process_wokers[$key][$worker_id] = $process;
+                $this->process_workers[$key][$worker_id] = $process;
                 $process->start();
                 $this->swooleEventAdd($process);
                 write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态创建成功",'green');
             }catch(\Throwable $throwable) {
-                unset($this->process_wokers[$key][$worker_id], $process);
+                unset($this->process_workers[$key][$worker_id], $process);
                 $this->onHandleException->call($this, $throwable);
             }
         }
@@ -788,7 +787,7 @@ class ProcessManager {
     public function getProcessStatus(int $running_status = 1) {
         $status = [];
         $children_num = 0;
-        foreach($this->process_wokers as $key=>$processes) {
+        foreach($this->process_workers as $key=>$processes) {
             $children_num += count($processes);
         }
         $cpu_num = swoole_cpu_num();
@@ -820,7 +819,7 @@ class ProcessManager {
         $running_children_num = 0;
         // 获取子进程status
         $children_status = [];
-        foreach($this->process_wokers as $key => $processes) {
+        foreach($this->process_workers as $key => $processes) {
             ksort($processes);
             foreach($processes as $process_worker_id => $process) {
                 $process_name = $process->getProcessName();
@@ -928,10 +927,10 @@ class ProcessManager {
      */
 	public function getProcessByName(string $process_name, int $process_worker_id = 0) {
         $key = md5($process_name);
-        if(isset($this->process_wokers[$key][$process_worker_id])){
-            return $this->process_wokers[$key][$process_worker_id];
+        if(isset($this->process_workers[$key][$process_worker_id])){
+            return $this->process_workers[$key][$process_worker_id];
         }else if($process_worker_id == -1) {
-            return $this->process_wokers[$key];
+            return $this->process_workers[$key];
         }else {
             throw new RuntimeException("Missing and not found process_name={$process_name}, worker_id={$process_worker_id}");
         }
@@ -944,7 +943,7 @@ class ProcessManager {
      */
     public function getProcessByPid(int $pid) {
     	$p = null;
-       	foreach ($this->process_wokers as $key => $processes) {
+       	foreach ($this->process_workers as $key => $processes) {
             foreach ($processes as $worker_id => $process) {
                 if($process->getPid() == $pid) {
                     $p = $process;
@@ -1058,8 +1057,8 @@ class ProcessManager {
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
         if($process_name) {
             $key = md5($process_name);
-            if(isset($this->process_wokers[$key])) {
-                $process_workers = $this->process_wokers[$key];
+            if(isset($this->process_workers[$key])) {
+                $process_workers = $this->process_workers[$key];
                 foreach($process_workers as $process_worker_id => $process) {
                     $process->getSwooleProcess()->write($message);
                 }
@@ -1436,7 +1435,7 @@ class ProcessManager {
         if($process_name == $this->getMasterWorkerName())
         {
             $children_num = 0;
-            foreach($this->process_wokers as $key=>$processes) {
+            foreach($this->process_workers as $key=>$processes) {
                 $children_num += count($processes);
             }
             $start_script_file = START_SCRIPT_FILE;
