@@ -364,7 +364,7 @@ abstract class AbstractProcess {
             });
 
             // 定时检测父进程是否存活,否则自身要退出
-            $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 10)) * 1000, function($timer_id) {
+            $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function($timer_id) {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
