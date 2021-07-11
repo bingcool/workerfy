@@ -90,7 +90,7 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
         }
     }
 
-    public function onHandleException(\Throwable $throwable)
+    public function onHandleException(\Throwable $throwable, array $context = [])
     {
         switch (get_class($throwable))
         {

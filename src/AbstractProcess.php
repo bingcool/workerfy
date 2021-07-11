@@ -398,6 +398,13 @@ abstract class AbstractProcess {
                     $this->cli_init_params = $args;
                     $this->{$targetAction}(...$args);
                 }
+
+                // reboot after handle can do send or record msg log or report msg
+                if($this->getRebootCount() > 0 && method_exists($this,'afterReboot'))
+                {
+                    $this->afterReboot();
+                }
+
                 $this->run();
             }catch(\Throwable $throwable) {
                 $this->onHandleException($throwable);
@@ -476,7 +483,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * writeToWorkerByMasterProxy 向master进程写代理数据，master在代理转发worker进程
+     * writeToWorkerByMasterProxy 向master进程写代理数据，master再代理转发worker进程
      * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
@@ -812,17 +819,11 @@ abstract class AbstractProcess {
             return false;
         }
 
-        // 设置强制退出后，不能再设置reboot
-        if($this->is_force_exit) {
-            return false;
-        }
-
         // reboot or exit status
-        if($this->is_reboot || $this->is_exit) {
+        if($this->is_force_exit || $this->is_reboot || $this->is_exit) {
             return false;
         }
 
-        // 自定义等待重启时间
         if($wait_time) {
             $this->wait_time = $wait_time;
         }
@@ -842,7 +843,7 @@ abstract class AbstractProcess {
                 }
             });
             $this->reboot_timer_id = $timer_id;
-            // 阻塞等待reboot，防止父协程继续往下执行逻辑
+            // block wait to reboot
             $channel->pop(-1);
         }
         return true;
@@ -855,7 +856,6 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function exit(bool $is_force = false, float $wait_time = null) {
-        // 设置强制退出后，不能再设置exit
         if($this->is_force_exit) {
             return false;
         }
@@ -870,10 +870,8 @@ abstract class AbstractProcess {
             if($is_force) {
                 $this->is_force_exit = true;
             }
-            // 设置了reboot的定时器，需要清除
             $this->clearRebootTimer();
 
-            // 自定义退出等待时间
             $wait_time && $this->wait_time = $wait_time;
 
             $channel = new Channel(1);
@@ -888,7 +886,7 @@ abstract class AbstractProcess {
                 }
             });
             $this->exit_timer_id = $timer_id;
-            // 阻塞等待退出，防止父协程继续往下执行逻辑
+            // block wait to exit
             $channel->pop(-1);
             return true;
         }
@@ -905,7 +903,7 @@ abstract class AbstractProcess {
         $waitTime = 5;
         if(is_numeric($cron_expression))
         {
-            // eg: reboot/600s 启动后，每600s后重启
+            // for Example reboot/600s after 600s reboot this process
             if($cron_expression < 120)
             {
                 $sleep = 120;
@@ -919,7 +917,7 @@ abstract class AbstractProcess {
                 }
             });
         }else {
-            // eg:crontab expression 定时重启
+            // crontab expression of timer to reboot this process
             CrontabManager::getInstance()->addRule(
                 'register-tick-reboot',
                 $cron_expression,
@@ -1162,10 +1160,11 @@ abstract class AbstractProcess {
 
     /**
      * onHandleException
-     * @param  $throwable
+     * @param  \Throwable $throwable
+     * @param  array $context
      * @return void
      */
-    public function onHandleException(\Throwable $throwable) {
+    public function onHandleException(\Throwable $throwable, array $context = []) {
         $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
         $logger->error(sprintf("%s on File %s on Line %d on trace %s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $throwable->getTraceAsString()));
     }

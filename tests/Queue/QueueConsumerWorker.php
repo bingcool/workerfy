@@ -78,7 +78,7 @@ class QueueConsumerWorker extends AbstractProcess {
 
     }
 
-    public function onHandleException(\Throwable $throwable)
+    public function onHandleException(\Throwable $throwable, array $context = [])
     {
         var_dump(get_class($throwable), $throwable->getMessage(), $throwable->getCode());
     }

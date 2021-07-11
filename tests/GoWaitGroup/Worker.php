@@ -153,7 +153,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
     }
 
-    public function onHandleException(\Throwable $throwable)
+    public function onHandleException(\Throwable $throwable, array $context = [])
     {
         var_dump($throwable->getMessage());
         parent::onHandleException($throwable);

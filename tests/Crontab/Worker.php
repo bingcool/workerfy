@@ -94,7 +94,7 @@ class Worker extends \Workerfy\AbstractProcess {
        // var_dump('创建了一个Crontable 每隔一分钟执行的任务，timer_id='.$timer_id);
     }
 
-    public function onHandleException($t) {
+    public function onHandleException(\Throwable $t, array $context = []) {
         var_dump('Exception_cid='.\Co::getCid());
         var_dump($t->getMessage());
     }

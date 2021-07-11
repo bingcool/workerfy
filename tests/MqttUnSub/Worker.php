@@ -41,7 +41,7 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("shutdown--");
     }
 
-    public function onHandleException(\Throwable $throwable)
+    public function onHandleException(\Throwable $throwable, array $context = [])
     {
         var_dump($throwable->getMessage()."-----trace:".$throwable->getTraceAsString());
     }

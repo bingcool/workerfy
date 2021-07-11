@@ -32,7 +32,7 @@ class Worker extends \Workerfy\AbstractProcess {
         throw new \Exception("test exceptions");
     }
 
-    public function onHandleException($throwable)
+    public function onHandleException(\Throwable $throwable, array $context = [])
     {
         $msg = $throwable->getMessage();
         var_dump($msg);

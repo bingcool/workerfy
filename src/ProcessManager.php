@@ -11,6 +11,8 @@
 
 namespace Workerfy;
 
+use Workerfy\Log\LogManager;
+use Workerfy\Memory\SysvmsgManager;
 use Workerfy\Exception\RuntimeException;
 use Workerfy\Exception\BroadcastException;
 use Workerfy\Exception\DynamicException;
@@ -542,7 +544,7 @@ class ProcessManager {
                 $key = md5($process_name);
                 $process_workers[$key][$process_worker_id] = $process;
             }else {
-                $this->onHandleException->call($this, new \Exception(__CLASS__.'::'.__FUNCTION__.' param $process must instance of AbstractProcess'));
+                $this->onHandleException->call($this, new \Exception(__CLASS__.'::'.__FUNCTION__.' argument of name=process must instance of AbstractProcess'));
                 return false;
             }
         }else {
@@ -1339,10 +1341,11 @@ class ProcessManager {
      */
     public function getSysvmsgInfo() {
         $msg_sysvmsg_info = 'Disable sysvmsg(没启用)';
-        $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
+        $sysvmsgManager = SysvmsgManager::getInstance();
         if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
             $msg_queue_info = $sysvmsgManager->getAllMsgQueueWaitToPopNum();
-            if(!empty($msg_queue_info)) {
+            if(!empty($msg_queue_info))
+            {
                 $msg_sysvmsg_info = '';
                 foreach($msg_queue_info as $info) {
                     list($msg_queue_name, $wait_to_read_num) = $info;
@@ -1364,11 +1367,12 @@ class ProcessManager {
         if(!$this->onRegisterRuntimeLog instanceof \Closure) {
             // 定义注册默认runtimelog
             $this->onRegisterRuntimeLog = function() {
-                $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
-                if(!is_object($logger)) {
+                $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+                if(!is_object($logger))
+                {
                     $pidFileRoot = pathinfo(PID_FILE,PATHINFO_DIRNAME);
                     $runtimeLog = $pidFileRoot.'/runtime.log';
-                    $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
+                    $logger = LogManager::getInstance()->registerLogger(LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
                 }
                 $logger->info("默认Runtime日志注册成功",[],false);
                 return $logger;
