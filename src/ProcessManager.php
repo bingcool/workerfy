@@ -168,7 +168,10 @@ class ProcessManager {
     {
         if(empty($hook_flags))
         {
-            if(version_compare(swoole_version(),'4.6.0', '>='))
+            if(version_compare(swoole_version(),'4.7.0', '>='))
+            {
+                $hook_flags = SWOOLE_HOOK_ALL | SWOOLE_HOOK_NATIVE_CURL;
+            }else if(version_compare(swoole_version(),'4.6.0', '>='))
             {
                 $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
             }else
@@ -247,6 +250,7 @@ class ProcessManager {
         try {
             if(!empty($this->process_lists)) {
                 $this->daemon($is_daemon);
+                $this->installReportStatus();
                 $this->setMasterPid();
                 foreach ($this->process_lists as $key => $list) {
                     $process_worker_num = $list['process_worker_num'] ?? 1;
@@ -289,7 +293,6 @@ class ProcessManager {
                 $this->installRegisterShutdownFunction();
                 $this->registerSignal();
                 $this->swooleEventAdd();
-                $this->installReportStatus();
                 $this->setStartTime();
             }
             // 设置在process start之后
@@ -319,7 +322,6 @@ class ProcessManager {
             // Ctrl+C 退出，master如果使用了协程，可能会出现Segmentation fault，因为是在退出阶段，对业务影响不大，可以忽略
             \Swoole\Process::signal(SIGINT, $this->signalHandle());
         }
-
         \Swoole\Process::signal(SIGTERM, $this->signalHandle());
     }
 
@@ -510,11 +512,8 @@ class ProcessManager {
                                     $newProcess->setRebootCount($process_reboot_count);
                                     $newProcess->setStartTime();
                                     $this->process_workers[$key][$process_worker_id] = $newProcess;
-
                                     $newProcess->start();
-
                                     $this->swooleEventAdd($newProcess);
-
                                 } catch (\Throwable $throwable) {
                                     if(isset($this->process_workers[$key][$process_worker_id])) {
                                         unset($this->process_workers[$key][$process_worker_id]);
@@ -544,7 +543,11 @@ class ProcessManager {
                 $key = md5($process_name);
                 $process_workers[$key][$process_worker_id] = $process;
             }else {
-                $this->onHandleException->call($this, new \Exception(__CLASS__.'::'.__FUNCTION__.' argument of name=process must instance of AbstractProcess'));
+                $this->onHandleException->call($this, new \Exception(sprintf(
+                    's%::s% argument of process must instance of AbstractProcess',
+                    __CLASS__,
+                    __FUNCTION__)
+                ));
                 return false;
             }
         }else {
@@ -882,21 +885,36 @@ class ProcessManager {
             \Swoole\Timer::set([
                 'enable_coroutine' => false,
             ]);
-        }else {
-            /**
-             * 4.6 统一改了，Async 相关的包括 Event、Timer、Process::signal,回调式的都属于Async模块
-             */
-            if(class_exists('Swoole\Async'))
+        }else
+        {
+            if(function_exists('swoole_async_set'))
             {
-                \Swoole\Async::set([
-                        'enable_coroutine' => false,
-                    ]);
-            } else if(method_exists('Swoole\Timer', 'set'))
-            {
-                \Swoole\Timer::set([
+                swoole_async_set([
                     'enable_coroutine' => false,
                 ]);
+            }else
+            {
+                /**
+                 * 4.6 统一改了，Async 相关的包括 Event、Timer、Process::signal,回调式的都属于Async模块
+                 */
+                $isSetFlag = false;
+                if(class_exists('Swoole\Async'))
+                {
+                    \Swoole\Async::set([
+                        'enable_coroutine' => false,
+                    ]);
+                    $isSetFlag = true;
+                }
+
+                if(!$isSetFlag) {
+                    if(method_exists('Swoole\Timer', 'set')) {
+                        @\Swoole\Timer::set([
+                            'enable_coroutine' => false,
+                        ]);
+                    }
+                }
             }
+
         }
 
         $timer_id = \Swoole\Timer::tick($tick_time * 1000, function($timer_id) {
@@ -1250,9 +1268,10 @@ class ProcessManager {
                 $this->onHandleException->call($this, $throwable);
             }finally
             {
-                // close pipe fofo
-                if(is_resource($this->cli_pipe_fd)) {
-                    \Swoole\Event::del($this->cli_pipe_fd);
+                // close pipe fifo
+                if(is_resource($this->cli_pipe_fd))
+                {
+                    @\Swoole\Event::del($this->cli_pipe_fd);
                     fclose($this->cli_pipe_fd);
                     @unlink($this->getCliPipeFile());
                 }

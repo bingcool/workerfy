@@ -8,7 +8,6 @@ class Worker extends \Workerfy\AbstractProcess {
     // 外部cli方式传入--sleep=5
     public function init($sleep = 3)
     {
-        var_dump($sleep);
         $this->sleep = $sleep;
     }
 
@@ -36,7 +35,7 @@ class Worker extends \Workerfy\AbstractProcess {
     // 有时需要上报一下reboot的信息，主要是发生异常的时候或者业务上主动reboot，可以上报，方便随时了解信息
     public function afterReboot()
     {
-        var_dump('reboot-count='.$this->getRebootCount());
+        var_dump('after reboot-count='.$this->getRebootCount());
     }
 
     public function onShutDown()
@@ -45,13 +44,10 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump("子进程 shutdown--".\Co::getCid());
     }
 
+    // 这个函数不要使用
     public function __destruct()
     {
         var_dump("kkkkniiugiuguyvugyfuyf=".$this->getCoroutineId());
     }
 
-//    public function __destruct()
-//    {
-//        var_dump("destruct");
-//    }
 }

@@ -120,7 +120,7 @@ function start($cli_params) {
             exit(0);
         }
         if(\Swoole\Process::kill($master_pid, 0)) {
-            write_info("【Warning】Master Process has started, you can not start again");
+            write_info("【Warning】Master Process has started, you can not start again, you can use status to show info");
             exit(0);
         }
     }
@@ -299,7 +299,7 @@ function pipe($cli_params) {
     }
     $msg = $cli_params['msg'] ?? '';
     if($msg) {
-        write_info("【Info】Start write message={$msg} to master",'green');
+        write_info("【Info】Start write msg={$msg} to master",'green');
         fwrite($pipe, $msg);
     }else {
         write_info("【Warning】Please use pipe --msg=xxxxx");
@@ -460,4 +460,3 @@ function setCliParamsEnv($cli_params)
         defined("WORKER_NUM") or define("WORKER_NUM", $worker_num);
     }
 }
-

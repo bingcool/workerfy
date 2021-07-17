@@ -31,7 +31,8 @@
     "ext-pdo": "*",
     "ext-curl": "*",
     "dragonmantank/cron-expression" : "2.3.0",
-    "bingcool/library": "dev-master"
+    "bingcool/library": "dev-master",
+    "elasticsearch/elasticsearch": "dev-master"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",

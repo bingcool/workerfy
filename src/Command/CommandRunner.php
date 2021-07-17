@@ -75,7 +75,7 @@ class CommandRunner {
         );
 
         $proc_process = proc_open($command, $descriptors, $pipes);
-        // 注意：$callable 里面禁止再创建协程，因为$proc_process协程绑定在当前协程
+        // $callable 里面禁止再创建协程，因为$proc_process协程绑定在当前协程
         try {
             array_push($pipes, $command);
             return call_user_func_array($callable, $pipes);

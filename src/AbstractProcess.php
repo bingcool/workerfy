@@ -363,7 +363,6 @@ abstract class AbstractProcess {
                 }
             });
 
-            // 定时检测父进程是否存活,否则自身要退出
             $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function($timer_id) {
                 if($this->isMasterLive() === false) {
                     \Swoole\Timer::clear($timer_id);
@@ -371,7 +370,7 @@ abstract class AbstractProcess {
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
                     $masterPid = $this->getMasterPid();
-                    write_info("【Warming】定时检测到父进程master_pid={$masterPid}不存在，子进程process={$processName},worker_id={$workerId} start to exit");
+                    write_info("【Warming】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
                 if($this->getProcessWorkerId() == 0 && $this->master_pid) {
@@ -450,8 +449,8 @@ abstract class AbstractProcess {
         }
 
         foreach($process_workers as $process_worker_id => $process) {
-            // 进程处于rebooting|Exiting时，不再发msg
-            if($process->isRebooting() || $process->isExiting()) {
+            if($process->isRebooting() || $process->isExiting())
+            {
                 write_info("【Warming】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
                 continue;
             }
@@ -1029,7 +1028,6 @@ abstract class AbstractProcess {
                 {
                     sleep($re_wait_time);
                 }
-
             }else {
                 break;
             }
@@ -1103,9 +1101,8 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "start children_process【{$process_type}】: $process_name@$worker_id started, Pid=$pid";
+        $logInfo = "start children_process【{$process_type}】: $process_name@$worker_id started, Pid={$pid}";
         write_info($logInfo,'green');
-
     }
 
     /**
@@ -1120,7 +1117,7 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "stop children_process【{$process_type}】: $process_name@$worker_id stopped, Pid=$pid";
+        $logInfo = "stop children_process【{$process_type}】: {$process_name}@{$worker_id} stopped, Pid={$pid}";
         write_info($logInfo,'red');
     }
 
@@ -1133,7 +1130,7 @@ abstract class AbstractProcess {
             $worker_id = $this->getProcessWorkerId();
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
             $pid = $this->getPid();
-            $logInfo = "start children_process【{$process_type}】: $process_name@$worker_id start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid=$pid";
+            $logInfo = "start children_process【{$process_type}】: {$process_name}@{$worker_id} start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid={$pid}";
             write_info($logInfo,'red');
         }
     }
