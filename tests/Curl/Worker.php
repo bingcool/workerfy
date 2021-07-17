@@ -12,8 +12,8 @@ class Worker extends AbstractProcess {
 
     public function init()
     {
-       $this->url = 'http://127.0.0.1:9502/index/testJson';
-       //$this->url = 'http://www.baidu.com';
+       //$this->url = 'http://127.0.0.1:9502/index/testJson';
+       $this->url = 'http://www.baidu.com';
     }
 
     /**
@@ -71,17 +71,36 @@ class Worker extends AbstractProcess {
             });
         }else if($this->getProcessWorkerId() == 2)
         {
-            \Workerfy\Coroutine\GoCoroutine::go(function ()
+            $start = microtime(true);
+
+            for($i=0;$i<10;$i++)
             {
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, "http://www.baiduw.com");
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE); // TRUE 将curl_exec()获取的信息以字符串返回，而不是直接输出
-                curl_setopt($ch, CURLOPT_HEADER, true); // 返回 response header 默认 false 只会获得响应的正文
-                $response = curl_exec($ch);
-                $info = curl_getinfo($ch); // 获得响应头大小
-                var_dump($info);
-                curl_close($ch);
-            });
+                \Workerfy\Coroutine\GoCoroutine::go(function ()
+                {
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $this->url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE); // TRUE 将curl_exec()获取的信息以字符串返回，而不是直接输出
+                    curl_setopt($ch, CURLOPT_HEADER, true); // 返回 response header 默认 false 只会获得响应的正文
+                    $response = curl_exec($ch);
+                    $info = curl_getinfo($ch); // 获得响应头大小
+                    curl_close($ch);
+                });
+            }
+
+//            for($i=0;$i<10;$i++)
+//            {
+//                $ch = curl_init();
+//                curl_setopt($ch, CURLOPT_URL, $this->url);
+//                curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE); // TRUE 将curl_exec()获取的信息以字符串返回，而不是直接输出
+//                curl_setopt($ch, CURLOPT_HEADER, true); // 返回 response header 默认 false 只会获得响应的正文
+//                $response = curl_exec($ch);
+//                $info = curl_getinfo($ch); // 获得响应头大小
+//                curl_close($ch);
+//            }
+
+            $end = microtime(true);
+            $time = $end - $start;
+            var_dump($time);
 
         }
 

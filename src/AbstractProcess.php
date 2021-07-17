@@ -318,12 +318,14 @@ abstract class AbstractProcess {
             // exit
             Process::signal(SIGTERM, function ($signo) {
                 try {
-                    if(method_exists($this,'__destruct')) {
+                    if(method_exists($this,'__destruct'))
+                    {
                         $this->__destruct();
                     }
                     $this->writeStopFormatInfo();
                     // clear
-                    if($this->master_live_timer_id) {
+                    if($this->master_live_timer_id)
+                    {
                         @\Swoole\Timer::clear($this->master_live_timer_id);
                     }
                     $processName = $this->getProcessName();
@@ -331,8 +333,9 @@ abstract class AbstractProcess {
                     write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
                 }catch (\Throwable $throwable)
                 {
-                    write_info("【Error】Exit error, Process=$processName, error:".$throwable->getMessage());
-                }finally {
+                    write_info("【Error】Exit error, Process={$processName}, error:".$throwable->getMessage());
+                }finally
+                {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
                     $this->swooleProcess->exit(SIGTERM);
@@ -343,20 +346,24 @@ abstract class AbstractProcess {
             Process::signal(SIGUSR1, function ($signo) {
                 // clear
                 try {
-                    if($this->master_live_timer_id) {
-                        @\Swoole\Timer::clear($this->master_live_timer_id);
-                    }
                     // destroy
-                    if(method_exists($this,'__destruct')) {
+                    if(method_exists($this,'__destruct'))
+                    {
                         $this->__destruct();
+                    }
+
+                    if($this->master_live_timer_id)
+                    {
+                        @\Swoole\Timer::clear($this->master_live_timer_id);
                     }
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
                     write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
                 }catch (\Throwable $throwable)
                 {
-                    write_info("【Error】Reboot error, Process=$processName error:".$throwable->getMessage());
-                }finally {
+                    write_info("【Error】Reboot error, Process={$processName}, error:".$throwable->getMessage());
+                }finally
+                {
                     Event::del($this->swooleProcess->pipe);
                     Event::exit();
                     $this->swooleProcess->exit(SIGUSR1);
@@ -364,7 +371,8 @@ abstract class AbstractProcess {
             });
 
             $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function($timer_id) {
-                if($this->isMasterLive() === false) {
+                if($this->isMasterLive() === false)
+                {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
                     $processName = $this->getProcessName();
@@ -373,7 +381,8 @@ abstract class AbstractProcess {
                     write_info("【Warming】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
-                if($this->getProcessWorkerId() == 0 && $this->master_pid) {
+                if($this->getProcessWorkerId() == 0 && $this->master_pid)
+                {
                     $this->saveMasterId($this->master_pid);
                 }
             });
@@ -451,7 +460,7 @@ abstract class AbstractProcess {
         foreach($process_workers as $process_worker_id => $process) {
             if($process->isRebooting() || $process->isExiting())
             {
-                write_info("【Warming】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
+                write_info("【Warning】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
                 continue;
             }
             $to_process_name = $process->getProcessName();
@@ -855,12 +864,8 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function exit(bool $is_force = false, float $wait_time = null) {
-        if($this->is_force_exit) {
-            return false;
-        }
-
         // reboot or exit status
-        if($this->is_reboot || $this->is_exit) {
+        if($this->is_force_exit || $this->is_reboot || $this->is_exit) {
             return false;
         }
         $pid = $this->getPid();
@@ -870,9 +875,7 @@ abstract class AbstractProcess {
                 $this->is_force_exit = true;
             }
             $this->clearRebootTimer();
-
             $wait_time && $this->wait_time = $wait_time;
-
             $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
@@ -881,7 +884,13 @@ abstract class AbstractProcess {
                 }catch (\Throwable $throwable) {
                     $this->onHandleException($throwable);
                 }finally {
-                    $this->kill($pid, SIGTERM);
+                    if($this->is_force_exit)
+                    {
+                        $this->kill($pid, SIGKILL);
+                    }else
+                    {
+                        $this->kill($pid, SIGTERM);
+                    }
                 }
             });
             $this->exit_timer_id = $timer_id;
@@ -906,7 +915,8 @@ abstract class AbstractProcess {
             if($cron_expression < 120)
             {
                 $sleep = 120;
-            }else {
+            }else
+            {
                 $sleep = $cron_expression;
             }
             \Swoole\Timer::tick(120 * 1000, function() use($sleep, $waitTime) {
@@ -915,7 +925,8 @@ abstract class AbstractProcess {
                     $this->reboot($waitTime);
                 }
             });
-        }else {
+        }else
+        {
             // crontab expression of timer to reboot this process
             CrontabManager::getInstance()->addRule(
                 'register-tick-reboot',
@@ -1101,7 +1112,7 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "start children_process【{$process_type}】: $process_name@$worker_id started, Pid={$pid}";
+        $logInfo = "start children_process【{$process_type}】: {$process_name}@{$worker_id} started, Pid={$pid}";
         write_info($logInfo,'green');
     }
 

@@ -62,8 +62,12 @@ function parseCliEnvParams() {
     $cli_params = [];
     $argv_arr = array_splice($_SERVER['argv'], 2);
     array_reduce($argv_arr, function($result, $item) use(&$cli_params) {
+        // start daemon
         if(in_array($item, ['-d', '-D'])) {
             putenv('daemon=1');
+        } else if(in_array($item,['-f','-F'])) {
+            // stop force
+            putenv('force=1');
         }else {
             $item = ltrim($item, '--');
             list($param, $value) = explode('=', $item);
@@ -139,7 +143,12 @@ function stop($cli_params) {
         }
     }
     if(\Swoole\Process::kill($master_pid, 0)) {
-        $res = \Swoole\Process::kill($master_pid, SIGTERM);
+        if(getenv('force'))
+        {
+            $res = \Swoole\Process::kill($master_pid, SIGKILL);
+        }else {
+            $res = \Swoole\Process::kill($master_pid, SIGTERM);
+        }
         if($res) {
             write_info("【Info】Master and Children Process start to stop, please wait a time",'green');
         }
