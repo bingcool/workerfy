@@ -13,10 +13,16 @@ $args = [
 ];
 $extend_data = null;
 
-$processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
+$processManager->addProcess(
+    $process_name,
+    $process_class,
+    $process_worker_num,
+    $async,
+    $args,
+    $extend_data
+);
 
 // 监控进程
-
 $monitor_process_name = 'test-monitor';
 $monitor_process_class = \Workerfy\Tests\Dynamic\Monitor_Worker::class;
 $monitor_process_worker_num = 1;
@@ -27,7 +33,14 @@ $monitor_args = [
 ];
 $monitor_extend_data = null;
 
-$processManager->addProcess($monitor_process_name, $monitor_process_class, $monitor_process_worker_num, $monitor_async, $monitor_args, $monitor_extend_data);
+$processManager->addProcess(
+    $monitor_process_name,
+    $monitor_process_class,
+    $monitor_process_worker_num,
+    $monitor_async,
+    $monitor_args,
+    $monitor_extend_data
+);
 
 
 $processManager->onStart = function ($pid) {

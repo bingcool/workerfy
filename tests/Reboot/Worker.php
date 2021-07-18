@@ -9,6 +9,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public function init($sleep = 3)
     {
         $this->sleep = $sleep;
+        var_dump(\Swoole\Coroutine::getOptions());
     }
 
     public function run() {

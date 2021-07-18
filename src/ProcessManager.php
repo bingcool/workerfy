@@ -153,7 +153,7 @@ class ProcessManager {
      */
 	public function __construct(array $config = [], ...$args) {
         $this->config = $config;
-        $this->setHookFlags($config['hook_flags'] ?? '');
+        $this->setCoroutineSetting($config['coroutine_setting'] ?? []);
         $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
@@ -162,10 +162,21 @@ class ProcessManager {
     }
 
     /**
-     * setHookFlags
+     * @param array $setting
      */
-    public function setHookFlags($hook_flags)
+    public function setCoroutineSetting(array $setting)
     {
+        $setting['hook_flags'] = $this->getHookFlags();
+        $setting = array_merge(\Swoole\Coroutine::getOptions() ?? [], $setting);
+        !empty($setting) && \Swoole\Coroutine::set($setting);
+    }
+
+    /**
+     * getHookFlags
+     */
+    public function getHookFlags()
+    {
+        $hook_flags = $this->config['coroutine_setting']['hook_flags'] ?? '';
         if(empty($hook_flags))
         {
             if(version_compare(swoole_version(),'4.7.0', '>='))
@@ -179,11 +190,9 @@ class ProcessManager {
                 $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
             }
         }
-        \Swoole\Coroutine::set([
-            'hook_flags' => $hook_flags
-        ]);
-    }
 
+        return $hook_flags;
+    }
 
     /**
      * addProcess
@@ -202,7 +211,7 @@ class ProcessManager {
         int $process_worker_num = 1,
         bool $async = true,
         array $args = [],
-        $extend_data = null,
+        ?array $extend_data = null,
         bool $enable_coroutine = true
     ) {
         $key = md5($process_name);
@@ -265,7 +274,13 @@ class ProcessManager {
                             /**
                              * @var AbstractProcess $process
                              */
-                            $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                            $process = new $process_class(
+                                $process_name,
+                                $async,
+                                $args,
+                                $extend_data,
+                                $enable_coroutine
+                            );
                             $process->setProcessWorkerId($worker_id);
                             $process->setMasterPid($this->master_pid);
                             $process->setStartTime();
@@ -367,10 +382,12 @@ class ProcessManager {
             $this->start_time
         );
         fwrite($ctl_pipe, $master_info);
-        foreach($this->process_workers as $key => $processes) {
+        foreach($this->process_workers as $key => $processes)
+        {
             ksort($processes);
             /** @var AbstractProcess $process */
-            foreach($processes as $process_worker_id => $process) {
+            foreach($processes as $process_worker_id => $process)
+            {
                 $process_name = $process->getProcessName();
                 $worker_id = $process->getProcessWorkerId();
                 $pid = $process->getPid();
@@ -455,8 +472,10 @@ class ProcessManager {
      */
     protected function rebootOrExitHandle() {
         //必须为false，非阻塞模式
-        while($ret = \Swoole\Process::wait(false)) {
-            if(!is_array($ret) || !isset($ret['pid'])) {
+        while($ret = \Swoole\Process::wait(false))
+        {
+            if(!is_array($ret) || !isset($ret['pid']))
+            {
                 return;
             }
             $pid = $ret['pid'];
@@ -505,7 +524,12 @@ class ProcessManager {
                                     $extend_data = $list['extend_data'] ?? null;
                                     $enable_coroutine = $list['enable_coroutine'] ?? false;
                                     /** @var AbstractProcess $newProcess */
-                                    $newProcess = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                                    $newProcess = new $process_class(
+                                        $process_name,
+                                        $async, $args,
+                                        $extend_data,
+                                        $enable_coroutine
+                                    );
                                     $newProcess->setProcessWorkerId($process_worker_id);
                                     $newProcess->setMasterPid($this->master_pid);
                                     $newProcess->setProcessType($process_type);
@@ -536,8 +560,10 @@ class ProcessManager {
      */
     private function swooleEventAdd($process = null) {
         $process_workers = [];
-        if(isset($process)) {
-            if($process instanceof AbstractProcess) {
+        if(isset($process))
+        {
+            if($process instanceof AbstractProcess)
+            {
                 $process_name = $process->getProcessName();
                 $process_worker_id = $process->getProcessWorkerId();
                 $key = md5($process_name);
@@ -550,12 +576,15 @@ class ProcessManager {
                 ));
                 return false;
             }
-        }else {
+        }else
+        {
             $process_workers = $this->process_workers;
         }
 
-        foreach($process_workers as $key => $processes) {
-            foreach($processes as $worker_id => $process) {
+        foreach($process_workers as $key => $processes)
+        {
+            foreach($processes as $worker_id => $process)
+            {
                 $swooleProcess = $process->getSwooleProcess();
                 \Swoole\Event::add($swooleProcess->pipe, function($pipe) use ($swooleProcess) {
                     $msg = $swooleProcess->read(64 * 1024);
@@ -636,14 +665,14 @@ class ProcessManager {
      * @throws \Exception
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
-        if($this->isMasterExiting()) {
+        if($this->isMasterExiting())
+        {
             write_info("【Warning】 Master进程正在处于exiting退出状态，不能再动态创建子进程");
             return false;
         }
 
         $key = md5($process_name);
         $this->getDynamicProcessNum($process_name);
-
         if($this->process_lists[$key]['dynamic_process_destroying'] ?? false)
         {
             $msg = "【Warning】 已创建动态进程{$process_name}正在逐个退出，不能再动态创建子进程,稍后再通知创建";
@@ -680,10 +709,17 @@ class ProcessManager {
             throw new DynamicException($msg);
         }
 
-        for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++) {
+        for($worker_id = $running_process_worker_num; $worker_id < $total_process_num; $worker_id++)
+        {
             try {
                 /** @var AbstractProcess $process */
-                $process = new $process_class($process_name, $async, $args, $extend_data, $enable_coroutine);
+                $process = new $process_class(
+                    $process_name,
+                    $async,
+                    $args,
+                    $extend_data,
+                    $enable_coroutine
+                );
                 $process->setProcessWorkerId($worker_id);
                 $process->setMasterPid($this->master_pid);
                 $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
@@ -709,8 +745,10 @@ class ProcessManager {
     public function destroyDynamicProcess(string $process_name, $process_num = -1) {
         $process_workers = $this->getProcessByName($process_name, -1);
         $key = md5($process_name);
-        foreach($process_workers as $worker_id=>$process) {
-            if($process->isDynamicProcess()) {
+        foreach($process_workers as $worker_id=>$process)
+        {
+            if($process->isDynamicProcess())
+            {
                 $this->process_lists[$key]['dynamic_process_destroying'] = true;
                 try {
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
@@ -751,19 +789,19 @@ class ProcessManager {
      * @param bool $is_daemon
      */
     private function daemon($is_daemon) {
-        if(defined('IS_DAEMON') && IS_DAEMON == true) {
+        if(defined('IS_DAEMON') && IS_DAEMON == true)
+        {
             $this->is_daemon = IS_DAEMON;
         }
 
-        if($is_daemon) {
+        if($is_daemon)
+        {
             $this->is_daemon = $is_daemon;
         }
 
-        if($this->is_daemon) {
-            if(!isset($this->start_daemon)) {
-                \Swoole\Process::daemon(true,false);
-                $this->start_daemon = true;
-            }
+        if($this->is_daemon)
+        {
+            \Swoole\Process::daemon(true,false);
         }
     }
 
@@ -820,11 +858,10 @@ class ProcessManager {
             'stop_time' => !$running_status ? date("Y-m-d H:i:s") : '',
             'report_time' => date("Y-m-d H:i:s")
         ];
-        // 运行中的总的子进程
         $running_children_num = 0;
-        // 获取子进程status
         $children_status = [];
-        foreach($this->process_workers as $key => $processes) {
+        foreach($this->process_workers as $key => $processes)
+        {
             ksort($processes);
             foreach($processes as $process_worker_id => $process) {
                 $process_name = $process->getProcessName();
@@ -1346,7 +1383,7 @@ class ProcessManager {
                 if(!empty($all_table_info)) {
                     $swoole_table_info = $all_table_info;
                 }else {
-                    $swoole_table_info = "swoole table(已启用),但没有设置table_name";
+                    $swoole_table_info = "swoole table(已启用), but missing table_name";
                 }
             }
 
@@ -1384,7 +1421,7 @@ class ProcessManager {
      */
     protected function registerRuntimeLog() {
         if(!$this->onRegisterRuntimeLog instanceof \Closure) {
-            // 定义注册默认runtimelog
+            // default register runtimeLog
             $this->onRegisterRuntimeLog = function() {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 if(!is_object($logger))
@@ -1430,7 +1467,7 @@ class ProcessManager {
 
         if(empty($cli_params))
         {
-            $cli_params = '(无)';
+            $cli_params = '(no)';
         }
 
         return $cli_params;

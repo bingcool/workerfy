@@ -2,7 +2,14 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\processManager::getInstance([
+    'coroutine_setting' => [
+        'enable_deadlock_check' => true,
+        'log_level' => SWOOLE_LOG_TRACE,
+        'trace_flags' => SWOOLE_TRACE_SERVER | SWOOLE_TRACE_HTTP2,
+    ]
+]);
+
 $process_name = 'test-reboot';
 $process_class = \Workerfy\Tests\Reboot\Worker::class;
 $process_worker_num = 1;

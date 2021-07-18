@@ -577,6 +577,18 @@ abstract class AbstractProcess {
     }
 
     /**
+     * @param array $setting
+     */
+    public function setCoroutineSetting(array $setting)
+    {
+        if($this->enable_coroutine)
+        {
+            $setting = array_merge(\Swoole\Coroutine::getOptions() ?? [], $setting);
+            !empty($setting) && \Swoole\Coroutine::set($setting);
+        }
+    }
+
+    /**
      * getProcess 获取process进程对象
      * @return object
      */

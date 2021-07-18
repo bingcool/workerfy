@@ -311,7 +311,9 @@ function pipe($cli_params) {
         write_info("【Info】Start write msg={$msg} to master",'green');
         fwrite($pipe, $msg);
     }else {
+        fclose($pipe);
         write_info("【Warning】Please use pipe --msg=xxxxx");
+        exit(0);
     }
     fclose($pipe);
     exit(0);
@@ -346,10 +348,13 @@ function add($cli_params, int $wait_time = 5) {
     $num = $cli_params['num'] ?? 1;
     $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
     if($name) {
-        write_info("【Info】 Master Process start to create dynamic process, please wait a time(about {$wait_time}s)",'green');
+        write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("【Warning】 Please use pipe --name=xxxxx -num=1");
+        write_info("【Warning】 Please use pipe --name=xxxxx --num=1");
+        flock($pipe, LOCK_UN);
+        fclose($pipe);
+        exit(0);
     }
     flock($pipe, LOCK_UN);
     fclose($pipe);
@@ -383,18 +388,19 @@ function remove($cli_params, int $wait_time = 5) {
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $name = $cli_params['name'] ?? '';
+    $name = $cli_params['name'] ?? null;
     $num = $cli_params['num'] ?? 1;
     $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
-        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time(about {$wait_time}s)",'green');
+        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
         write_info("【Warning】 Please use pipe --name=xxxxx");
+        exit(0);
     }
     fclose($pipe);
     sleep($wait_time);
-    write_info("【Info】 All process_name={$name} of dynamic process be removed, you can show status to see", 'green');
+    write_info("【Info】 All process_name={$name} of dynamic process had be removed, you can show status to see", 'green');
     exit(0);
 }
 

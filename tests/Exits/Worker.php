@@ -4,6 +4,7 @@ namespace Workerfy\Tests\Exits;
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
+        var_dump(\Swoole\Coroutine::getOptions());
         // 模拟处理业务
         while (true) {
             try {

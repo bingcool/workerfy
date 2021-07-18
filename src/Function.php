@@ -13,8 +13,8 @@ function json_validate(string $str, & $decodeData = null) {
 }
 
 /**
- * 随机获取一个监听的端口
- * php_socket模式
+ * listen rand port
+ * php_socket model
  * @return bool
  */
 function get_one_free_port() {
@@ -34,8 +34,8 @@ function get_one_free_port() {
 }
 
 /**
- * 随机获取一个监听的端口
- * swoole_coroutine模式
+ * rand get poet
+ * swoole_coroutine
  * @return mixed
  */
 function get_one_free_port_coro() {
@@ -49,7 +49,6 @@ function get_one_free_port_coro() {
 }
 
 /**
- * 是否是在主进程环境中
  * @return bool
  */
 function in_master_process_env() {
@@ -61,7 +60,6 @@ function in_master_process_env() {
 }
 
 /**
- * 是否是在子进程环境中
  * @return bool
  */
 function in_children_process_env() {
