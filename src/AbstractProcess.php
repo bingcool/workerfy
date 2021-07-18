@@ -318,7 +318,7 @@ abstract class AbstractProcess {
             // exit
             Process::signal(SIGTERM, function ($signo) {
                 try {
-                    if(method_exists($this,'__destruct'))
+                    if(method_exists($this,'__destruct') && (version_compare(swoole_version(),'4.6.0', '<')))
                     {
                         $this->__destruct();
                     }
@@ -378,7 +378,7 @@ abstract class AbstractProcess {
                     $processName = $this->getProcessName();
                     $workerId = $this->getProcessWorkerId();
                     $masterPid = $this->getMasterPid();
-                    write_info("【Warming】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
+                    write_info("【Warning】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
                 if($this->getProcessWorkerId() == 0 && $this->master_pid)
@@ -512,7 +512,7 @@ abstract class AbstractProcess {
      */
     public function notifyMasterCreateDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = 2) {
         if($this->is_dynamic_destroy) {
-            write_info("【Warming】process is destroying, forbidden dynamic create process");
+            write_info("【Warning】process is destroying, forbidden dynamic create process");
             return;
         }
         $data = [
@@ -1112,7 +1112,7 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "start children_process【{$process_type}】: {$process_name}@{$worker_id} started, Pid={$pid}";
+        $logInfo = "start children_process【{$process_type}】: {$process_name}@{$worker_id} started, pid={$pid}, master_pid={$this->getMasterPid()}";
         write_info($logInfo,'green');
     }
 
@@ -1128,7 +1128,7 @@ abstract class AbstractProcess {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
-        $logInfo = "stop children_process【{$process_type}】: {$process_name}@{$worker_id} stopped, Pid={$pid}";
+        $logInfo = "stop children_process【{$process_type}】: {$process_name}@{$worker_id} stopped, pid={$pid}, master_pid={$this->getMasterPid()}";
         write_info($logInfo,'red');
     }
 

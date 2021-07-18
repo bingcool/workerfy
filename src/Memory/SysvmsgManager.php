@@ -88,7 +88,10 @@ class SysvmsgManager {
         }
 
         if(strlen($project) !=1) {
-            $errorMsg = sprintf("【Warning】%s::%s. the params of project require string type", __CLASS__, __FUNCTION__);
+            $errorMsg = sprintf("【Warning】%s::%s. the params of project require string type",
+                __CLASS__,
+                __FUNCTION__
+            );
             write_info($errorMsg);
             $isSuccess = false;
         }
@@ -99,7 +102,10 @@ class SysvmsgManager {
         if(!isset($msg_project[$path_name_key][$project])) {
             $msg_project[$path_name_key][$project] = 1;
         }else {
-            $errorMsg = sprintf("【Warning】%s::%s. the params of project is had setting", __CLASS__, __FUNCTION__);
+            $errorMsg = sprintf("【Warning】%s::%s. the params of project is had setting",
+                __CLASS__,
+                __FUNCTION__
+            );
             write_info($errorMsg);
             $isSuccess = false;
         }
@@ -107,7 +113,10 @@ class SysvmsgManager {
         $msg_key = ftok($path_name, $project);
 
         if($msg_key < 0) {
-            $errorMsg = sprintf("【Warning】%s::%s. create msg_key failed", __CLASS__, __FUNCTION__);
+            $errorMsg = sprintf("【Warning】%s::%s. create msg_key failed",
+                __CLASS__,
+                __FUNCTION__
+            );
             write_info($errorMsg);
             $isSuccess = false;
         }
@@ -163,7 +172,10 @@ class SysvmsgManager {
      */
     public function registerMsgType(string $msg_queue_name, string $msg_type_name, int $msg_type_flag_num = 1) {
         if($msg_type_flag_num <=0) {
-            $errorMsg = sprintf("【Warning】%s::%s. 第三个参数msg_flag_num必须大于0", __CLASS__, __FUNCTION__);
+            $errorMsg = sprintf("【Warning】%s::%s. 第三个参数msg_flag_num必须大于0",
+                __CLASS__,
+                __FUNCTION__
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -172,7 +184,11 @@ class SysvmsgManager {
         $msg_type_name_key = md5($msg_type_name);
 
         if(isset($this->msg_type[$msg_queue_name_key][$msg_type_name_key])) {
-            $errorMsg = sprintf("【Warning】%s::%s. 第二个参数msg_type_name=%s已经存在设置", __CLASS__, __FUNCTION__, $msg_type_name);
+            $errorMsg = sprintf("【Warning】%s::%s. 第二个参数msg_type_name=%s已经存在设置",
+                __CLASS__,
+                __FUNCTION__,
+                $msg_type_name
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -180,7 +196,11 @@ class SysvmsgManager {
         if(isset($this->msg_type[$msg_queue_name_key])) {
             $register_msg_flag_num = array_values($this->msg_type[$msg_queue_name_key]);
             if(in_array($msg_type_flag_num, $register_msg_flag_num)) {
-                $errorMsg = sprintf("【Warning】%s::%s 第三个参数msg_type_flag_num=%s已经存在设置,不要重复设置", __CLASS__, __FUNCTION__, $msg_type_flag_num);
+                $errorMsg = sprintf("【Warning】%s::%s 第三个参数msg_type_flag_num=%s已经存在设置,不要重复设置",
+                    __CLASS__,
+                    __FUNCTION__,
+                    $msg_type_flag_num
+                );
                 write_info($errorMsg);
                 throw new \Exception($errorMsg);
             }
@@ -206,14 +226,22 @@ class SysvmsgManager {
             if(isset($this->msg_type[$msg_queue_name_key][$msg_type_name_key])) {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
-                $errorMsg = sprintf("【Warning】%s::%s 消息类型=%s,不存在",__CLASS__, __FUNCTION__, $msg_type_name);
+                $errorMsg = sprintf("【Warning】%s::%s 消息类型=%s,不存在",
+                    __CLASS__,
+                    __FUNCTION__,
+                    $msg_type_name
+                );
                 write_info($errorMsg);
                 throw new \Exception($errorMsg);
             }
         }
 
         if(!isset($this->msg_queue[$msg_queue_name_key])) {
-            $errorMsg = sprintf("【Warning】%s::%s 队列名称：%s,不存在", __CLASS__, __FUNCTION__, $msg_queue_name);
+            $errorMsg = sprintf("【Warning】%s::%s 队列名称：%s,不存在",
+                __CLASS__,
+                __FUNCTION__,
+                $msg_queue_name
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -222,7 +250,10 @@ class SysvmsgManager {
         $res = msg_send($msg_queue, $msg_type_flag_num, $msg, $serialize = true, $blocking = false, $errorCode);
 
         if($res === false) {
-            $errorMsg = sprintf("【Warning】%s::%s. msg_send()发送消息失败，返回错误码：%d", __CLASS__, __FUNCTION__, $errorCode);
+            $errorMsg = sprintf("【Warning】%s::%s. msg_send()发送消息失败，返回错误码：%d",
+                __CLASS__,
+                __FUNCTION__,
+                $errorCode);
             write_info($errorMsg);
             return false;
         }
@@ -241,7 +272,11 @@ class SysvmsgManager {
         $msg_queue_name_key = md5($msg_queue_name);
         if(!isset($this->msg_queue[$msg_queue_name_key]))
         {
-            $errorMsg = sprintf("【Warning】%s::%s. 队列名称：%s,不存在", __CLASS__, __FUNCTION__, $msg_queue_name);
+            $errorMsg = sprintf("【Warning】%s::%s. 队列名称：%s,不存在",
+                __CLASS__,
+                __FUNCTION__,
+                $msg_queue_name
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -253,7 +288,11 @@ class SysvmsgManager {
             {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
-                $errorMsg = sprintf("【Warning】%s::%s. 消息类型=%s,不存在", __CLASS__, __FUNCTION__, $msg_type_name);
+                $errorMsg = sprintf("【Warning】%s::%s. 消息类型=%s,不存在",
+                    __CLASS__,
+                    __FUNCTION__,
+                    $msg_type_name
+                );
                 write_info($errorMsg);
                 throw new \Exception($errorMsg);
             }
@@ -264,7 +303,11 @@ class SysvmsgManager {
         $msg_queue = $this->msg_queue[$msg_queue_name_key];
         $res = msg_receive($msg_queue, $msg_type_flag_num, $msg_type, $max_size, $msg, true, 0, $errorCode);
         if($res === false) {
-            $errorMsg = sprintf("【Warning】%s::%s. msg_receive()接收消息失败，返回错误码：%d", __CLASS__, __FUNCTION__, $errorCode);
+            $errorMsg = sprintf("【Warning】%s::%s. msg_receive()接收消息失败，返回错误码：%d",
+                __CLASS__,
+                __FUNCTION__,
+                $errorCode
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -282,7 +325,11 @@ class SysvmsgManager {
     public function getMsgQueue(string $msg_queue_name) {
         $msg_queue_name_key = md5($msg_queue_name);
         if(!isset($this->msg_queue[$msg_queue_name_key])) {
-            $errorMsg = sprintf("【Warning】%s::%s. 队列名称：%s,不存在", __CLASS__, __FUNCTION__, $msg_queue_name);
+            $errorMsg = sprintf("【Warning】%s::%s. queue msg=%s not exist",
+                __CLASS__,
+                __FUNCTION__,
+                $msg_queue_name
+            );
             write_info($errorMsg);
             throw new \Exception($errorMsg);
         }
@@ -304,7 +351,11 @@ class SysvmsgManager {
             if(isset($this->msg_type[$msg_queue_name_key][$msg_type_name_key])) {
                 $msg_type_flag_num = $this->msg_type[$msg_queue_name_key][$msg_type_name_key];
             }else {
-                $errorMsg = "【Warning】".__CLASS__.'::'.__FUNCTION__." 消息类型={$msg_type_name},不存在";
+                $errorMsg = sprintf("【Warning】s%::s%.msg type=s% not exist",
+                    __CLASS__,
+                    __FUNCTION__,
+                    $msg_queue_name
+                );
                 write_info($errorMsg);
                 throw new \Exception($errorMsg);
             }

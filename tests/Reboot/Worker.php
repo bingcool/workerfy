@@ -44,10 +44,4 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump("子进程 shutdown--".\Co::getCid());
     }
 
-    // 这个函数不要使用
-    public function __destruct()
-    {
-        var_dump("kkkkniiugiuguyvugyfuyf=".$this->getCoroutineId());
-    }
-
 }

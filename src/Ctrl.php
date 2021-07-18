@@ -398,32 +398,6 @@ function remove($cli_params, int $wait_time = 5) {
     exit(0);
 }
 
-function write_info($msg, $foreground = "red", $background = "black") {
-    include_once __DIR__.'/EachColor.php';
-    // Create new Colors class
-    static $colors;
-    if(!isset($colors)) {
-        $colors = new \Workerfy\EachColor();
-    }
-    $formatMsg = "--------------{$msg} --------------";
-    echo $colors->getColoredString($formatMsg, $foreground, $background) . "\n\n";
-    if(defined("CTL_LOG_FILE")) {
-        if(defined('MAX_LOG_FILE_SIZE')) {
-             $max_log_file_size = MAX_LOG_FILE_SIZE;
-        }else {
-            $max_log_file_size = 10 * 1024 * 1024;
-        }
-        if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
-            unlink(CTL_LOG_FILE);
-        }
-        $logFd = fopen(CTL_LOG_FILE,'a+');
-        $date = date("Y-m-d H:i:s");
-        $writeMsg = "【{$date}】".$msg."\n\r";
-        fwrite($logFd, $writeMsg);
-        fclose($logFd);
-    }
-}
-
 /**
  * master 进程启动时创建注册的有名管道，在master中将入Event::add()事件监听
  * 终端或者外部程序只需要打开这个有名管道，往里面写数据，master的onCliMsg回调即可收到信息
@@ -439,6 +413,9 @@ function getCliPipeFile() {
     return $pipe_file;
 }
 
+/**
+ * @return string
+ */
 function getCtlPipeFile() {
     $path_info = pathinfo(PID_FILE);
     $path_dir = $path_info['dirname'];
@@ -447,6 +424,9 @@ function getCtlPipeFile() {
     return $pipe_file;
 }
 
+/**
+ * @return string
+ */
 function getCtlLogFile() {
     $path_info = pathinfo(PID_FILE);
     $path_dir = $path_info['dirname'];
@@ -455,6 +435,9 @@ function getCtlLogFile() {
     return $ctl_log_file;
 }
 
+/**
+ * @param $cli_params
+ */
 function setCliParamsEnv($cli_params)
 {
     $param_keys = array_keys($cli_params);
@@ -467,5 +450,39 @@ function setCliParamsEnv($cli_params)
     $worker_num = (int)getenv('worker_num');
     if(isset($worker_num) && $worker_num > 0) {
         defined("WORKER_NUM") or define("WORKER_NUM", $worker_num);
+    }
+}
+
+/**
+ * @param $msg
+ * @param string $foreground
+ * @param string $background
+ */
+function write_info($msg, $foreground = "red", $background = "black") {
+    // Create new Colors class
+    static $colors;
+    if(!isset($colors))
+    {
+        $colors = new \Workerfy\EachColor();
+    }
+    $formatMsg = "--------------{$msg} --------------";
+    echo $colors->getColoredString($formatMsg, $foreground, $background) . "\n\n";
+    if(defined("CTL_LOG_FILE"))
+    {
+        if(defined('MAX_LOG_FILE_SIZE'))
+        {
+            $max_log_file_size = MAX_LOG_FILE_SIZE;
+        }else
+        {
+            $max_log_file_size = 10 * 1024 * 1024;
+        }
+        if(is_file(CTL_LOG_FILE) && filesize(CTL_LOG_FILE) > $max_log_file_size) {
+            unlink(CTL_LOG_FILE);
+        }
+        $logFd = fopen(CTL_LOG_FILE,'a+');
+        $date = date("Y-m-d H:i:s");
+        $writeMsg = "【{$date}】".$msg."\n\r";
+        fwrite($logFd, $writeMsg);
+        fclose($logFd);
     }
 }

@@ -32,10 +32,13 @@ $processManager->onReportStatus =  function ($status) {
     //var_dump($status);
     file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
 
-    var_dump($status);
+    //var_dump($status);
 
     go(function () {
-        sleep(20);
+        \Swoole\Coroutine::set([
+            'enable_deadlock_check' => false
+        ]);
+        \Swoole\Coroutine::sleep(1);
         var_dump('onReportStatus');
     });
 
