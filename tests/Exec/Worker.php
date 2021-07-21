@@ -24,7 +24,7 @@ class Worker extends \Workerfy\AbstractProcess {
                 return 'zhongguo';
             } ,"php --ri swoole");
 
-            //var_dump($return);
+            var_dump($return);
 
         });
 
@@ -34,8 +34,8 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump("start exec");
         $execFile = 'php';
         CommandRunner::exec($execFile,
-            ['/home/bingcool/wwwroot/workerfy/tests/Exec/TestCommand.php','hello'],
-            true
+            [__DIR__.'/TestCommand.php','hello'],
+            false
         );
         var_dump("exec end");
 

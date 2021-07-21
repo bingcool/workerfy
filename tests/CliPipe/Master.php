@@ -14,8 +14,7 @@ $args = [
     //'max_worker_num' => 10
 ];
 $extend_data = null;
-// 设置启用管道，默认不设置
-$processManager->createCliPipe(true);
+
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {
@@ -27,11 +26,11 @@ $processManager->onCreateDynamicProcess = function ($process_name, $num) {
 };
 // 终端信息处理
 $processManager->onCliMsg = function($msg) {
-    //var_dump("父进程收到来自于cli终端信息：".$msg);
+    var_dump("父进程收到来自于cli终端信息：".$msg);
 };
 
 $processManager->onExit = function() use($configFilePath) {
-    //var_dump("master exit",$configFilePath);
+
 };
 
 $master_pid = $processManager->start();

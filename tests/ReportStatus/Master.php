@@ -2,9 +2,6 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-// 可以定义全局变量改变上报状态时间间隔，单位秒
-define("WORKERFY_REPORT_TICK_TIME", 2);
-
 $processManager = \Workerfy\processManager::getInstance();
 $process_name = 'test-report-status';
 $process_class = \Workerfy\Tests\ReportStatus\Worker::class;

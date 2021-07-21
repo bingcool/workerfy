@@ -149,6 +149,7 @@ class ProcessManager {
 
     /**
      * ProcessManager constructor.
+     * @param array $config
      * @param mixed ...$args
      */
 	public function __construct(array $config = [], ...$args) {
@@ -336,6 +337,7 @@ class ProcessManager {
         if(!$this->is_daemon) {
             // Ctrl+C 退出，master如果使用了协程，可能会出现Segmentation fault，因为是在退出阶段，对业务影响不大，可以忽略
             \Swoole\Process::signal(SIGINT, $this->signalHandle());
+            return;
         }
         \Swoole\Process::signal(SIGTERM, $this->signalHandle());
     }
@@ -437,13 +439,13 @@ class ProcessManager {
      */
     private function installMasterReloadSignal() {
         \Swoole\Process::signal(SIGUSR2, function($signo) {
+            $this->is_exit = false;
             foreach($this->process_workers as $key => $processes) {
                 foreach($processes as $worker_id => $process) {
                     $process_name = $process->getProcessName();
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_REBOOT_FLAG, $worker_id);
                 }
             }
-            $this->is_exit = true;
         });
     }
 

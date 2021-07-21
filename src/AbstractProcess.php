@@ -281,7 +281,13 @@ abstract class AbstractProcess {
                                     case self::WORKERFY_PROCESS_REBOOT_FLAG :
                                         $is_call_pipe = false;
                                         \Swoole\Coroutine::create(function () {
-                                            $this->reboot();
+                                            if($this->isStaticProcess())
+                                            {
+                                                $this->reboot();
+                                            }else {
+                                                // from cli ctl, dynamic process can not reload. only exit
+                                                $this->exit(true);
+                                            }
                                         });
                                         break;
                                     case self::WORKERFY_PROCESS_EXIT_FLAG :

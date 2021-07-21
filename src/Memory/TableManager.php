@@ -47,7 +47,6 @@ class TableManager {
 
         $size = $setting['size'] ?? 128;
         $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
-
         $table = new \Swoole\Table($size, $conflict_proportion);
         $this->setTableColumn($table, $fields);
         $table->create();
@@ -95,9 +94,8 @@ class TableManager {
     public function getTable(string $table_name) {
         if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {
             return $this->swooleTables[$table_name];
-        }else {
-            throw new \Exception("table name = {$table_name} is not create, please create it before using");
         }
+        return null;
     }
 
     /**
