@@ -312,14 +312,14 @@ function pipe($cli_params) {
         fwrite($pipe, $msg);
     }else {
         fclose($pipe);
-        write_info("【Warning】Please use pipe --msg=xxxxx");
+        write_info("【Warning】Please use: pipe --msg=xxxxx");
         exit(0);
     }
     fclose($pipe);
     exit(0);
 }
 
-function add($cli_params, int $wait_time = 5) {
+function add($cli_params, int $wait_time = 3) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -351,7 +351,7 @@ function add($cli_params, int $wait_time = 5) {
         write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("【Warning】 Please use pipe --name=xxxxx --num=1");
+        write_info("【Warning】 Please use: add --name=xxxxx --num=1");
         flock($pipe, LOCK_UN);
         fclose($pipe);
         exit(0);
@@ -359,11 +359,11 @@ function add($cli_params, int $wait_time = 5) {
     flock($pipe, LOCK_UN);
     fclose($pipe);
     sleep($wait_time);
-    write_info("【Info】 Dynamic Process add successful, you can show status to see", 'green');
+    status($cli_params);
     exit(0);
 }
 
-function remove($cli_params, int $wait_time = 5) {
+function remove($cli_params, int $wait_time = 3) {
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid)) {
@@ -395,12 +395,12 @@ function remove($cli_params, int $wait_time = 5) {
         write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
     }else {
-        write_info("【Warning】 Please use pipe --name=xxxxx");
+        write_info("【Warning】 Please use: remove --name=xxxxx");
         exit(0);
     }
     fclose($pipe);
     sleep($wait_time);
-    write_info("【Info】 All process_name={$name} of dynamic process had be removed, you can show status to see", 'green');
+    status($cli_params);
     exit(0);
 }
 

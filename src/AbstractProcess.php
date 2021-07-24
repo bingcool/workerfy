@@ -189,6 +189,11 @@ abstract class AbstractProcess {
     const WORKERFY_PROCESS_EXIT_FLAG = "process::worker::action::exit";
 
     /**
+     * @var string
+     */
+    const WORKERFY_PROCESS_STATUS_FLAG = "process::worker::action::status";
+
+    /**
      * 动态进程销毁间隔多少秒后，才能再次接受动态创建，防止频繁销毁和创建，最大300s
      * @var int
      */
@@ -262,24 +267,29 @@ abstract class AbstractProcess {
             $this->coroutine_id = \Swoole\Coroutine::getCid();
             $this->setUserAndGroup();
             if($this->async) {
-                Event::add($this->swooleProcess->pipe, function () {
+                Event::add($this->swooleProcess->pipe, function ()
+                {
                     try {
-                        $msg = $this->swooleProcess->read(64 * 1024);
-                        if (is_string($msg)) {
-                            $message = json_decode($msg, true);
-                            @list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $message;
+                        $targetMsg = $this->swooleProcess->read(64 * 1024);
+                        if (is_string($targetMsg))
+                        {
+                            $targetMsg = json_decode($targetMsg, true);
+                            @list($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) = $targetMsg;
                             if (!isset($is_proxy_by_master) || is_null($is_proxy_by_master) || $is_proxy_by_master === false) {
                                 $is_proxy_by_master = false;
                             } else {
                                 $is_proxy_by_master = true;
                             }
                         }
-                        if ($msg && isset($from_process_name) && isset($from_process_worker_id)) {
-                            $is_call_pipe = true;
-                            if (is_string($msg)) {
-                                switch ($msg) {
+                        if($msg && isset($from_process_name) && isset($from_process_worker_id))
+                        {
+                            $action_handle_flag = false;
+                            if(is_string($msg))
+                            {
+                                switch ($msg)
+                                {
                                     case self::WORKERFY_PROCESS_REBOOT_FLAG :
-                                        $is_call_pipe = false;
+                                        $action_handle_flag = true;
                                         \Swoole\Coroutine::create(function () {
                                             if($this->isStaticProcess())
                                             {
@@ -291,7 +301,7 @@ abstract class AbstractProcess {
                                         });
                                         break;
                                     case self::WORKERFY_PROCESS_EXIT_FLAG :
-                                        $is_call_pipe = false;
+                                        $action_handle_flag = true;
                                         \Swoole\Coroutine::create(function () use($from_process_name) {
                                             if($from_process_name == ProcessManager::MASTER_WORKER_NAME) {
                                                 $this->exit(true);
@@ -300,10 +310,31 @@ abstract class AbstractProcess {
                                             }
                                         });
                                         break;
+                                    case self::WORKERFY_PROCESS_STATUS_FLAG :
+                                        $action_handle_flag = true;
+                                        $systemStatus = $this->getProcessSystemStatus();
+                                        if(!isset($systemStatus['record_time']))
+                                        {
+                                            $systemStatus['record_time'] = date('Y-m-d H:i:s');
+                                        }
+                                        $data = [
+                                            'action' =>self::WORKERFY_PROCESS_STATUS_FLAG,
+                                            'process_name' =>$this->getProcessName(),
+                                            'data' => [
+                                                    'worker_id' => $this->getProcessWorkerId(),
+                                                    'status' => $systemStatus ?? []
+                                                ]
+                                            ];
+                                        $this->writeToMasterProcess(
+                                            ProcessManager::MASTER_WORKER_NAME,
+                                            $data
+                                        );
+                                        break;
                                 }
 
                             }
-                            if ($is_call_pipe === true) {
+                            if ($action_handle_flag === false)
+                            {
                                 \Swoole\Coroutine::create(function () use($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {
                                     try {
                                         $this->onPipeMsg($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master);
@@ -393,10 +424,10 @@ abstract class AbstractProcess {
                 }
             });
 
-            // 这里子进程不需要SIGUSR2，需要移除信号监听
             @Process::signal(SIGUSR2, null);
 
-            if(PHP_OS != 'Darwin') {
+            if(PHP_OS != 'Darwin')
+            {
                 $process_type_name = $this->getProcessTypeName();
                 $this->swooleProcess->name("php-process-worker[{$process_type_name}]:".$this->getProcessName().'@'.$this->getProcessWorkerId());
             }
@@ -438,17 +469,24 @@ abstract class AbstractProcess {
      * @return bool
      * @throws \Exception
      */
-    public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0, bool $is_use_master_proxy = true) {
+    public function writeByProcessName(
+        string $process_name,
+        $data,
+        int $process_worker_id = 0,
+        bool $is_use_master_proxy = true
+    ) {
         $processManager = \Workerfy\processManager::getInstance();
         $isMaster = $processManager->isMaster($process_name);
         $from_process_name = $this->getProcessName();
         $from_process_worker_id = $this->getProcessWorkerId();
         
-        if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id) {
+        if($from_process_name == $process_name && $process_worker_id == $from_process_worker_id)
+        {
             throw new \Exception('Process can\'t write message to myself');
         }
 
-        if($isMaster) {
+        if($isMaster)
+        {
             $to_process_worker_id = 0;
             $message = json_encode([$data, $from_process_name, $from_process_worker_id, $processManager->getMasterWorkerName(), $to_process_worker_id], JSON_UNESCAPED_UNICODE);
             $this->getSwooleProcess()->write($message);
@@ -457,13 +495,16 @@ abstract class AbstractProcess {
 
         $process_workers = [];
         $to_target_process = $processManager->getProcessByName($process_name, $process_worker_id);
-        if(is_object($to_target_process) && $to_target_process instanceof AbstractProcess) {
+        if(is_object($to_target_process) && $to_target_process instanceof AbstractProcess)
+        {
             $process_workers = [$process_worker_id => $to_target_process];
-        }else if(is_array($to_target_process)) {
+        }else if(is_array($to_target_process))
+        {
             $process_workers = $to_target_process;
         }
 
-        foreach($process_workers as $process_worker_id => $process) {
+        foreach($process_workers as $process_worker_id => $process)
+        {
             if($process->isRebooting() || $process->isExiting())
             {
                 write_info("【Warning】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
@@ -473,9 +514,11 @@ abstract class AbstractProcess {
             $to_process_worker_id = $process->getProcessWorkerId();
 
             $message = json_encode([$data, $from_process_name, $from_process_worker_id, $to_process_name, $to_process_worker_id], JSON_UNESCAPED_UNICODE);
-            if($is_use_master_proxy) {
+            if($is_use_master_proxy)
+            {
                 $this->getSwooleProcess()->write($message);
-            }else {
+            }else
+            {
                 $is_proxy = false;
                 $message = json_encode([$data, $from_process_name, $from_process_worker_id, $is_proxy], JSON_UNESCAPED_UNICODE);
                 $process->getSwooleProcess()->write($message);
@@ -522,9 +565,12 @@ abstract class AbstractProcess {
             return;
         }
         $data = [
-            ProcessManager::CREATE_DYNAMIC_WORKER,
-            $dynamic_process_name,
-            $dynamic_process_num
+            'action' =>ProcessManager::CREATE_DYNAMIC_WORKER,
+            'process_name' =>$dynamic_process_name,
+            'data' =>
+                [
+                    'dynamic_process_num' =>$dynamic_process_num
+                ]
         ];
         $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
     }
@@ -540,16 +586,19 @@ abstract class AbstractProcess {
             // 销毁进程，默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
             $dynamic_process_num = -1;
             $data = [
-                ProcessManager::DESTROY_DYNAMIC_PROCESS,
-                $dynamic_process_name,
-                $dynamic_process_num
+                'action' =>ProcessManager::DESTROY_DYNAMIC_PROCESS,
+                'process_name' =>$dynamic_process_name,
+                'data' =>
+                    [
+                        'dynamic_process_num' => $dynamic_process_num
+                    ]
             ];
             $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
             // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
             $this->isDynamicDestroy(true);
             if(isset($this->getArgs()['dynamic_destroy_process_time'])) {
                 $dynamic_destroy_process_time = $this->getArgs()['dynamic_destroy_process_time'];
-                // 最大时间不能太长
+                // max time can not too long
                 if(is_numeric($dynamic_destroy_process_time)) {
                     if($dynamic_destroy_process_time > 300) {
                         $dynamic_destroy_process_time = self::DYNAMIC_DESTROY_PROCESS_TIME;
@@ -596,7 +645,7 @@ abstract class AbstractProcess {
 
     /**
      * getProcess 获取process进程对象
-     * @return object
+     * @return \Swoole\Process
      */
     public function getProcess() {
         return $this->swooleProcess;
@@ -840,31 +889,37 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function reboot(float $wait_time = null) {
-        if(!$this->isStaticProcess()) {
+        if(!$this->isStaticProcess())
+        {
             $this->writeReloadFormatInfo();
             return false;
         }
 
         // reboot or exit status
-        if($this->is_force_exit || $this->is_reboot || $this->is_exit) {
+        if($this->is_force_exit || $this->is_reboot || $this->is_exit)
+        {
             return false;
         }
 
-        if($wait_time) {
+        if($wait_time)
+        {
             $this->wait_time = $wait_time;
         }
 
         $pid = $this->getPid();
-        if(Process::kill($pid, 0)) {
+        if(Process::kill($pid, 0))
+        {
             $this->is_reboot = true;
             $channel = new Channel(1);
             $timer_id = \Swoole\Timer::after($this->wait_time * 1000, function() use($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycle_times);
                     $this->onShutDown();
-                }catch (\Throwable $throwable) {
+                }catch (\Throwable $throwable)
+                {
                     $this->onHandleException($throwable);
-                }finally {
+                }finally
+                {
                     $this->kill($pid, SIGUSR1);
                 }
             });
@@ -883,13 +938,16 @@ abstract class AbstractProcess {
      */
     public function exit(bool $is_force = false, float $wait_time = null) {
         // reboot or exit status
-        if($this->is_force_exit || $this->is_reboot || $this->is_exit) {
+        if($this->is_force_exit || $this->is_reboot || $this->is_exit)
+        {
             return false;
         }
         $pid = $this->getPid();
-        if(Process::kill($pid, 0)) {
+        if(Process::kill($pid, 0))
+        {
             $this->is_exit = true;
-            if($is_force) {
+            if($is_force)
+            {
                 $this->is_force_exit = true;
             }
             $this->clearRebootTimer();
@@ -899,9 +957,11 @@ abstract class AbstractProcess {
                 try {
                     $this->runtimeCoroutineWait($this->cycle_times);
                     $this->onShutDown();
-                }catch (\Throwable $throwable) {
+                }catch (\Throwable $throwable)
+                {
                     $this->onHandleException($throwable);
-                }finally {
+                }finally
+                {
                     if($this->is_force_exit)
                     {
                         $this->kill($pid, SIGKILL);
@@ -965,7 +1025,8 @@ abstract class AbstractProcess {
      */
     public function clearRebootTimer() {
         if($this->is_reboot) $this->is_reboot = false;
-        if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id)) {
+        if(isset($this->reboot_timer_id) && !empty($this->reboot_timer_id))
+        {
             \Swoole\Timer::clear($this->reboot_timer_id);
         }
     }
@@ -995,7 +1056,8 @@ abstract class AbstractProcess {
      */
     public function isMasterLive() {
         if($this->master_pid) {
-            if(Process::kill($this->master_pid, 0)) {
+            if(Process::kill($this->master_pid, 0))
+            {
                 return true;
             }else {
                 return false;
@@ -1022,7 +1084,7 @@ abstract class AbstractProcess {
      */
     public function getCurrentRunCoroutineNum() {
         $coroutine_info = \Swoole\Coroutine::stats();
-        return $coroutine_info['coroutine_num'] ?? null;
+        return $coroutine_info['coroutine_num'];
     }
 
     /**
@@ -1041,14 +1103,17 @@ abstract class AbstractProcess {
      * @return void
      */
     private function runtimeCoroutineWait(int $cycle_times = 5, int $re_wait_time = 2) {
-        if($cycle_times <= 0) {
+        if($cycle_times <= 0)
+        {
             $cycle_times = 2;
         }
-        while($cycle_times > 0) {
+        while($cycle_times > 0)
+        {
             // 当前运行的coroutine
             $runCoroutineNum = $this->getCurrentRunCoroutineNum();
             // 除了主协程和runtimeCoroutineWait跑在协程中，所以等于2个协程，还有其他协程没唤醒，则再等待
-            if($runCoroutineNum > 2) {
+            if($runCoroutineNum > 2)
+            {
                 --$cycle_times;
                 if(\Swoole\Coroutine::getCid() > 0)
                 {
@@ -1068,6 +1133,17 @@ abstract class AbstractProcess {
      */
     public static function getProcessInstance() {
         return self::$processInstance;
+    }
+
+    /**
+     * @return array
+     */
+    private function getProcessSystemStatus()
+    {
+        return [
+            'memory' => Helper::getMemoryUsage(),
+            'coroutine_num' => $this->getCurrentRunCoroutineNum()
+        ];
     }
 
     /**
@@ -1120,13 +1196,15 @@ abstract class AbstractProcess {
     private function writeStartFormatInfo() {
         $process_name = $this->getProcessName();
         $worker_id = $this->getProcessWorkerId();
-        if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
+        if($this->getProcessType() == self::PROCESS_STATIC_TYPE)
+        {
             if($this->getRebootCount() > 0) {
                 $process_type = 'static-reboot';
             }else {
                 $process_type = self::PROCESS_STATIC_TYPE_NAME;
             }
-        }else  {
+        }else
+        {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
@@ -1140,9 +1218,11 @@ abstract class AbstractProcess {
     private function writeStopFormatInfo() {
         $process_name = $this->getProcessName();
         $worker_id = $this->getProcessWorkerId();
-        if($this->getProcessType() == self::PROCESS_STATIC_TYPE) {
+        if($this->getProcessType() == self::PROCESS_STATIC_TYPE)
+        {
             $process_type = self::PROCESS_STATIC_TYPE_NAME;
-        }else {
+        }else
+        {
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;
         }
         $pid = $this->getPid();
@@ -1154,7 +1234,8 @@ abstract class AbstractProcess {
      * writeReloadFormatInfo
      */
     private function writeReloadFormatInfo() {
-        if($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE) {
+        if($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE)
+        {
             $process_name = $this->getProcessName();
             $worker_id = $this->getProcessWorkerId();
             $process_type = self::PROCESS_DYNAMIC_TYPE_NAME;

@@ -12,7 +12,7 @@ $args = [
 ];
 $extend_data = null;
 // 设置启用管道，默认不设置
-$processManager->createCliPipe(true);
+$processManager->enableCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 $processManager->onStart = function ($pid) {

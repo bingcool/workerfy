@@ -81,4 +81,47 @@ class Helper
         }
         return $params;
     }
+
+    /**
+     * @param bool $format_flag
+     * @param bool $real_usage
+     * @return float|int|string
+     */
+    public static function getMemoryUsage(bool $format_flag = true, bool $real_usage = true)
+    {
+        $memoryNum = memory_get_usage($real_usage);
+        $format = 'bytes';
+        if($format_flag)
+        {
+            if($memoryNum > 0 && $memoryNum < 1024)
+            {
+                return number_format($memoryNum) . ' ' . $format;
+            }
+            if($memoryNum >= 1024 && $memoryNum < pow(1024, 2))
+            {
+                $p = 1;
+                $format = 'KB';
+            }
+            if($memoryNum >= pow(1024, 2) && $memoryNum < pow(1024, 3))
+            {
+                $p = 2;
+                $format = 'MB';
+            }
+            if($memoryNum >= pow(1024, 3) && $memoryNum < pow(1024, 4))
+            {
+                $p = 3;
+                $format = 'GB';
+            }
+            if($memoryNum >= pow(1024, 4) && $memoryNum < pow(1024, 5))
+            {
+                $p = 3;
+                $format = 'TB';
+            }
+
+            $memoryNum /= pow(1024, $p);
+            $memoryNum = number_format($memoryNum, 3) . ' ' . $format;
+        }
+
+        return $memoryNum;
+    }
 }

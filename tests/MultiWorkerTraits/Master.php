@@ -9,7 +9,7 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->createCliPipe(true);
+$processManager->enableCliPipe(true);
 
 // 多个worker按照消费不同的队列
 //worker
