@@ -13,5 +13,16 @@ return [
         'password' => '123456',
         // 数据库编码默认采用utf8
         'charset'  => 'utf8mb4',
+    ],
+
+    'predis' => [
+        'scheme' => 'tcp',
+        'host'   => '127.0.0.1',
+        'port'   => 6379,
+    ],
+
+    'redis' => [
+        'host'   => '127.0.0.1',
+        'port'   => 6379,
     ]
 ];

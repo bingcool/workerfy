@@ -504,6 +504,7 @@ class ProcessManager {
         {
             if(!is_array($ret) || !isset($ret['pid']))
             {
+                write_info("【Error】Swoole\Process::wait Error");
                 return;
             }
             $pid = $ret['pid'];
@@ -520,9 +521,11 @@ class ProcessManager {
                         $process_name = $process->getProcessName();
                         $process_worker_id = $process->getProcessWorkerId();
                         $key = md5($process_name);
-                        if (isset($this->process_workers[$key][$process_worker_id])) {
+                        if (isset($this->process_workers[$key][$process_worker_id]))
+                        {
                             unset($this->process_workers[$key][$process_worker_id]);
-                            if (count($this->process_workers[$key]) == 0) {
+                            if (count($this->process_workers[$key]) == 0)
+                            {
                                 unset($this->process_workers[$key]);
                             }
                         }
@@ -1503,14 +1506,15 @@ class ProcessManager {
     public function getSysvmsgInfo() {
         $msg_sysvmsg_info = 'Disable sysvmsg(没启用)';
         $sysvmsgManager = SysvmsgManager::getInstance();
-        if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
+        if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1)
+        {
             $msg_queue_info = $sysvmsgManager->getAllMsgQueueWaitToPopNum();
             if(!empty($msg_queue_info))
             {
                 $msg_sysvmsg_info = '';
                 foreach($msg_queue_info as $info) {
                     list($msg_queue_name, $wait_to_read_num) = $info;
-                    $msg_sysvmsg_info .= "[队列名称:$msg_queue_name,消息数量:$wait_to_read_num]".',';
+                    $msg_sysvmsg_info .= "[queue_name:$msg_queue_name,queue_number:$wait_to_read_num]".',';
                 }
                 $msg_sysvmsg_info = trim($msg_sysvmsg_info, ',');
             }
@@ -1525,9 +1529,11 @@ class ProcessManager {
      * @return Log\LogHandle
      */
     protected function registerRuntimeLog() {
-        if(!$this->onRegisterRuntimeLog instanceof \Closure) {
+        if(!$this->onRegisterRuntimeLog instanceof \Closure)
+        {
             // default register runtimeLog
-            $this->onRegisterRuntimeLog = function() {
+            $this->onRegisterRuntimeLog = function()
+            {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 if(!is_object($logger))
                 {
@@ -1535,7 +1541,7 @@ class ProcessManager {
                     $runtimeLog = $pidFileRoot.'/runtime.log';
                     $logger = LogManager::getInstance()->registerLogger(LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
                 }
-                $logger->info("默认Runtime日志注册成功",[],false);
+                $logger->info("Default Runtime log register successful",[],false);
                 return $logger;
             };
         }
@@ -1600,7 +1606,8 @@ class ProcessManager {
         if($process_name == $this->getMasterWorkerName())
         {
             $children_num = 0;
-            foreach($this->process_workers as $key=>$processes) {
+            foreach($this->process_workers as $key=>$processes)
+            {
                 $children_num += count($processes);
             }
             $start_script_file = START_SCRIPT_FILE;

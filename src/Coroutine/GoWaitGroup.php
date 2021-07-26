@@ -39,23 +39,31 @@ class GoWaitGroup {
     }
 
     /**
-     * go
+     * go function
      */
     public function go(\Closure $callBack, ...$params) {
-        Coroutine::create(function (...$params) use($callBack) {
+        $exception = '';
+        Coroutine::create(function (...$params) use($callBack, &$exception) {
             try{
                 $this->count++;
-                $args = func_get_args();
-                call_user_func($callBack, ...$args);
+                call_user_func($callBack, ...$params);
             }catch (\Throwable $throwable) {
                 $this->count--;
                 $processInstance = AbstractProcess::getProcessInstance();
                 if($processInstance instanceof AbstractProcess)
                 {
                     AbstractProcess::getProcessInstance()->onHandleException($throwable);
+                }else
+                {
+                    $exception = $throwable;
                 }
             }
         }, ...$params);
+
+        if($exception instanceof \Throwable)
+        {
+            throw $exception;
+        }
     }
 
     /**

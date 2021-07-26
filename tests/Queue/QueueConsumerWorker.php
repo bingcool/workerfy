@@ -2,6 +2,7 @@
 namespace Workerfy\Tests\Queue;
 
 use Workerfy\AbstractProcess;
+use Workerfy\Tests\Make;
 
 class QueueConsumerWorker extends AbstractProcess {
 
@@ -19,16 +20,11 @@ class QueueConsumerWorker extends AbstractProcess {
         // 模拟处理业务
         if($this->isPredisDriver)
         {
-            $redis = new \Common\Library\Cache\Predis([
-                'scheme' => 'tcp',
-                'host'   => '127.0.0.1',
-                'port'   => 6379,
-            ]);
+            $redis = Make::makePredis();
             var_dump("use Predis driver");
         }else
         {
-            $redis = new \Common\Library\Cache\Redis();
-            $redis->connect('127.0.0.1');
+            $redis = Make::makeRedis();
             var_dump('use Phpredis driver');
         }
 
@@ -49,6 +45,10 @@ class QueueConsumerWorker extends AbstractProcess {
 
             $queue->push($item);
         }
+
+        \Swoole\Timer::tick(3000,function () {
+            var_dump('tick');
+        });
 
         $queue->delRetryMessageKey();
 

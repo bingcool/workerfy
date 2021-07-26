@@ -1,6 +1,8 @@
 <?php
 namespace Workerfy\Tests\Queue;
 
+use Workerfy\Tests\Make;
+
 class DelayConsumerWorker extends \Workerfy\AbstractProcess {
 
     protected $isPredisDriver = false;
@@ -20,22 +22,14 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
     public function run()
     {
         if($this->isPredisDriver) {
-            $redis = new \Common\Library\Cache\Predis([
-                'scheme' => 'tcp',
-                'host'   => '127.0.0.1',
-                'port'   => 6379,
-            ]);
-
+            $redis = Make::makePredis();
             $queue = new \Common\Library\Queues\PredisDelayQueue(
                 $redis,
                 'ali_delay_key'
             );
             var_dump( 'use Predis driver');
         }else {
-
-            $redis = new \Common\Library\Cache\Redis();
-            $redis->connect('127.0.0.1');
-
+            $redis = Make::makeRedis();
             $queue = new \Common\Library\Queues\RedisDelayQueue(
                 $redis,
                 'ali_delay_key'
@@ -80,7 +74,7 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
                     }
                 }
 
-                var_dump($result);
+                //var_dump($result);
 
             }catch (\Throwable $throwable)
             {

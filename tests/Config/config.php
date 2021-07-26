@@ -40,6 +40,17 @@ $config = [
         // 是否开启dubug
         'debug' => 1
     ],
+
+    'predis' => [
+        'scheme' => $dc['predis']['scheme'],
+        'host'   => $dc['predis']['host'],
+        'port'   => $dc['predis']['port'],
+    ],
+
+    'redis' => [
+        'host'   => $dc['redis']['host'],
+        'port'   => $dc['redis']['port'],
+    ]
 ];
 
 return $config;
