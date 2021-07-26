@@ -71,7 +71,8 @@ class TableManager {
      */
     private function setTableColumn(\Swoole\Table $table, array $fields) {
         foreach($fields  as $field) {
-            switch (strtolower($field[1])) {
+            switch (strtolower($field[1]))
+            {
                 case 'int':
                 case \Swoole\Table::TYPE_INT:
                     $table->column($field[0], \Swoole\Table::TYPE_INT, (int)$field[2]);

@@ -2,6 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
+// Redis Pool
 $processManager = \Workerfy\processManager::getInstance();
 $process_name = 'test-pool-redis';
 $process_class = \Workerfy\Tests\Pool\RedisPoolWorker::class;
@@ -14,7 +15,7 @@ $extend_data = null;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
-
+// Mysql Pool
 $processManager = \Workerfy\processManager::getInstance();
 $process_name = 'test-pool-mysql';
 $process_class = \Workerfy\Tests\Pool\MysqlPoolWorker::class;

@@ -105,8 +105,10 @@ class GoWaitGroup {
      */
     public static function multiCall(array $callBacks, float $timeOut = 3.0) {
         $goWait = new static();
-        foreach($callBacks as $key=>$callBack) {
-            Coroutine::create(function () use($key, $callBack, $goWait) {
+        foreach($callBacks as $key=>$callBack)
+        {
+            Coroutine::create(function () use($key, $callBack, $goWait)
+            {
                 try{
                     $goWait->count++;
                     $goWait->initResult($key, null);

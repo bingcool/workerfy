@@ -26,6 +26,9 @@ class Worker extends \Workerfy\AbstractProcess {
             }
         }if($this->getProcessWorkerId() == 2)
         {
+            \Swoole\Timer::tick(3000,function (){
+               var_dump('ticker');
+            });
             // 其他的worker处理逻辑消费队列
             //sleep(5);
             $msg_queue = $sysvmsgManager->getMsgQueue(MSG_QUEUE_NAME_ORDER);
@@ -33,15 +36,13 @@ class Worker extends \Workerfy\AbstractProcess {
             //var_dump($sysvmsgManager->getSysKernelInfo(), $sysvmsgManager->getMsgQueueSize(MSG_QUEUE_NAME_ORDER));
             while (1)
             {
-                // 获取剩余的未读消息体数量
+                \Swoole\Event::dispatch();
                 $num = $sysvmsgManager->getMsgQueueWaitToPopNum(MSG_QUEUE_NAME_ORDER);
                 var_dump($num);
-
-                // 阻塞等待消费
+                // 阻塞等待消费,这时是阻塞，整个event loop 都不会触发事件
                 $msg = $sysvmsgManager->pop(MSG_QUEUE_NAME_ORDER,'add_order');
                 var_dump($this->getProcessName().'@'.$this->getProcessWorkerId().":".$msg);
                 usleep(50000);
-
             }
         }
         else if($this->getProcessWorkerId() == 3)

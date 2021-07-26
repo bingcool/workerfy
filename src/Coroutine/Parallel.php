@@ -58,7 +58,8 @@ class Parallel {
      * @param string $key
      */
     public function add(callable $callable, string $key = null) {
-        if (null === $key) {
+        if (null === $key)
+        {
             $this->callbacks[] = $callable;
         } else {
             $this->callbacks[$key] = $callable;
@@ -75,11 +76,14 @@ class Parallel {
         }
         $chunks = array_chunk($this->callbacks, $this->concurrent, true);
         $result = $this->callbacks = [];
-        foreach ($chunks as $k=>$chunk) {
-            foreach($chunk as $key=>$callable) {
+        foreach ($chunks as $k=>$chunk)
+        {
+            foreach($chunk as $key=>$callable)
+            {
                 if(in_array($key, $this->ignoreCallbacks)) unset($chunk[$key]);
             }
-            if($chunk) {
+            if($chunk)
+            {
                 $res = GoWaitGroup::multiCall($chunk, $timeOut);
             }
             unset($chunks[$k]);

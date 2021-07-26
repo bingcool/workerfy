@@ -33,9 +33,11 @@ class CommandRunner {
         bool $isExec = true
     ) {
         $params = '';
-        if($args) {
+        if($args)
+        {
             $params = implode(' ', $args);
         }
+
         $path = $execFile.' '.$params;
         $command = "{$path} >> {$log} 2>&1";
         if($async)
@@ -64,9 +66,11 @@ class CommandRunner {
      */
     public static function procOpen(callable $callable, $execFile, array $args = []) {
         $params = '';
-        if($args) {
+        if($args)
+        {
             $params = implode(' ', $args);
         }
+
         $command = $execFile.' '.$params;
         $descriptors = array(
             0 => array('pipe', 'r'),
@@ -75,7 +79,7 @@ class CommandRunner {
         );
 
         $proc_process = proc_open($command, $descriptors, $pipes);
-        // $callable 里面禁止再创建协程，因为$proc_process协程绑定在当前协程
+        // in $callable forbidden create coroutine, because $proc_process had been bind in current coroutine
         try {
             array_push($pipes, $command);
             return call_user_func_array($callable, $pipes);

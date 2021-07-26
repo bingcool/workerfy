@@ -30,7 +30,8 @@ class AtomicManager {
      * @return mixed
      */
     public function addAtomic(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swooleAtomic[$atomic_name])) {
+        if(!isset($this->swooleAtomic[$atomic_name]))
+        {
             $atomic = new \Swoole\Atomic($init_value);
             $this->swooleAtomic[$atomic_name] = $atomic;
         }
@@ -44,7 +45,8 @@ class AtomicManager {
      * @return mixed
      */
     public function addAtomicLong(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swooleAtomicLong[$atomic_name])){
+        if(!isset($this->swooleAtomicLong[$atomic_name]))
+        {
             $atomic = new \Swoole\Atomic\Long($init_value);
             $this->swooleAtomicLong[$atomic_name] = $atomic;
         }
@@ -57,7 +59,8 @@ class AtomicManager {
      * @return mixed
      */
     public function getAtomic(string $atomic_name) {
-        if(isset($this->swoole_atomic[$atomic_name])){
+        if(isset($this->swoole_atomic[$atomic_name]))
+        {
             return $this->swooleAtomic[$atomic_name];
         }else{
             return null;
@@ -70,7 +73,8 @@ class AtomicManager {
      * @return mixed
      */
     public function getAtomicLong(string $atomic_name) {
-        if(isset($this->swoole_atomic_long[$atomic_name])){
+        if(isset($this->swoole_atomic_long[$atomic_name]))
+        {
             return $this->swooleAtomicLong[$atomic_name];
         }else{
             return null;
@@ -84,12 +88,16 @@ class AtomicManager {
      */
     public function getAllAtomicName(int $type = self::ATOMIC_SHORT) {
         $atomicName = [];
-        if($type === self::ATOMIC_SHORT) {
-            if(isset($this->swooleAtomic) && !empty($this->swooleAtomic)) {
+        if($type === self::ATOMIC_SHORT)
+        {
+            if(isset($this->swooleAtomic) && !empty($this->swooleAtomic))
+            {
                 $atomicName = array_keys($this->swooleAtomic);
             }
-        }else if($type === self::ATOMIC_LONG) {
-            if(isset($this->swooleAtomicLong) && !empty($this->swooleAtomicLong)) {
+        }else if($type === self::ATOMIC_LONG)
+        {
+            if(isset($this->swooleAtomicLong) && !empty($this->swooleAtomicLong))
+            {
                 $atomicName = array_keys($this->swooleAtomicLong);
             }
         }

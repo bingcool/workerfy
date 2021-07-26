@@ -20,7 +20,8 @@ class Context {
      * @throws RuntimeException
      */
     public static function getContext() {
-        if(\Swoole\Coroutine::getCid() > 0) {
+        if(\Swoole\Coroutine::getCid() > 0)
+        {
             $context = \Swoole\Coroutine::getContext();
             return $context;
         }else {
@@ -35,7 +36,8 @@ class Context {
      */
     public static function set($name, $value) {
         $context = self::getContext();
-        if($context) {
+        if($context)
+        {
             $context[$name] = $value;
             return true;
         }
@@ -49,7 +51,8 @@ class Context {
      */
     public static function get($name) {
         $context = self::getContext();
-        if($context) {
+        if($context)
+        {
             return $context[$name];
         }
         return null;
@@ -62,8 +65,10 @@ class Context {
      */
     public static function has($name) {
         $context = self::getContext();
-        if($context) {
-            if(isset($context[$name])) {
+        if($context)
+        {
+            if(isset($context[$name]))
+            {
                 return true;
             }
             return false;

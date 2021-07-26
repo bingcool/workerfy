@@ -20,19 +20,44 @@ class CrontabManager {
 
     use \Workerfy\Traits\SingletonTrait;
 
+    /**
+     * @var integer
+     */
     const loopChannelType = 0;
+
+    /**
+     * @var integer
+     */
     const loopTickType = 1;
 
+    /**
+     * @var array
+     */
 	private $cron_tasks = [];
 
+    /**
+     * @var array
+     */
 	private $cron_next_datetime = [];
 
+    /**
+     * @var array
+     */
 	private $expression = [];
 
+    /**
+     * @var int
+     */
 	private $offset_second = 1;
 
+    /**
+     * @var array
+     */
 	private $timer_ids = [];
 
+    /**
+     * @var array
+     */
 	private $channels = [];
 
     /**
@@ -40,8 +65,10 @@ class CrontabManager {
      * @throws \Exception
      */
 	protected function __construct() {
-	    if(function_exists('in_children_process_env')) {
-	        if(in_children_process_env() === false) {
+	    if(function_exists('in_children_process_env'))
+	    {
+	        if(in_children_process_env() === false)
+	        {
 	            throw new CrontabException(__CLASS__." only use in children worker process");
             }
         }
@@ -63,29 +90,35 @@ class CrontabManager {
         int $loop_type = self::loopChannelType,
         int $msec = 1 * 1000)
     {
-	    if(!class_exists('Cron\\CronExpression')) {
+	    if(!class_exists('Cron\\CronExpression'))
+	    {
 	        throw new CrontabException("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
         }
 
-	    if(!CronExpression::isValidExpression($expression)) {
+	    if(!CronExpression::isValidExpression($expression))
+	    {
             throw new CrontabException("Crontab expression format is wrong, please check it");
         }
 
-	    if(!is_callable($func)) {
-            throw new CrontabException("Params func must be callable");
+	    if(!is_callable($func))
+	    {
+            throw new CrontabException("Params func must be callable type");
         }
 
-	    if(!in_array($loop_type, [self::loopChannelType, self::loopTickType])) {
-            throw new CrontabException("Params of type error");
+	    if(!in_array($loop_type, [self::loopChannelType, self::loopTickType]))
+	    {
+            throw new CrontabException("Params of loop_type error");
         }
 
-        if(!isset($this->cron_tasks[$cron_name])) {
+        if(!isset($this->cron_tasks[$cron_name]))
+        {
             $this->cron_tasks[$cron_name] = [$expression, $func, $loop_type];
         }else {
-            throw new CrontabException("Cron_name=$cron_name had exist, you can not set same again");
+            throw new CrontabException("Cron_name=$cron_name had exist, forbidden set same cron_name again");
         }
 
-        if($loop_type == self::loopChannelType) {
+        if($loop_type == self::loopChannelType)
+        {
             $channel = $this->channelLoop($cron_name, $expression, $func, $msec);
             return $channel;
         }else {
@@ -104,8 +137,10 @@ class CrontabManager {
      */
 	protected function tickLoop(string $cron_name, string $expression, callable $func, float $msec) {
         $channel = new \Swoole\Coroutine\Channel(1);
-        GoCoroutine::go(function ($cron_name, $expression, $func, $msec) use($channel) {
-            if(is_array($func)) {
+        GoCoroutine::go(function ($cron_name, $expression, $func, $msec) use($channel)
+        {
+            if(is_array($func))
+            {
                 $timer_id = \Swoole\Timer::tick($msec, $func, $expression);
             }else {
                 $timer_id = \Swoole\Timer::tick($msec, function ($timer_id, $expression, $cron_name) use ($func) {
@@ -132,12 +167,14 @@ class CrontabManager {
     protected function channelLoop(string $cron_name, string $expression, callable $func, float $msec) {
         $channel = new \Swoole\Coroutine\Channel(1);
         $second = round($msec / 1000, 3);
-        if($second < 0.001) {
+        if($second < 0.001)
+        {
             $second = 0.001;
         }
         $this->channels[$cron_name] = $channel;
         GoCoroutine::go(function($cron_name, $expression, $func, $second) use($channel) {
-            while(!$channel->pop($second)) {
+            while(!$channel->pop($second))
+            {
                 GoCoroutine::go(function($cron_name, $expression, $func) {
                     $this->loopHandle($cron_name, $expression, $func);
                 }, $cron_name, $expression, $func);
@@ -158,15 +195,19 @@ class CrontabManager {
         $cron = CronExpression::factory($expression);
         $now_time = time();
         $cron_next_datetime = strtotime($cron->getNextRunDate()->format('Y-m-d H:i:s'));
-        if($cron->isDue()) {
-            if(!isset($this->cron_next_datetime[$cron_name][$expression_key])) {
+        if($cron->isDue())
+        {
+            if(!isset($this->cron_next_datetime[$cron_name][$expression_key]))
+            {
                 $this->expression[$cron_name][$expression_key] = $expression;
                 $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
             }
 
-            if(($now_time >= $this->cron_next_datetime[$cron_name][$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second))) {
+            if(($now_time >= $this->cron_next_datetime[$cron_name][$expression_key] && $now_time < ($cron_next_datetime - $this->offset_second)))
+            {
                 $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
-                if ($func instanceof \Closure) {
+                if ($func instanceof \Closure)
+                {
                     try {
                         call_user_func($func, $cron_name, $cron);
                     }catch (\Throwable $throwable) {
@@ -176,7 +217,8 @@ class CrontabManager {
             }
 
             // 防止万一出现的异常出现，比如没有命中任务， 19:05:00要命中的，由于其他网络或者服务器其他原因，阻塞了,造成延迟，现在时间已经到了19::05:05
-            if($now_time > $this->cron_next_datetime[$cron_name][$expression_key] || $now_time >= $cron_next_datetime) {
+            if($now_time > $this->cron_next_datetime[$cron_name][$expression_key] || $now_time >= $cron_next_datetime)
+            {
                 $this->cron_next_datetime[$cron_name][$expression_key] = $cron_next_datetime;
             }
         }
@@ -187,8 +229,10 @@ class CrontabManager {
      * @return array|mixed|null
      */
     public function getCronTaskByName(string $cron_name = null) {
-        if($cron_name) {
-            if(isset($this->cron_tasks[$cron_name])) {
+        if($cron_name)
+        {
+            if(isset($this->cron_tasks[$cron_name]))
+            {
                 return $this->cron_tasks[$cron_name];
             }
             return null;
@@ -201,8 +245,10 @@ class CrontabManager {
      * @return mixed|null
      */
     public function getTimerIdByName(string $cron_name = null) {
-        if($cron_name) {
-            if(isset($this->timer_ids[$cron_name])) {
+        if($cron_name)
+        {
+            if(isset($this->timer_ids[$cron_name]))
+            {
                 return $this->timer_ids[$cron_name];
             }
             return null;
@@ -222,12 +268,14 @@ class CrontabManager {
      */
     public function cancelCrontabTask(string $cron_name) {
         $loop_type = $this->getLoopType($cron_name) ?? null;
-        if($loop_type == self::loopChannelType) {
+        if($loop_type == self::loopChannelType)
+        {
             $channel = $this->channels[$cron_name];
             $channel->push(true);
             $channel->close();
             unset($this->channels[$cron_name]);
-        }else if($loop_type = self::loopTickType) {
+        }else if($loop_type = self::loopTickType)
+        {
             $tick_id = $this->timer_ids[$cron_name];
             \Swoole\Timer::clear($tick_id);
             unset($this->timer_ids[$cron_name]);
@@ -235,7 +283,8 @@ class CrontabManager {
 
         write_info("【Info】tickName={$cron_name} has been cancel");
 
-        if(count($this->channels) == 0 && count($this->timer_ids) == 0) {
+        if(count($this->channels) == 0 && count($this->timer_ids) == 0)
+        {
             write_info("【Info】Process had not exit tick task");
         }
     }
@@ -259,7 +308,8 @@ class CrontabManager {
      * @return bool
      */
     public function hasRunningCrontabTask() {
-        if(count($this->channels) > 0 || count($this->timer_ids) > 0) {
+        if(count($this->channels) > 0 || count($this->timer_ids) > 0)
+        {
             return true;
         }
         return false;
