@@ -19,24 +19,42 @@ class RedisPoolWorker extends \Workerfy\AbstractProcess {
         while (1)
         {
             go(function () use($pool) {
-                $redis = $pool->get();
-                var_dump(spl_object_id($redis));
-                sleep(1);
-                $pool->put($redis);
+                try {
+                    $redis = $pool->get();
+                    var_dump(spl_object_id($redis));
+                    sleep(1);
+                }catch (\Throwable $e)
+                {
+                    $this->onHandleException($e);
+                } finally {
+                    $pool->put($redis);
+                }
             });
 
             go(function () use($pool) {
-                $redis = $pool->get();
-                var_dump(spl_object_id($redis));
-                sleep(1);
-                $pool->put($redis);
+                try {
+                    $redis = $pool->get();
+                    var_dump(spl_object_id($redis));
+                    sleep(1);
+                }catch (\Throwable $e)
+                {
+                    $this->onHandleException($e);
+                } finally {
+                    $pool->put($redis);
+                }
             });
 
             go(function () use($pool) {
-                $redis = $pool->get();
-                var_dump(spl_object_id($redis));
-                sleep(1);
-                $pool->put($redis);
+                try {
+                    $redis = $pool->get();
+                    var_dump(spl_object_id($redis));
+                    sleep(1);
+                }catch (\Throwable $e)
+                {
+                    $this->onHandleException($e);
+                } finally {
+                    $pool->put($redis);
+                }
             });
 
             sleep(1);

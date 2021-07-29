@@ -65,7 +65,7 @@ $processManager->onExit = function() use($configFilePath) {
 };
 
 $processManager->onHandleException = function(\Throwable $e) {
-    var_dump($e->getMessage());
+    //var_dump($e->getMessage());
 };
 
 $master_pid = $processManager->start();

@@ -29,4 +29,18 @@ class Make
         $redis->connect($config['host'],$config['port']);
         return $redis;
     }
+
+    public static function makeMysql()
+    {
+        $config = \Workerfy\ConfigLoad::getInstance()->getConfig()['mysql_db'];
+        $mysql = new \Common\Library\Db\Mysql($config);
+        return $mysql;
+    }
+
+    public static function makeCurl()
+    {
+        $curlClient = new \Common\Library\HttpClient\CurlHttpClient();
+        return $curlClient;
+    }
+
 }

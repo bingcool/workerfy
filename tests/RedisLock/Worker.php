@@ -19,22 +19,30 @@ class Worker extends \Workerfy\AbstractProcess {
             var_dump('start-0');
         }
 
-        $mutex = new PHPRedisMutex([$redis], "test_lock",7);
-        try {
-            // 获得锁，进行回调处理, 业务尽可能简单处理，在规定时间内完成
-            $mutex->synchronized(function () {
-                var_dump($this->getProcessWorkerId());
-                // 最好用事务处理，这里不能使用协程，因为使用协程，就会让出cpu控制权，然后就会就会直接执行release,释放锁。所以要阻塞执行
+
+        while(1)
+        {
+            $orderId = '12345'.rand(1,10);
+            // lockKey与业务数据结合
+            $lockKey = 'test_lock_'.$orderId;
+            $mutex = new PHPRedisMutex([$redis], $lockKey,7);
+            try {
+                // 获得锁,并进行回调处理, 业务尽可能简单处理，在规定时间内完成
+                $mutex->synchronized(function () {
+                    var_dump($this->getProcessWorkerId());
+                    // 最好用事务处理，这里不能使用协程，因为使用协程，就会让出cpu控制权，然后就会就会直接执行release,释放锁。所以要阻塞执行
 //                if($this->getProcessWorkerId() == 0) {
 //                    sleep(6);
 //                    var_dump('worker-id='.$this->getProcessWorkerId());
 //                }
 //                var_dump('test-lock-'.$this->getProcessWorkerId());
-            });
+                });
 
-        }catch (\Exception $exception) {
-            var_dump($exception->getMessage());
+            }catch (\Exception $exception) {
+                var_dump($exception->getMessage());
+            }
         }
+
 
     }
 

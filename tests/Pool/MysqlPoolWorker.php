@@ -11,6 +11,24 @@ class MysqlPoolWorker extends \Workerfy\AbstractProcess
      */
     public function run()
     {
+        $pool = new \Common\Library\Pool\MysqlPool(function () {
+            return Make::makeMysql();
+        });
 
+        while (1)
+        {
+            /**
+             * @var \Common\Library\Db\Mysql $db
+             */
+            try {
+                $db = $pool->get();
+                $db->query('select 1');
+            }catch (\Throwable $e)
+            {
+                $this->onHandleException($e);
+            } finally {
+                $pool->put($db);
+            }
+        }
     }
 }

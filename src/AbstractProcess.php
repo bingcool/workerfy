@@ -106,7 +106,7 @@ abstract class AbstractProcess {
     /**
      * @var int|float
      */
-    private $wait_time = 30;
+    private $wait_time = 5;
 
     /**
      * @var int
@@ -565,7 +565,7 @@ abstract class AbstractProcess {
             return;
         }
         $data = [
-            'action' =>ProcessManager::CREATE_DYNAMIC_WORKER,
+            'action' =>ProcessManager::CREATE_DYNAMIC_PROCESS_WORKER,
             'process_name' =>$dynamic_process_name,
             'data' =>
                 [
@@ -586,7 +586,7 @@ abstract class AbstractProcess {
             // 销毁进程，默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
             $dynamic_process_num = -1;
             $data = [
-                'action' =>ProcessManager::DESTROY_DYNAMIC_PROCESS,
+                'action' =>ProcessManager::DESTROY_DYNAMIC_PROCESS_WORKER,
                 'process_name' =>$dynamic_process_name,
                 'data' =>
                     [

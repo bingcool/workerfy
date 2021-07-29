@@ -13,7 +13,7 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump("start redis test");
         // 模拟处理业务
         sleep(1);
-        $redis = \Workerfy\Tests\Redis::getMasterRedis();
+        $redis = \Workerfy\Tests\Make::makeRedis();
         $redis->set("name", "bingcool-".rand(1,1000));
         $value = $redis->get('name');
         var_dump($value);

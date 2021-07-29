@@ -149,8 +149,8 @@ class ProcessManager {
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 5;
     const MASTER_WORKER_NAME = 'master_worker';
-    const CREATE_DYNAMIC_WORKER = 'create_dynamic_process_worker';
-    const DESTROY_DYNAMIC_PROCESS = 'destroy_dynamic_process_worker';
+    const CREATE_DYNAMIC_PROCESS_WORKER = 'create_dynamic_process_worker';
+    const DESTROY_DYNAMIC_PROCESS_WORKER = 'destroy_dynamic_process_worker';
 
     /**
      * ProcessManager constructor.
@@ -165,39 +165,6 @@ class ProcessManager {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
             $logger->error(sprintf("%s on File %s on Line %d", $e->getMessage(), $e->getFile(), $e->getLine()), [], false);
         };
-    }
-
-    /**
-     * @param array $setting
-     */
-    public function setCoroutineSetting(array $setting)
-    {
-        $setting['hook_flags'] = $this->getHookFlags();
-        $setting = array_merge(\Swoole\Coroutine::getOptions() ?? [], $setting);
-        !empty($setting) && \Swoole\Coroutine::set($setting);
-    }
-
-    /**
-     * getHookFlags
-     */
-    public function getHookFlags()
-    {
-        $hook_flags = $this->config['coroutine_setting']['hook_flags'] ?? '';
-        if(empty($hook_flags))
-        {
-            if(version_compare(swoole_version(),'4.7.0', '>='))
-            {
-                $hook_flags = SWOOLE_HOOK_ALL | SWOOLE_HOOK_NATIVE_CURL;
-            }else if(version_compare(swoole_version(),'4.6.0', '>='))
-            {
-                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
-            }else
-            {
-                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
-            }
-        }
-
-        return $hook_flags;
     }
 
     /**
@@ -233,9 +200,7 @@ class ProcessManager {
             $async = true;
         }
 
-        $cpu_num = swoole_cpu_num();
-
-        $max_process_num = $cpu_num * (self::NUM_PEISHU);
+        $max_process_num = $this->getMaxProcessNum();
 
         if(isset($args['max_process_num']) && $args['max_process_num'] > $max_process_num)
         {
@@ -344,6 +309,39 @@ class ProcessManager {
     }
 
     /**
+     * @param array $setting
+     */
+    public function setCoroutineSetting(array $setting)
+    {
+        $setting['hook_flags'] = $this->getHookFlags();
+        $setting = array_merge(\Swoole\Coroutine::getOptions() ?? [], $setting);
+        !empty($setting) && \Swoole\Coroutine::set($setting);
+    }
+
+    /**
+     * getHookFlags
+     */
+    public function getHookFlags()
+    {
+        $hook_flags = $this->config['coroutine_setting']['hook_flags'] ?? '';
+        if(empty($hook_flags))
+        {
+            if(version_compare(swoole_version(),'4.7.0', '>='))
+            {
+                $hook_flags = SWOOLE_HOOK_ALL | SWOOLE_HOOK_NATIVE_CURL;
+            }else if(version_compare(swoole_version(),'4.6.0', '>='))
+            {
+                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
+            }else
+            {
+                $hook_flags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
+            }
+        }
+
+        return $hook_flags;
+    }
+
+    /**
      * 主进程注册监听退出信号,逐步发送退出指令至子进程退出，子进程完全退出后，master进程最后退出
      * 每个子进程收到退出指令后，等待wait_time后正式退出，那么在这个wait_time过程
      * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在退出状态中，这个状态中不能再处理新的任务数据
@@ -421,9 +419,11 @@ class ProcessManager {
                 }
                 $reboot_count = $process->getRebootCount();
                 $process_type = $process->getProcessType();
-                if($process_type == AbstractProcess::PROCESS_STATIC_TYPE) {
+                if($process_type == AbstractProcess::PROCESS_STATIC_TYPE)
+                {
                     $process_type = AbstractProcess::PROCESS_STATIC_TYPE_NAME;
-                }else {
+                }else
+                {
                     $process_type = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
                 }
 
@@ -499,12 +499,12 @@ class ProcessManager {
      * rebootOrExitHandle 信号处理函数
      */
     protected function rebootOrExitHandle() {
-        //必须为false，非阻塞模式
+        // no block model
         while($ret = \Swoole\Process::wait(false))
         {
             if(!is_array($ret) || !isset($ret['pid']))
             {
-                write_info("【Error】Swoole\Process::wait Error");
+                write_info("【Error】Swoole\Process::wait error");
                 return;
             }
             $pid = $ret['pid'];
@@ -529,7 +529,8 @@ class ProcessManager {
                                 unset($this->process_workers[$key]);
                             }
                         }
-                        if (count($this->process_workers) == 0) {
+                        if (count($this->process_workers) == 0)
+                        {
                             $this->saveStatusToFile();
                             exit(0);
                         }
@@ -647,7 +648,7 @@ class ProcessManager {
                                 {
                                     switch ($action)
                                     {
-                                        case ProcessManager::CREATE_DYNAMIC_WORKER :
+                                        case ProcessManager::CREATE_DYNAMIC_PROCESS_WORKER :
                                             $action_handle_flag = true;
                                             $dynamic_process_name = $process_name;
                                             $dynamic_process_num = $data['dynamic_process_num'] ?? 1;
@@ -658,7 +659,7 @@ class ProcessManager {
                                                 $this->createDynamicProcess($dynamic_process_name, $dynamic_process_num);
                                             }
                                             break;
-                                        case ProcessManager::DESTROY_DYNAMIC_PROCESS:
+                                        case ProcessManager::DESTROY_DYNAMIC_PROCESS_WORKER:
                                             $action_handle_flag = true;
                                             $dynamic_process_name = $process_name;
                                             $dynamic_process_num = $data['dynamic_process_num'] ?? -1;
@@ -732,7 +733,7 @@ class ProcessManager {
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
         if($this->isMasterExiting())
         {
-            write_info("【Warning】 Master进程正在处于exiting退出状态，不能再动态创建子进程");
+            write_info("【Warning】 Master process is exiting now，forbidden to create dynamic process");
             return false;
         }
 
@@ -740,7 +741,7 @@ class ProcessManager {
         $this->getDynamicProcessNum($process_name);
         if($this->process_lists[$key]['dynamic_process_destroying'] ?? false)
         {
-            $msg = "【Warning】 已创建动态进程{$process_name}正在逐个退出，不能再动态创建子进程,稍后再通知创建";
+            $msg = "【Warning】 Process name={$process_name} is exiting now，forbidden to create dynamic process, please try again after moment";
             write_info($msg);
             throw new DynamicException($msg);
         }
@@ -768,8 +769,9 @@ class ProcessManager {
         $extend_data = $this->process_lists[$key]['extend_data'];
         $enable_coroutine = $this->process_lists[$key]['enable_coroutine'];
         // 超出限定总数，禁止动态创建
-        if($running_process_worker_num >= $total_process_num) {
-            $msg = "【Warning】 子进程已达到最大的限制数量({$total_process_num}个)，禁止动态创建子进程";
+        if($running_process_worker_num >= $total_process_num)
+        {
+            $msg = "【Warning】 Children process num={$total_process_num}, achieve max_process_num，forbidden to create process";
             write_info($msg);
             throw new DynamicException($msg);
         }
@@ -792,7 +794,7 @@ class ProcessManager {
                 $this->process_workers[$key][$worker_id] = $process;
                 $process->start();
                 $this->swooleEventAdd($process);
-                write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态创建成功",'green');
+                write_info("【Info】Process name={$process_name},worker_id={$worker_id} create successful",'green');
             }catch(\Throwable $throwable) {
                 unset($this->process_workers[$key][$worker_id], $process);
                 $this->onHandleException->call($this, $throwable);
@@ -819,7 +821,7 @@ class ProcessManager {
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
                     // 动态进程销毁，需要自减
                     $this->process_lists[$key]['dynamic_process_worker_num']--;
-                    write_info("【Info】子进程={$process_name},worker_id={$worker_id} 动态销毁成功 ");
+                    write_info("【Info】Dynamic process={$process_name},worker_id={$worker_id} destroy successful");
                 }catch (\Throwable $e) {
                     write_info("destroyDynamicProcess error message=".$e->getMessage());
                 }
@@ -1551,6 +1553,14 @@ class ProcessManager {
     }
 
     /**
+     * @return float|int
+     */
+    private function getMaxProcessNum()
+    {
+        return (swoole_cpu_num()) * (self::NUM_PEISHU);
+    }
+
+    /**
      * @param bool $showAll
      * @return string
      */
@@ -1620,6 +1630,7 @@ class ProcessManager {
             list($msg_sysvmsg_info, $sysKernel)= $this->getSysvmsgInfo();
             $swoole_table_info = $this->getSwooleTableInfo();
             $cli_params = $this->getCliParams(false);
+            $max_num = $this->getMaxProcessNum();
             $info =
 <<<EOF
 \r
@@ -1635,6 +1646,7 @@ class ProcessManager {
         pid_file: $pid_file
         children_num: $children_num
         cpu_num: $cpu_num
+        max_process_num(cpu_num * 8): $max_num
         memory: $memory
         php_version: $php_version
         swoole_version: $swoole_version

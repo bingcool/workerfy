@@ -32,7 +32,7 @@
     "ext-curl": "*",
     "dragonmantank/cron-expression" : "2.3.0",
     "bingcool/library": "dev-master",
-    "elasticsearch/elasticsearch": "dev-master"
+    "malkusch/lock": "dev-master"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
