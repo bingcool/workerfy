@@ -1,11 +1,11 @@
 <?php
 define('WORKERFY_VERSION', '1.0.0');
 
-define('START', 'start');
-define('STOP', 'stop');
-define('RELOAD', 'reload');
-define('RESTART','restart');
-define('STATUS', 'status');
-define('PIPE', 'pipe');
-define('ADD','add');
-define('REMOVE', 'remove');
+define('CLI_START', 'start');
+define('CLI_STOP', 'stop');
+define('CLI_RELOAD', 'reload');
+define('CLI_RESTART','restart');
+define('CLI_STATUS', 'status');
+define('CLI_PIPE', 'pipe');
+define('CLI_ADD','add');
+define('CLI_REMOVE', 'remove');

@@ -56,7 +56,7 @@ if(!defined('STATUS_FILE')) {
     }
 }
 
-$command = $_SERVER['argv'][1] ?? START;
+$command = $_SERVER['argv'][1] ?? CLI_START;
 
 function parseCliEnvParams() {
     $cli_params = [];
@@ -84,28 +84,28 @@ function parseCliEnvParams() {
 $cli_params = parseCliEnvParams();
 
 switch($command) {
-    case START :
+    case CLI_START :
         start($cli_params);
         break;
-    case STOP :
+    case CLI_STOP :
         stop($cli_params);
         break;
-    case RELOAD :
+    case CLI_RELOAD :
         reload($cli_params);
         break;
-    case RESTART:
+    case CLI_RESTART:
         restart($cli_params);
         break;
-    case STATUS :
+    case CLI_STATUS :
         status($cli_params);
         break;
-    case PIPE :
+    case CLI_PIPE :
         pipe($cli_params);
         break;
-    case ADD :
+    case CLI_ADD :
         add($cli_params);
         break;
-    case REMOVE :
+    case CLI_REMOVE :
         remove($cli_params);
         break;
     default :
@@ -444,8 +444,7 @@ function getCtlLogFile() {
 /**
  * @param $cli_params
  */
-function setCliParamsEnv($cli_params)
-{
+function setCliParamsEnv($cli_params) {
     $param_keys = array_keys($cli_params);
     foreach($cli_params as $param=>$value)
     {
@@ -454,7 +453,8 @@ function setCliParamsEnv($cli_params)
     putenv('workerfy_cli_params='.json_encode($param_keys));
     defined('IS_DAEMON') or define('IS_DAEMON', getenv('daemon') ? true : false);
     $worker_num = (int)getenv('worker_num');
-    if(isset($worker_num) && $worker_num > 0) {
+    if(isset($worker_num) && $worker_num > 0)
+    {
         defined("WORKER_NUM") or define("WORKER_NUM", $worker_num);
     }
 }
