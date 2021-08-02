@@ -936,7 +936,7 @@ abstract class AbstractProcess {
      * @param float  $wait_time
      * @return bool
      */
-    public function exit(bool $is_force = false, float $wait_time = null) {
+    public function exit(bool $is_force = false, ?float $wait_time = null) {
         // reboot or exit status
         if($this->is_force_exit || $this->is_reboot || $this->is_exit)
         {
@@ -1273,7 +1273,7 @@ abstract class AbstractProcess {
      */
     public function onHandleException(\Throwable $throwable, array $context = []) {
         $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
-        $logger->error(sprintf("%s on File %s on Line %d on trace %s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $throwable->getTraceAsString()));
+        $logger->error(sprintf("%s on File in %s on Line %d on trace %s", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine(), $throwable->getTraceAsString()));
     }
 
 }

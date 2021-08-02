@@ -16,8 +16,6 @@ $extend_data = null;
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
-
-
 // 多进程消费
 $processManager = \Workerfy\processManager::getInstance();
 $process_name = 'test-kafka-consumer';

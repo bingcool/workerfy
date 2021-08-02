@@ -11,7 +11,7 @@ class ConsumerWorker extends AbstractProcess
      */
     public function run()
     {
-        $metaBrokerList = '10.0.8.58:9092';
+        $metaBrokerList = '127.0.0.1:9092';
         $topicName = 'mykafka';
 
         $consumer =new \Common\Library\Kafka\Consumer($metaBrokerList, $topicName);
@@ -31,7 +31,7 @@ class ConsumerWorker extends AbstractProcess
                     break;
 
                 default:
-                    throw new Exception($err);
+                    throw new \Exception($err);
             }
         });
 
@@ -65,7 +65,7 @@ class ConsumerWorker extends AbstractProcess
                         break;
                     default:
                         var_dump("nothing");
-                        throw new Exception($message->errstr(), $message->err);
+                        throw new \Exception($message->errstr(), $message->err);
                         break;
                 }
             }

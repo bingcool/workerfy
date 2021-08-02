@@ -22,9 +22,6 @@ $processManager->onStart = function ($pid) {
 
 };
 
-$processManager->onCreateDynamicProcess = function ($process_name, $process_num) use($processManager) {
-    $this->createDynamicProcess($process_name, $process_num);
-};
 
 
 $processManager->onExit = function() {

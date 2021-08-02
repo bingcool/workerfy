@@ -32,9 +32,8 @@ $processManager->onReportStatus =  function ($status) {
 
     // 需要运行在协程中
 //    go(function () {
-//        $db = \Workerfy\Tests\Db::getMasterMysql();
-//        $query = $db->query("SELECT * FROM user LIMIT 1");
-//        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+//        $db = \Workerfy\Tests\Make::makeMysql();
+//        $res = $db->query("SELECT * FROM tbl_users LIMIT 1");
 //        var_dump($res);
 //    });
 };

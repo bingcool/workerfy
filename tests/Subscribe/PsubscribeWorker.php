@@ -16,18 +16,11 @@ class PsubscribeWorker extends \Workerfy\AbstractProcess {
     public function run()
     {
         if($this->isPredisDriver) {
-            $redis = new \Common\Library\Cache\Predis([
-                'scheme' => 'tcp',
-                'host'   => '127.0.0.1',
-                'port'   => 6379,
-                'read_write_timeout' => -1
-            ]);
+            $redis = \Workerfy\Tests\Make::makePredis();
             $pubSub = new \Common\Library\PubSub\PredisPubSub($redis);
             var_dump( 'use Predis driver');
         }else {
-
-            $redis = new \Common\Library\Cache\Redis();
-            $redis->connect('127.0.0.1');
+            $redis = \Workerfy\Tests\Make::makeRedis();
             $pubSub = new \Common\Library\PubSub\RedisPubSub($redis);
 
             var_dump('use phpredis driver');

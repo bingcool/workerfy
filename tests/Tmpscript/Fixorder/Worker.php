@@ -10,18 +10,28 @@ namespace Workerfy\Tests\Tmpscript\Fixorder;
 
 class Worker extends \Workerfy\AbstractProcess {
 
+    protected $action;
+
+    /**
+     * @param $action
+     */
+    public function init($action = '')
+    {
+        $this->action = $action;
+    }
+
     public function run() {
         sleep(1);
-        $action = getenv('action');
-        var_dump($action);
+        var_dump($this->action);
         // 一般选择第一个worker处理，防止多个worker处理情况出现
-        if($this->getProcessWorkerId() == 0 && $action !== false) {
-            switch ($action) {
+        if($this->getProcessWorkerId() == 0 && $this->action != '') {
+            switch ($this->action) {
                 case 'test1' :
                     $this->actionTest1();
                     break;
                 case 'test2':
                     $this->actionTest2();
+                    break;
                 default :
                     var_dump("action is not match anyone");
             }

@@ -211,7 +211,7 @@ class ProcessManager {
         }
 
         if($process_worker_num > $max_process_num) {
-            write_info("【Warning】Params process_worker_num 大于最大的子进程限制数量={$max_process_num}");
+            write_info("【Warning】Params process_worker_num more then max_process_num={$max_process_num}");
             $process_worker_num = $max_process_num;
         }
 

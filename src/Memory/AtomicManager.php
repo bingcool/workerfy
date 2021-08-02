@@ -15,12 +15,24 @@ class AtomicManager {
 
     use \Workerfy\Traits\SingletonTrait;
 
+    /**
+     * const
+     */
     const ATOMIC_SHORT = 1;
 
+    /**
+     * const
+     */
     const ATOMIC_LONG = 2;
 
+    /**
+     * @var array
+     */
     private $swooleAtomic = [];
 
+    /**
+     * @var array
+     */
     private $swooleAtomicLong = [];
 
     /**

@@ -16,19 +16,17 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-// 设置启用管道，默认不设置
-$processManager->enableCliPipe(true);
+
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
 
 $processManager->onStart = function ($pid) {
     $logger = \Workerfy\Log\LogManager::getInstance()->getLogger();
-    $logger->info('中国有{num}人口',['num'=>10000000000],false);
+    $logger->info('中国有{num}人口',['{num}'=>10000000000],false);
 
     \Workerfy\Coroutine\GoCoroutine::go(function () use($pid) {
-        $db = \Workerfy\Tests\Db::getMasterMysql();
-        $query = $db->query("select * from user limit 1");
-        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        $db = \Workerfy\Tests\Make::makeMysql();
+        $res = $db->query("select * from tbl_users limit 1");
         var_dump($res);
     });
 };

@@ -11,7 +11,7 @@ class ProduceWorker extends AbstractProcess
      */
     public function run()
     {
-        $metaBrokerList = '10.0.8.58:9092';
+        $metaBrokerList = '127.0.0.1:9092';
         $topicName = 'mykafka';
 
         $producer = new \Common\Library\Kafka\Producer($metaBrokerList, $topicName);
@@ -28,8 +28,8 @@ class ProduceWorker extends AbstractProcess
 
         while (true)
         {
-            $producer->produce('hello',5000);
-            sleep(2);
+            $producer->produce('hello-'.rand(1,1000),5000);
+            sleep(1);
         }
     }
 }

@@ -46,8 +46,4 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump($throwable->getMessage()."-----trace:".$throwable->getTraceAsString());
     }
 
-//    public function __destruct()
-//    {
-//        var_dump("destruct");
-//    }
 }

@@ -18,8 +18,4 @@ class Worker1 extends \Workerfy\AbstractProcess {
         //var_dump("shutdown--");
     }
 
-//    public function __destruct()
-//    {
-//        var_dump("destruct");
-//    }
 }

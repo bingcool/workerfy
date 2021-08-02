@@ -20,6 +20,12 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $server->handle('/generaUuid', function ($request, $response) use(&$total) {
             try {
+                // 达到一次请求次数，重启
+                if($total >= 200000)
+                {
+                    $this->reboot(1);
+                }
+
                 // 模拟处理业务
                 $redis = $this->getRedis();
                 $redisIncrement = new \Common\Library\Uuid\RedisIncrement($redis,'order_incr_id');
@@ -47,22 +53,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function getRedis()
     {
-        if($this->isPredisDriver)
-        {
-            $redis = new \Common\Library\Cache\Predis([
-                'scheme' => 'tcp',
-                'host'   => '127.0.0.1',
-                'port'   => 6379,
-            ]);
-            //var_dump("use Predis driver");
-        }else
-        {
-            $redis = new \Common\Library\Cache\Redis();
-            $redis->connect('127.0.0.1');
-            //var_dump('use Phpredis driver');
-        }
-
-        return $redis;
+        return \Workerfy\Tests\Make::MakePredis();
     }
 
     public function onShutDown()

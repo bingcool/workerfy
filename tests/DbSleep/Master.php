@@ -11,11 +11,8 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->enableCliPipe(false);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
-
-//$processManager->writeByProcessName($process_name, 0);
 
 $processManager->onStart = function ($pid) {
 };

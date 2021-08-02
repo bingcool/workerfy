@@ -10,10 +10,9 @@ class Worker extends \Workerfy\AbstractProcess {
         if($this->getProcessWorkerId() == 0) {
             while (1) {
                 var_dump("vbbbbbbbbb");
-                $db = \Workerfy\Tests\Db::getMasterMysql();
+                $db = \Workerfy\Tests\Make::makeMysql();
                 var_dump($db);
-                $query = $db->query("select sleep(2)");
-                $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+                $res = $db->query("select sleep(2)");
                 var_dump($res);
                 usleep(100000);
             }
@@ -31,9 +30,8 @@ class Worker extends \Workerfy\AbstractProcess {
 
         if($this->getProcessWorkerId() == 1) {
             while (1) {
-                $db = \Workerfy\Tests\Db::getMasterMysql();
-                $query = $db->query("select sleep(3)");
-                $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+                $db = \Workerfy\Tests\Make::makeMysql();
+                $res = $db->query("select sleep(3)");
                 var_dump($res);
                 usleep(100000);
             }

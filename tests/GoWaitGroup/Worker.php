@@ -110,7 +110,6 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $last_time = $end_time - $start_time;
         var_dump("阻塞串行请求时长:". $last_time);
-
     }
 
     public function parallel() {

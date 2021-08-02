@@ -45,13 +45,6 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
     var_dump($this->getMasterWorkerName().'@'.$this->getMasterWorkerId().'父进程读取到table的值'.' : '.$value);
 };
 
-// 状态上报
-$processManager->onReportStatus =  function ($status) {
-
-    //file_put_contents(STATUS_FILE, json_encode($status, JSON_UNESCAPED_UNICODE));
-    //var_dump($status);
-};
-
 $processManager->onExit = function() {
     //var_dump("master exit");
 };
