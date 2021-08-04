@@ -235,8 +235,8 @@ class ProcessManager {
             if(!empty($this->process_lists))
             {
                 $this->daemon($is_daemon);
-                $this->installReportStatus();
                 $this->setMasterPid();
+                $this->installReportStatus();
                 foreach ($this->process_lists as $key => $list)
                 {
                     $process_worker_num = $list['process_worker_num'] ?? 1;
@@ -290,7 +290,7 @@ class ProcessManager {
                 $this->swooleEventAdd();
                 $this->setStartTime();
             }
-            // 设置在process start之后
+            // set process start after
             $master_pid = $this->getMasterPid();
             $this->saveMasterPidTofile($master_pid);
             $this->saveStatusToFile();

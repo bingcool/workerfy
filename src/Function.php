@@ -53,7 +53,7 @@ function get_one_free_port_coro() {
  */
 function in_master_process_env() {
     $pid = posix_getpid();
-    if(defined(MASTER_PID) && $pid == MASTER_PID) {
+    if(!defined(MASTER_PID) || (defined(MASTER_PID) && $pid == MASTER_PID)) {
         return true;
     }
     return false;
