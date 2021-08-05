@@ -8,15 +8,14 @@ class Worker extends \Workerfy\AbstractProcess {
         //sleep(1);
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
-            while (1) {
-                var_dump("vbbbbbbbbb");
+            while (1)
+            {
                 $db = \Workerfy\Tests\Make::makeMysql();
-                var_dump($db);
-                $res = $db->query("select sleep(2)");
+                $res = $db->query("select sleep(10)");
                 var_dump($res);
-                usleep(100000);
+                $this->reboot();
             }
-            //$this->reboot(); //可以观察到子进程pid在变化
+            $this->reboot(); //可以观察到子进程pid在变化
             //$ids = $this->getCliEnvParam('ids');
 //            $db = \Workerfy\Tests\Db::getMasterMysql();
 //            $query = $db->query("select * from user limit 2");
@@ -32,7 +31,7 @@ class Worker extends \Workerfy\AbstractProcess {
             while (1) {
                 $db = \Workerfy\Tests\Make::makeMysql();
                 $res = $db->query("select sleep(3)");
-                var_dump($res);
+                //var_dump($res);
                 usleep(100000);
             }
         }

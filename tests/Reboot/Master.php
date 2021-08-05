@@ -21,7 +21,6 @@ $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
-
 $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };

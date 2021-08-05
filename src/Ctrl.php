@@ -257,7 +257,7 @@ function status($cli_params) {
         exit(0);
     }
     $pipe = fopen($pipe_file,'r+');
-    $pipe_msg = json_encode(['status', $ctl_pipe_file, ''], JSON_UNESCAPED_UNICODE);
+    $pipe_msg = json_encode([CLI_STATUS, $ctl_pipe_file, ''], JSON_UNESCAPED_UNICODE);
     if(file_exists($ctl_pipe_file)) {
         unlink($ctl_pipe_file);
     }
@@ -346,7 +346,7 @@ function add($cli_params, int $wait_time = 3) {
     }
     $name = $cli_params['name'] ?? '';
     $num = $cli_params['num'] ?? 1;
-    $pipe_msg = json_encode(['add' , $name, $num], JSON_UNESCAPED_UNICODE);
+    $pipe_msg = json_encode([CLI_ADD , $name, $num], JSON_UNESCAPED_UNICODE);
     if($name) {
         write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);
@@ -390,7 +390,7 @@ function remove($cli_params, int $wait_time = 3) {
     }
     $name = $cli_params['name'] ?? null;
     $num = $cli_params['num'] ?? 1;
-    $pipe_msg = json_encode(['remove' , $name, $num], JSON_UNESCAPED_UNICODE);
+    $pipe_msg = json_encode([CLI_REMOVE , $name, $num], JSON_UNESCAPED_UNICODE);
     if(isset($name)) {
         write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)",'green');
         fwrite($pipe, $pipe_msg);

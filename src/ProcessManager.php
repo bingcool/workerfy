@@ -146,6 +146,13 @@ class ProcessManager {
      */
     protected $config;
 
+    /**
+     * @var array
+     */
+    protected $default_coroutine_setting = [
+        'enable_deadlock_check' => false
+    ];
+
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 5;
     const MASTER_WORKER_NAME = 'master_worker';
@@ -159,7 +166,7 @@ class ProcessManager {
      */
 	public function __construct(array $config = [], ...$args) {
         $this->config = $config;
-        $this->setCoroutineSetting($config['coroutine_setting'] ?? []);
+        $this->setCoroutineSetting(array_merge($this->default_coroutine_setting,$config['coroutine_setting'] ?? []));
         $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
@@ -753,14 +760,16 @@ class ProcessManager {
         $process_worker_num = $this->process_lists[$key]['process_worker_num'];
         $process_name = $this->process_lists[$key]['process_name'];
         $process_class = $this->process_lists[$key]['process_class'];
-        if(isset($this->process_lists[$key]['dynamic_process_worker_num']) && $this->process_lists[$key]['dynamic_process_worker_num'] > 0) {
+        if(isset($this->process_lists[$key]['dynamic_process_worker_num']) && $this->process_lists[$key]['dynamic_process_worker_num'] > 0)
+        {
             $total_process_num = $process_worker_num + $this->process_lists[$key]['dynamic_process_worker_num'] + $process_num;
         }else {
             $total_process_num = $process_worker_num + $process_num;
             $this->process_lists[$key]['dynamic_process_worker_num'] = 0;
         }
         // 总的进程数，大于设置的进程数
-        if($total_process_num > $this->process_lists[$key]['args']['max_process_num']) {
+        if($total_process_num > $this->process_lists[$key]['args']['max_process_num'])
+        {
             $total_process_num = $this->process_lists[$key]['args']['max_process_num'];
         }
         $running_process_worker_num = $process_worker_num + $this->process_lists[$key]['dynamic_process_worker_num'];
@@ -966,7 +975,7 @@ class ProcessManager {
                 }
                 if(\Swoole\Process::kill($pid, 0))
                 {
-                    // 循环上报状态的时候可以处理一些僵尸进程
+                    // loop report should be handle(exit) some deal process
                     $this->rebootOrExitHandle();
                     $process_status = 'running';
                     $children_status[$process_name][$worker_id] = [
@@ -1030,7 +1039,7 @@ class ProcessManager {
             }else
             {
                 /**
-                 * 4.6 统一改了，Async 相关的包括 Event、Timer、Process::signal,回调式的都属于Async模块
+                 * 4.6 Async Event、Timer、Process::signal moveto Swoole\Async library
                  */
                 $isSetFlag = false;
                 if(class_exists('Swoole\Async'))
@@ -1074,7 +1083,7 @@ class ProcessManager {
     }
 
     /**
-     * getProcessByName 通过名称获取一个进程
+     * getProcessByName
      * @param string $process_name
      * @param int $process_worker_id
      * @return mixed|null
@@ -1092,8 +1101,8 @@ class ProcessManager {
     }
 
     /**
-     * getProcessByPid 通过进程id获取进程
-     * @param  int    $pid
+     * getProcessByPid
+     * @param  int $pid
      * @return mixed
      */
     public function getProcessByPid(int $pid) {
@@ -1311,16 +1320,16 @@ class ProcessManager {
                     {
                         list($action, $process_name, $num) = $pipe_msg_arr;
                         switch($action) {
-                            case 'add' :
+                            case CLI_ADD :
                                 !isset($num) && $num = 1;
                                 $action_handle_flag = true;
                                 $this->addProcessByCli($process_name, $num);
                                 break;
-                            case 'remove' :
+                            case CLI_REMOVE :
                                 $action_handle_flag = true;
                                 $this->removeProcessByCli($process_name, $num);
                                 break;
-                            case 'status' :
+                            case CLI_STATUS :
                                 $action_handle_flag = true;
                                 $this->masterStatusToCliFifoPipe($process_name);
                                 break;

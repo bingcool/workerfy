@@ -18,7 +18,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         // 阻塞串行执行
         if($this->getProcessWorkerId() == 0) {
-            //$this->blockRun();
+            $this->blockRun();
         }
 
     }

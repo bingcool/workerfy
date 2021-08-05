@@ -467,7 +467,7 @@ abstract class AbstractProcess {
      * @param int $process_worker_id
      * @param bool $is_use_master_proxy
      * @return bool
-     * @throws \Exception
+     * @throws Exception
      */
     public function writeByProcessName(
         string $process_name,
@@ -545,7 +545,7 @@ abstract class AbstractProcess {
      * @param mixed $data
      * @param int $process_worker_id
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function writeToWorkerByMasterProxy(string $process_name, $data, int $process_worker_id = 0) {
         $is_use_master_proxy = true;
@@ -925,7 +925,11 @@ abstract class AbstractProcess {
             });
             $this->reboot_timer_id = $timer_id;
             // block wait to reboot
-            $channel->pop(-1);
+            if(\Swoole\Coroutine::getCid() > 0)
+            {
+                $channel->pop(-1);
+                $channel->close();
+            }
         }
         return true;
     }
@@ -973,7 +977,11 @@ abstract class AbstractProcess {
             });
             $this->exit_timer_id = $timer_id;
             // block wait to exit
-            $channel->pop(-1);
+            if(\Swoole\Coroutine::getCid() > 0)
+            {
+                $channel->pop(-1);
+                $channel->close();
+            }
             return true;
         }
 

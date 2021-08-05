@@ -19,14 +19,14 @@ $processManager->onStart = function ($pid) {
 
 // 状态上报
 $processManager->onReportStatus =  function ($status) {
-//    var_dump("master status");
-//    // 需要运行在协程中
-//    go(function () {
-//        $db = \Workerfy\Tests\Db::getMasterMysql();
-//        $query = $db->query("select sleep(5)");
-//        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
-//        var_dump($res);
-//    });$res
+    var_dump("master status");
+    // 需要运行在协程中
+    go(function () {
+        $db = \Workerfy\Tests\Db::getMasterMysql();
+        $query = $db->query("select sleep(10)");
+        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        var_dump($res);
+    });
 };
 
 
