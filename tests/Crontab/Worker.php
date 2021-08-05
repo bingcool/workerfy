@@ -2,6 +2,7 @@
 namespace Workerfy\Tests\Crontab;
 
 use Workerfy\Crontab\CrontabManager;
+use Workerfy\Exception\CrontabException;
 use Workerfy\ProcessManager;
 use \Workerfy\Coroutine\Context;
 
@@ -10,9 +11,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public $tick_format = "*/1 * * * *";
 
     public function init() {
-
         var_dump(base64_encode($this->tick_format));
-
         $tick_format = $this->getCliEnvParam('tick_format');
         var_dump($tick_format);
 
@@ -20,7 +19,6 @@ class Worker extends \Workerfy\AbstractProcess {
             $this->tick_format = $tick_format;
         }else {
             var_dump("cccccccccc");
-            //throw new \Exception("cli command env params must be set tick_format", 1);
         }
     }
 
@@ -31,31 +29,34 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump('worker_cid='.\Co::getCid());
         $this->tick_format = '*/1 * * * *';
         // 每分钟执行一次，时间格式类似于linux的crontab
-        CrontabManager::getInstance()->addRule("tick", $this->tick_format , function($cron_name, $expression) {
-            // 一定要在最外为捕捉异常，否则tick定时器里面的异常无法捕捉处理
-            var_dump('tick_cid='.\Co::getCid());
+        try {
+            CrontabManager::getInstance()->addRule("tick", $this->tick_format, function ($cron_name, $expression) {
+                // 一定要在最外为捕捉异常，否则tick定时器里面的异常无法捕捉处理
+                var_dump('tick_cid=' . \Co::getCid());
 
-            defer(function () {
-                var_dump("defer defer");
-            });
+                defer(function () {
+                    var_dump("defer defer");
+                });
 
-            try{
+                try {
 
-               // $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
+                    // $timer_id = CrontabManager::getInstance()->getTimerIdByName('tick');
 
-                //var_dump($timer_id);
+                    //var_dump($timer_id);
 
-                var_dump("一分钟时间到了,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
+                    var_dump("一分钟时间到了,表达式=$expression,执行任务:" . date('Y-m-d H:i:s', time()));
 
-                if(date('Y-m-d H:i:s') == '2020-06-13 21:17:00') {
-                    $this->reboot();
-                    //CrontabManager::getInstance()->cancelCrontabTask($cron_name);
+                    if (date('Y-m-d H:i:s') == '2020-06-13 21:17:00') {
+                        $this->reboot();
+                        //CrontabManager::getInstance()->cancelCrontabTask($cron_name);
+                    }
+
+                } catch (\Throwable $throwable) {
+                    $this->onHandleException($throwable);
                 }
-
-            }catch (\Throwable $throwable) {
-                $this->onHandleException($throwable);
-            }
-        }, 0);
+            }, 0);
+        } catch (CrontabException $e) {
+        }
 
         sleep(2);
 

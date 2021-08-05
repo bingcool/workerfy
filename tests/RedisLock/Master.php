@@ -15,9 +15,7 @@ $args = [
     'wait_time' => 1
 ];
 $extend_data = null;
-$processManager->enableCliPipe(true);
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
-
 
 
 
