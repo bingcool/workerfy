@@ -22,11 +22,10 @@ class Worker extends AbstractProcess {
      */
     public function run()
     {
-        $Pdo = \Workerfy\Tests\DB::getMasterMysql();
+        $mysql = \Workerfy\Tests\Make::makeMysql();
 
-        $stmt = $Pdo->query('show master status');
-
-        $rows = $stmt->fetchAll(); //获取所有
+        $rows = $mysql->query('show master status');
+        
         var_dump($rows);
 
     }
