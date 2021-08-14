@@ -5,14 +5,12 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function init()
     {
-
         set_error_handler(function($errorNo) {
             var_dump('errorNo='.$errorNo);
         });
     }
 
     public function run() {
-
         // 模拟处理业务
         sleep(3);
         trigger_error('fffffff', E_USER_ERROR);

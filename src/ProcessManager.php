@@ -27,6 +27,18 @@ class ProcessManager {
     use \Workerfy\Traits\SingletonTrait;
 
     /**
+     * @var
+     */
+    protected $config;
+
+    /**
+     * @var array
+     */
+    protected $default_coroutine_setting = [
+        'enable_deadlock_check' => false
+    ];
+
+    /**
      * @var array
      */
     private $process_lists = [];
@@ -91,6 +103,7 @@ class ProcessManager {
      */
     private $cli_pipe_fd;
 
+
     /**
      * @var \Closure
      */
@@ -140,18 +153,6 @@ class ProcessManager {
      * @var \Closure
      */
     public $onRegisterRuntimeLog;
-
-    /**
-     * @var
-     */
-    protected $config;
-
-    /**
-     * @var array
-     */
-    protected $default_coroutine_setting = [
-        'enable_deadlock_check' => false
-    ];
 
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 5;

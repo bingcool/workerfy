@@ -36,7 +36,6 @@ class Worker extends \Workerfy\AbstractProcess {
             //var_dump($sysvmsgManager->getSysKernelInfo(), $sysvmsgManager->getMsgQueueSize(MSG_QUEUE_NAME_ORDER));
             while (1)
             {
-                \Swoole\Event::dispatch();
                 $num = $sysvmsgManager->getMsgQueueWaitToPopNum(MSG_QUEUE_NAME_ORDER);
                 var_dump($num);
                 // 阻塞等待消费,这时是阻塞，整个event loop 都不会触发事件
