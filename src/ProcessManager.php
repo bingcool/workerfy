@@ -569,7 +569,8 @@ class ProcessManager {
                                     /** @var AbstractProcess $newProcess */
                                     $newProcess = new $process_class(
                                         $process_name,
-                                        $async, $args,
+                                        $async,
+                                        $args,
                                         $extend_data,
                                         $enable_coroutine
                                     );
@@ -829,8 +830,10 @@ class ProcessManager {
                 $this->process_lists[$key]['dynamic_process_destroying'] = true;
                 try {
                     $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
-                    // 动态进程销毁，需要自减
-                    $this->process_lists[$key]['dynamic_process_worker_num']--;
+                    if($this->process_lists[$key]['dynamic_process_worker_num'] > 0)
+                    {
+                        $this->process_lists[$key]['dynamic_process_worker_num']--;
+                    }
                     write_info("【Info】Dynamic process={$process_name},worker_id={$worker_id} destroy successful");
                 }catch (\Throwable $e) {
                     write_info("destroyDynamicProcess error message=".$e->getMessage());
@@ -1150,7 +1153,7 @@ class ProcessManager {
     }
 
     /**
-     * master是否正在退出状态中，这个状态中，不再接受处理动态创建进程
+     * isMasterExiting
      * @return bool
      */
     public function isMasterExiting() {
@@ -1186,7 +1189,7 @@ class ProcessManager {
     }
 
     /**
-     * master代理转发
+     * master proxy worker message
      * @param mixed $data
      * @param string $from_process_name
      * @param int $from_process_worker_id
@@ -1217,7 +1220,7 @@ class ProcessManager {
     }
 
     /**
-     * 广播消息至worker
+     * broadcast message to all worker
      * @param string|null $process_name
      * @param mixed $data
      */
@@ -1289,7 +1292,7 @@ class ProcessManager {
     }
 
     /**
-     * 创建管道
+     * install Cli Pipe for listen cli command
      * @throws null
      */
     private function installCliPipe() {
@@ -1399,7 +1402,7 @@ class ProcessManager {
     }
 
     /**
-     * 获取cli命令行传入的参数选项
+     * getCliEnvParam
      * @param string $name
      * @return array|false|string
      */
@@ -1458,7 +1461,7 @@ class ProcessManager {
     }
 
     /**
-     * setStartTime 设置启动时间
+     * setStartTime
      * @return void
      */
     private function setStartTime() {
@@ -1474,7 +1477,7 @@ class ProcessManager {
     }
 
     /**
-     * master && children process是否启动
+     * master && children process is running status
      * @return bool
      */
     public function isRunning() {

@@ -19,12 +19,6 @@ class ConfigLoad {
 
 	private $config = [];
 
-	private $color = null;
-
-	private function __construct() {
-		$this->color = new \Workerfy\EachColor();
-	}
-
     /**
      * @param string|null $config_file_path
      * @return array
