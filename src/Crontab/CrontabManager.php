@@ -291,7 +291,7 @@ class CrontabManager {
 
     /**
      * @param string $cron_name
-     * @return mixed
+     * @return mixed|null
      */
     public function getLoopType(string $cron_name) {
         if($cron_name) {

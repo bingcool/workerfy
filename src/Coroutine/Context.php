@@ -32,6 +32,7 @@ class Context {
     /**
      * @param $name
      * @param $value
+     * @return bool
      * @throws RuntimeException
      */
     public static function set($name, $value) {
@@ -46,7 +47,7 @@ class Context {
 
     /**
      * @param $name
-     * @return bool
+     * @return bool|null
      * @throws RuntimeException
      */
     public static function get($name) {

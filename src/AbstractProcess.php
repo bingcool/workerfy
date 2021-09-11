@@ -212,6 +212,7 @@ abstract class AbstractProcess {
      * @param array  $args
      * @param null   $extend_data
      * @param bool   $enable_coroutine
+     * @return void
      */
     public function __construct(
         string $process_name,
@@ -579,6 +580,7 @@ abstract class AbstractProcess {
      * notifyMasterDestroyDynamicProcess 通知master销毁动态创建的进程
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
+     * @return void
      * @throws \Exception
      */
     public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1) {
@@ -618,6 +620,7 @@ abstract class AbstractProcess {
     /**
      * 是否正在动态进程销毁中状态
      * @param bool $is_destroy
+     * @return void
      */
     public function isDynamicDestroy(bool $is_destroy) {
         $this->is_dynamic_destroy = $is_destroy;
@@ -633,6 +636,7 @@ abstract class AbstractProcess {
 
     /**
      * @param array $setting
+     * @return void
      */
     public function setCoroutineSetting(array $setting)
     {
@@ -652,7 +656,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getCoroutineId() {
         return $this->coroutine_id;
@@ -661,6 +665,7 @@ abstract class AbstractProcess {
     /**
      * setProcessWorkerId
      * @param int $id
+     * @return void
      */
     public function setProcessWorkerId(int $id) {
         $this->process_worker_id = $id;
@@ -688,7 +693,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getMasterPid() {
         return $this->master_pid;
@@ -703,6 +708,7 @@ abstract class AbstractProcess {
 
     /**
      * getWaitTime
+     * @return int
      */
     public function getWaitTime() {
         return $this->wait_time;
@@ -814,7 +820,7 @@ abstract class AbstractProcess {
 
     /**
      * isAsync
-     * @return boolean
+     * @return bool
      */
     public function isAsync() {
         return $this->async;
@@ -822,7 +828,7 @@ abstract class AbstractProcess {
 
     /**
      * 是否启用协程
-     * @return boolean
+     * @return bool
      */
     public function isEnableCoroutine() {
         return $this->enable_coroutine;
@@ -837,6 +843,7 @@ abstract class AbstractProcess {
 
     /**
      * @param int $count
+     * @return void
      */
     public function setRebootCount(int $count) {
         $this->reboot_count = $count;
@@ -858,13 +865,14 @@ abstract class AbstractProcess {
 
     /**
      * setStartTime
+     * @return void
      */
     public function setStartTime() {
         $this->start_time = strtotime('now');
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getStartTime() {
         return $this->start_time;
@@ -873,7 +881,7 @@ abstract class AbstractProcess {
     /**
      * 获取cli命令行传入的参数选项
      * @param string $name
-     * @return array|false|string
+     * @return array|false|string|null
      */
     public function getCliEnvParam(string $name) {
         $value = @getenv($name);
@@ -885,10 +893,10 @@ abstract class AbstractProcess {
 
     /**
      * reboot 自动重启
-     * @param float $wait_time
+     * @param null|float $wait_time
      * @return bool
      */
-    public function reboot(float $wait_time = null) {
+    public function reboot(?float $wait_time = null) {
         if(!$this->isStaticProcess())
         {
             $this->writeReloadFormatInfo();
@@ -988,8 +996,9 @@ abstract class AbstractProcess {
     }
 
     /**
-     * registerTickReboot
-     * 注册定时重启, 一般在init()函数中注册
+     * registerTickReboot 注册定时重启, 一般在init()函数中注册
+     * @param $cron_expression
+     * @return void
      */
     protected function registerTickReboot($cron_expression)
     {
@@ -1027,8 +1036,7 @@ abstract class AbstractProcess {
     }
 
     /**
-     * 强制退出时，需要清理reboot的定时器
-     * clearRebootTimer
+     * clearRebootTimer 强制退出时，需要清理reboot的定时器
      * @return void
      */
     public function clearRebootTimer() {
@@ -1041,7 +1049,7 @@ abstract class AbstractProcess {
 
     /**
      * isForceExit
-     * @return boolean
+     * @return bool
      */
     public function isForceExit() {
         return $this->is_force_exit;
@@ -1156,7 +1164,7 @@ abstract class AbstractProcess {
 
     /**
      * setUserAndGroup Set unix user and group for current process.
-     * @return boolean
+     * @return bool
      */
     protected function setUserAndGroup() {
         if(!isset($this->user)) {
@@ -1200,6 +1208,7 @@ abstract class AbstractProcess {
 
     /**
      * writeStartFormatInfo
+     * @return void
      */
     private function writeStartFormatInfo() {
         $process_name = $this->getProcessName();
@@ -1222,6 +1231,7 @@ abstract class AbstractProcess {
 
     /**
      * writeStopFormatInfo
+     * @return void
      */
     private function writeStopFormatInfo() {
         $process_name = $this->getProcessName();
@@ -1240,6 +1250,7 @@ abstract class AbstractProcess {
 
     /**
      * writeReloadFormatInfo
+     * @return void
      */
     private function writeReloadFormatInfo() {
         if($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE)

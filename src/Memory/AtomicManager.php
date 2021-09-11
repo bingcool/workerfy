@@ -71,12 +71,7 @@ class AtomicManager {
      * @return mixed
      */
     public function getAtomic(string $atomic_name) {
-        if(isset($this->swoole_atomic[$atomic_name]))
-        {
-            return $this->swooleAtomic[$atomic_name];
-        }else{
-            return null;
-        }
+        return $this->swooleAtomic[$atomic_name] ?? null;
     }
 
     /**
@@ -85,12 +80,7 @@ class AtomicManager {
      * @return mixed
      */
     public function getAtomicLong(string $atomic_name) {
-        if(isset($this->swoole_atomic_long[$atomic_name]))
-        {
-            return $this->swooleAtomicLong[$atomic_name];
-        }else{
-            return null;
-        }
+        return $this->swooleAtomicLong[$atomic_name] ?? null;
     }
 
     /**

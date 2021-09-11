@@ -27,7 +27,7 @@ class ProcessManager {
     use \Workerfy\Traits\SingletonTrait;
 
     /**
-     * @var
+     * @var array
      */
     protected $config;
 
@@ -236,7 +236,7 @@ class ProcessManager {
 
     /**
      * start
-     * @return
+     * @return mixed
      */
     public function start(bool $is_daemon = false) {
         try {
@@ -328,6 +328,7 @@ class ProcessManager {
 
     /**
      * getHookFlags
+     * @return int
      */
     public function getHookFlags()
     {
@@ -402,7 +403,7 @@ class ProcessManager {
      * @param $ctl_pipe_file
      */
     private function masterStatusToCliFifoPipe($ctl_pipe_file) {
-        $ctl_pipe = fopen($ctl_pipe_file,'w+');
+        $ctlPipe = fopen($ctl_pipe_file,'w+');
         $master_info = $this->statusInfoFormat(
             $this->getMasterWorkerName(),
             $this->getMasterWorkerId(),
@@ -410,7 +411,7 @@ class ProcessManager {
             'running',
             $this->start_time
         );
-        fwrite($ctl_pipe, $master_info);
+        fwrite($ctlPipe, $master_info);
         foreach($this->process_workers as $key => $processes)
         {
             ksort($processes);
@@ -455,10 +456,10 @@ class ProcessManager {
                 {
                     write_info($info);
                 }else {
-                    @fwrite($ctl_pipe, $info);
+                    @fwrite($ctlPipe, $info);
                 }
             }
-            @fclose($ctl_pipe);
+            @fclose($ctlPipe);
             unset($processes);
         }
     }
@@ -484,6 +485,7 @@ class ProcessManager {
 
     /**
      * installSigchldSignal 注册回收子进程信号
+     * @return void
      */
     private function installSigchldSignal() {
         \Swoole\Process::signal(SIGCHLD, function($signo) {
@@ -493,6 +495,7 @@ class ProcessManager {
 
     /**
      * @param string $name
+     * @return void
      */
     public function setCliMasterName($name = '') {
         $this->closure = function() use($name)
@@ -505,9 +508,10 @@ class ProcessManager {
 
     /**
      * rebootOrExitHandle 信号处理函数
+     * @return void
      */
     protected function rebootOrExitHandle() {
-        // no block model
+        // non block model
         while($ret = \Swoole\Process::wait(false))
         {
             if(!is_array($ret) || !isset($ret['pid']))
@@ -602,6 +606,7 @@ class ProcessManager {
 
     /**
      * @param null $process
+     * @return mixed
      */
     private function swooleEventAdd($process = null) {
         $process_workers = [];
@@ -718,6 +723,7 @@ class ProcessManager {
 
     /**
      * @param int $master_pid
+     * @return void
      */
     public function saveMasterPidTofile(int $master_pid) {
         @file_put_contents(PID_FILE, $master_pid);
@@ -725,6 +731,7 @@ class ProcessManager {
 
     /**
      * @param $status
+     * @return void
      */
     public function saveStatusToFile(array $status = []) {
         if(empty($status)) {
@@ -737,6 +744,7 @@ class ProcessManager {
      * dynamicCreateProcess 动态创建临时进程
      * @param string $process_name
      * @param int $process_num
+     * @return mixed
      * @throws \Exception
      */
     public function createDynamicProcess(string $process_name, int $process_num = 2) {
@@ -818,6 +826,7 @@ class ProcessManager {
      * destroyDynamicProcess 销毁动态创建的进程
      * @param string $process_name
      * @param int $process_num
+     * @return void
      * @throws \Exception
      */
     public function destroyDynamicProcess(string $process_name, $process_num = -1) {
@@ -867,6 +876,7 @@ class ProcessManager {
     /**
      * daemon
      * @param bool $is_daemon
+     * @return void
      */
     private function daemon($is_daemon) {
         if(defined('IS_DAEMON') && IS_DAEMON == true)
@@ -1015,6 +1025,7 @@ class ProcessManager {
 
     /**
      * installReportStatus
+     * @return void
      */
     private function installReportStatus() {
         $default_tick_time = self::REPORT_STATUS_TICK_TIME;
@@ -1164,7 +1175,7 @@ class ProcessManager {
      * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
-     * @throws
+     * @throws RuntimeException
      * @return bool
      */
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0) {
@@ -1223,6 +1234,7 @@ class ProcessManager {
      * broadcast message to all worker
      * @param string|null $process_name
      * @param mixed $data
+     * @return void
      */
     public function broadcastProcessWorker(string $process_name = null, $data = '') {
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
@@ -1257,8 +1269,9 @@ class ProcessManager {
     }
 
     /**
-     * @param $signal
+     * @param int $signal
      * @param callable $function
+     * @return void
      */
     public function addSignal($signal, callable $function) {
         // forbidden over has registered signal
@@ -1269,6 +1282,7 @@ class ProcessManager {
 
     /**
      * registerSignal
+     * @return void
      */
     private function registerSignal() {
         if(!empty($this->signal)) {
@@ -1286,6 +1300,7 @@ class ProcessManager {
 
     /**
      * @param bool $enable_pipe
+     * @return void
      */
     public function enableCliPipe(bool $enable_pipe = false) {
         $this->enable_pipe = $enable_pipe;
@@ -1293,7 +1308,8 @@ class ProcessManager {
 
     /**
      * install Cli Pipe for listen cli command
-     * @throws null
+     * @return bool|null
+     * @throws RuntimeException
      */
     private function installCliPipe() {
         if(!$this->enable_pipe)
@@ -1404,7 +1420,7 @@ class ProcessManager {
     /**
      * getCliEnvParam
      * @param string $name
-     * @return array|false|string
+     * @return array|false|string|null
      */
     public function getCliEnvParam(string $name) {
         $value = @getenv($name);
@@ -1416,6 +1432,7 @@ class ProcessManager {
 
     /**
      * installRegisterShutdownFunction
+     * @return void
      */
     private function installRegisterShutdownFunction() {
         register_shutdown_function(function() {

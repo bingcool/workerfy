@@ -28,11 +28,12 @@ $processManager->onStart = function ($pid) {
 
     // 需要运行在协程中
     go(function () use($pid) {
-        sleep(5);
+        //sleep(5);
         $db = \Workerfy\Tests\Make::makeCommonDb();
         $res = $db->query("select * from `tbl_order` limit 1");
         var_dump($res);
     });
+
 };
 
 $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_worker_id, $is_proxy_by_master) {

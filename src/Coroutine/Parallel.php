@@ -56,6 +56,7 @@ class Parallel {
     /**
      * @param callable $callable
      * @param string $key
+     * @return void
      */
     public function add(callable $callable, string $key = null) {
         if (null === $key)
@@ -94,6 +95,7 @@ class Parallel {
 
     /**
      * @param $key
+     * @return void
      */
     public function ignoreCallbacks(array $keys) {
         $this->ignoreCallbacks = $keys;

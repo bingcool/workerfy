@@ -17,6 +17,9 @@ class ConfigLoad {
 
 	use \Workerfy\Traits\SingletonTrait;
 
+    /**
+     * @var array
+     */
 	private $config = [];
 
     /**
@@ -46,6 +49,7 @@ class ConfigLoad {
 	/**
 	 * setConfig
 	 * @param array $config
+     * @return void
 	 */
 	public function setConfig(array $config = []) {
 		$this->config = array_merge_recursive($this->config, $config);

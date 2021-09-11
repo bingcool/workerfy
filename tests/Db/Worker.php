@@ -8,6 +8,15 @@ class Worker extends \Workerfy\AbstractProcess {
 
 	public function run() {
 	    if($this->getProcessWorkerId() == 0) {
+            $db = \Workerfy\Tests\Make::makeCommonDb();
+            $db->createCommand("insert into tbl_order (`order_id`,`user_id`,`order_amount`,`order_product_ids`,`order_status`) values(:order_id,:user_id,:order_amount,:order_product_ids,:order_status)" )
+                ->insert([
+                    ':order_id' => time() + 5,
+                    ':user_id' => 10000,
+                    ':order_amount' => 105,
+                    ':order_product_ids' => json_encode([1,2,3,rand(1,1000)]),
+                    ':order_status' => 1
+                ]);
 
 	        while (true)
             {

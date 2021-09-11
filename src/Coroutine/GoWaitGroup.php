@@ -130,6 +130,7 @@ class GoWaitGroup {
 
     /**
      * start
+     * @return int
      */
     public function start() {
         $this->count++;
@@ -138,6 +139,7 @@ class GoWaitGroup {
 
     /**
      * done
+     * @return void
      */
     public function done(string $key = null, $data = null, float $timeout = -1) {
         if(!empty($key) && !empty($data)) {
@@ -149,6 +151,7 @@ class GoWaitGroup {
     /**
      * @param string $key
      * @param null $data
+     * @return void
      */
     public function initResult(string $key, $data = null) {
         $this->result[$key] = $data;
@@ -156,6 +159,7 @@ class GoWaitGroup {
 
     /**
      * wait
+     * @return array
      */
     public function wait(float $timeout = 0) {
         while($this->count-- > 0) {
@@ -168,6 +172,7 @@ class GoWaitGroup {
 
     /**
      * reset
+     * @return void
      */
     public function reset() {
         $this->result = [];

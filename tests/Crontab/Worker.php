@@ -11,6 +11,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public $tick_format = "*/1 * * * *";
 
     public function init() {
+        var_dump($this->getStartTime());
         var_dump(base64_encode($this->tick_format));
         $tick_format = $this->getCliEnvParam('tick_format');
         var_dump($tick_format);
