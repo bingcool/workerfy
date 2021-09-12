@@ -50,13 +50,20 @@ class Worker extends \Workerfy\AbstractProcess {
                     $execBinFile,
                     __DIR__.'/TestCommand.php',
                     $params,
-                    true
+                    false
                 );
+
+                // exec调用失败,需要重试机制延后处理$params
+                if($return !=0)
+                {
+                    var_dump('exec failed');
+                }
 
                 if(isset($output[0]))
                 {
                     var_dump("exec end， pid={$output[0]}");
                 }
+
             }
 
         }

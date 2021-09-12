@@ -78,7 +78,7 @@ class Context {
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public static function getCid() {
         return \Swoole\Coroutine::getCid();
@@ -86,6 +86,7 @@ class Context {
 
     /**
      * @param callable $func
+     * @return void
      */
     public static function defer(callable $func) {
         \Swoole\Coroutine::defer($func);

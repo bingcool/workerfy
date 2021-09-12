@@ -28,7 +28,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         $response = $client->connect();
         while (!$response) {
-            Coroutine::sleep(3);
+            Coroutine\System::sleep(3);
             $client->connect();
         }
         $response = $client->publish('simps-mqtt/user001/update', '{"time":'. time() .'}', 1,0,1);

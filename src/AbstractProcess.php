@@ -612,7 +612,7 @@ abstract class AbstractProcess {
                 $dynamic_destroy_process_time = $this->wait_time + 10;
             }
             // wait sleep
-            \Swoole\Coroutine::sleep($dynamic_destroy_process_time);
+            \Swoole\Coroutine\System::sleep($dynamic_destroy_process_time);
             $this->isDynamicDestroy(false);
         }
     }
@@ -1133,7 +1133,7 @@ abstract class AbstractProcess {
                 --$cycle_times;
                 if(\Swoole\Coroutine::getCid() > 0)
                 {
-                    \Swoole\Coroutine::sleep($re_wait_time);
+                    \Swoole\Coroutine\System::sleep($re_wait_time);
                 }else
                 {
                     sleep($re_wait_time);

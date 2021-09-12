@@ -37,7 +37,7 @@ $processManager->onReportStatus =  function ($status) {
         \Swoole\Coroutine::set([
             'enable_deadlock_check' => false
         ]);
-        \Swoole\Coroutine::sleep(1);
+        \Swoole\Coroutine\System::sleep(1);
         var_dump('onReportStatus');
     });
 

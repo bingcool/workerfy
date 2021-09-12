@@ -56,6 +56,7 @@ class GoCoroutine {
 
     /**
      * @param callable $callback
+     * @return void
      */
     public static function create(callable $callback, ...$params) {
         self::go($callback, ...$params);
