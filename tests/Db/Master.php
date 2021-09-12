@@ -3,7 +3,7 @@
 require dirname(__DIR__).'/Common.php';
 
 $processManager = \Workerfy\processManager::getInstance();
-$process_name = 'Dbtest';
+$process_name = 'Db-test';
 $process_class = \Workerfy\Tests\Db\Worker::class;
 $process_worker_num = 1;
 $async = true;
@@ -50,8 +50,8 @@ $processManager->onExit = function() use($configFilePath) {
     //var_dump("master exit",$configFilePath);
 };
 
-$processManager->onHandleException = function($t) {
-    var_dump("aaaaaaaaaaaaaaaa");
+$processManager->onHandleException = function(\Throwable $t) {
+    var_dump("onHandleException");
     var_dump($t->getMessage());
 };
 

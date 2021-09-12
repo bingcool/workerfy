@@ -34,7 +34,7 @@ class QueueConsumerWorker extends AbstractProcess {
         );
 
 
-        $queue->getRedis()->del('ali_queue_key');
+        $queue->getRedis()->del(['ali_queue_key']);
 
         for($i=1; $i<=2; $i++)
         {

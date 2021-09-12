@@ -22,9 +22,8 @@ $processManager->onReportStatus =  function ($status) {
     var_dump("master status");
     // 需要运行在协程中
     go(function () {
-        $db = \Workerfy\Tests\Db::getMasterMysql();
-        $query = $db->query("select sleep(10)");
-        $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
+        $db = \Workerfy\Tests\Make::makeCommonDb();
+        $res = $db->createCommand("select sleep(10)")->queryAll();
         var_dump($res);
     });
 };

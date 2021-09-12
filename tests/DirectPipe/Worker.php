@@ -19,10 +19,10 @@ class Worker extends \Workerfy\AbstractProcess {
             var_dump($process_name."子进程开始向父进程发信息.....");
             sleep(1);
             //$this->writeToWorkerByMasterProxy($this->getProcessName(),'hello worker1', 1);
-            $this->writeByProcessName($this->getProcessName(),'hello worker1', 1);
+            $this->writeByProcessName($this->getProcessName(),'first send hello worker1', 1);
             sleep(5);
             //$this->writeToWorkerByMasterProxy($this->getProcessName(),'hello worker1', 1);
-            $this->writeByProcessName($this->getProcessName(),'hello worker1', 1);
+            $this->writeByProcessName($this->getProcessName(),'second send hello worker1', 1);
 
 
         }

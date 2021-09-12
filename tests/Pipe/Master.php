@@ -24,9 +24,16 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
         $from_process_name,
         $from_process_worker_id,
     ];
-    var_dump("父进程收到信息 : ". $msg);
+    if(is_array($msg))
+    {
+        var_dump("父进程收到信息 : ". json_encode($msg, 256));
+    }else {
+        var_dump("父进程收到信息 : ". $msg);
+    }
 
-    $processManager->writeByProcessName($from_process_name, '子进程'.$from_process_name.'@'.$from_process_worker_id. ' 你好，我已收到你的信息');
+    $processManager->writeByProcessName(
+        $from_process_name,
+        ['msg' => '子进程'.$from_process_name.'@'.$from_process_worker_id. ' 你好，我已收到你的信息']);
 
     var_dump("父进程开始向子进程回复信息.....");
 };

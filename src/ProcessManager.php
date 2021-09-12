@@ -318,6 +318,7 @@ class ProcessManager {
 
     /**
      * @param array $setting
+     * @return void
      */
     public function setCoroutineSetting(array $setting)
     {
@@ -400,9 +401,10 @@ class ProcessManager {
 
     /**
      * 父进程的status通过fifo有名管道信号回传
-     * @param $ctl_pipe_file
+     * @param string $ctl_pipe_file
+     * @return void
      */
-    private function masterStatusToCliFifoPipe($ctl_pipe_file) {
+    private function masterStatusToCliFifoPipe(string $ctl_pipe_file) {
         $ctlPipe = fopen($ctl_pipe_file,'w+');
         $master_info = $this->statusInfoFormat(
             $this->getMasterWorkerName(),
@@ -497,7 +499,7 @@ class ProcessManager {
      * @param string $name
      * @return void
      */
-    public function setCliMasterName($name = '') {
+    public function setCliMasterName(string $name = '') {
         $this->closure = function() use($name)
         {
             if($name) {
@@ -1108,7 +1110,7 @@ class ProcessManager {
         $key = md5($process_name);
         if(isset($this->process_workers[$key][$process_worker_id])){
             return $this->process_workers[$key][$process_worker_id];
-        }else if($process_worker_id == -1) {
+        }else if($process_worker_id < 0) {
             return $this->process_workers[$key];
         }else {
             throw new RuntimeException("Missing and not found process_name={$process_name}, worker_id={$process_worker_id}");

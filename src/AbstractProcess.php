@@ -465,7 +465,7 @@ abstract class AbstractProcess {
      * writeByProcessName worker进程向某个进程写数据
      * @param string $process_name
      * @param $data
-     * @param int $process_worker_id
+     * @param int $process_worker_id process_worker_id=-1 表示向所有worker发信息
      * @param bool $is_use_master_proxy
      * @return bool
      * @throws Exception
@@ -529,13 +529,21 @@ abstract class AbstractProcess {
 
     /**
      * writeToMasterProcess 直接向master进程写数据
-     * @param string $process_name
+     * @param string $process_name 读取固定常量
      * @param mixed $data
      * @param int $process_worker_id
      * @return bool
      * @throws Exception
      */
-    public function writeToMasterProcess(string $process_name, $data, int $process_worker_id = 0) {
+    public function writeToMasterProcess(string $process_name = ProcessManager::MASTER_WORKER_NAME, $data = '', int $process_worker_id = 0) {
+        if(empty($data))
+        {
+            return false;
+        }
+        if($process_name != ProcessManager::MASTER_WORKER_NAME)
+        {
+            $process_name = ProcessManager::MASTER_WORKER_NAME;
+        }
         $is_use_master_proxy = false;
         return $this->writeByProcessName($process_name, $data, $process_worker_id, $is_use_master_proxy);
     }

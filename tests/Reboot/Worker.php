@@ -11,8 +11,6 @@ class Worker extends \Workerfy\AbstractProcess {
         $this->sleep = $sleep;
         var_dump(\Swoole\Coroutine::getOptions());
 
-
-
         \Swoole\Timer::tick(1*1000, function (){
            var_dump('tick-'.\Co::getCid().'-'.rand(1,1000));
         });

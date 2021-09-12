@@ -11,6 +11,7 @@
 
 namespace Workerfy\Command;
 
+use Workerfy\Exception\CommandException;
 use Workerfy\Log\LogManager;
 
 class CommandRunner {
@@ -28,6 +29,11 @@ class CommandRunner {
      * @var int
      */
     protected $concurrent = 5;
+
+    /**
+     * @var bool
+     */
+    protected $isNextFlag = false;
 
     /**
      * @param string $runnerName
@@ -74,6 +80,10 @@ class CommandRunner {
         string $log = '/dev/null',
         bool $isExec = true
     ) {
+        if(!$this->isNextFlag) {
+            throw new CommandException('Missing call isNextHandle()');
+        }
+        $this->isNextFlag = false;
         $params = '';
         if($args)
         {
@@ -115,6 +125,7 @@ class CommandRunner {
      */
     public function isNextHandle()
     {
+        $this->isNextFlag = true;
         if($this->channel->isFull())
         {
             $pids = [];

@@ -228,7 +228,7 @@ class CrontabManager {
      * @param string|null $cron_name
      * @return array|mixed|null
      */
-    public function getCronTaskByName(string $cron_name = null) {
+    public function getCronTaskByName(?string $cron_name = null) {
         if($cron_name)
         {
             if(isset($this->cron_tasks[$cron_name]))

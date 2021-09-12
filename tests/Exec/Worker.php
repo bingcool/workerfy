@@ -39,31 +39,37 @@ class Worker extends \Workerfy\AbstractProcess {
         while (1)
         {
             $runner = CommandRunner::getInstance('test1');
+
             // $runner can do next item
-            if($runner->isNextHandle())
+            // 可以处理下一个的时候才从mq里面取出数据来消费，否则不要取数据
+            // todo
+
+            try {
+                if($runner->isNextHandle())
+                {
+                    $params = ['name-'.rand(1,1000)];
+
+                    list($command, $output, $return) = $runner->exec(
+                        $execBinFile,
+                        __DIR__.'/TestCommand.php',
+                        $params,
+                        true
+                    );
+
+                    // exec调用失败,需要重试机制延后处理$params
+                    if($return !=0)
+                    {
+                        var_dump('exec failed');
+                    }
+
+                    if(isset($output[0]))
+                    {
+                        var_dump("exec end， pid={$output[0]}");
+                    }
+                }
+            }catch (\Exception $e)
             {
-                // 可以处理下一个的时候才从mq里面取出数据来消费，否则不要取数据
-                // todo
-                $params = ['name-'.rand(1,1000)];
-
-                list($command, $output, $return) = $runner->exec(
-                    $execBinFile,
-                    __DIR__.'/TestCommand.php',
-                    $params,
-                    false
-                );
-
-                // exec调用失败,需要重试机制延后处理$params
-                if($return !=0)
-                {
-                    var_dump('exec failed');
-                }
-
-                if(isset($output[0]))
-                {
-                    var_dump("exec end， pid={$output[0]}");
-                }
-
+                var_dump($e->getMessage());
             }
 
         }
@@ -72,5 +78,11 @@ class Worker extends \Workerfy\AbstractProcess {
 
         //Service::test();
 
+    }
+
+
+    public function onHandleException(\Throwable $throwable, array $context = [])
+    {
+        var_dump($throwable->getMessage());
     }
 }
