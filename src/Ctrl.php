@@ -60,8 +60,8 @@ $command = $_SERVER['argv'][1] ?? CLI_START;
 
 function parseCliEnvParams() {
     $cli_params = [];
-    $argv_arr = array_splice($_SERVER['argv'], 2);
-    array_reduce($argv_arr, function($result, $item) use(&$cli_params) {
+    $args = array_splice($_SERVER['argv'], 2);
+    array_reduce($args, function($result, $item) use(&$cli_params) {
         // start daemon
         if(in_array($item, ['-d', '-D'])) {
             putenv('daemon=1');
@@ -70,10 +70,9 @@ function parseCliEnvParams() {
             putenv('force=1');
         }else {
             $item = ltrim($item, '--');
-            list($param, $value) = explode('=', $item);
-            if($param && $value)
-            {
-                $cli_params[$param] = $value;
+            list($env, $value) = explode('=', $item);
+            if($env && $value) {
+                $cli_params[$env] = $value;
             }
         }
     });

@@ -11,8 +11,10 @@
 
 namespace Workerfy\Command;
 
-use Workerfy\Exception\CommandException;
 use Workerfy\Log\LogManager;
+use Swoole\Coroutine\Channel;
+use Workerfy\Coroutine\GoCoroutine;
+use Workerfy\Exception\CommandException;
 
 class CommandRunner {
     /**
@@ -51,7 +53,7 @@ class CommandRunner {
                 $concurrent = 10;
             }
             $runner->concurrent = $concurrent;
-            $runner->channel = new \Swoole\Coroutine\Channel($runner->concurrent);
+            $runner->channel = new Channel($runner->concurrent);
             static::$instances[$runnerName] = $runner;
         }else {
             /**@var CommandRunner $runner*/
@@ -70,6 +72,7 @@ class CommandRunner {
      * @param bool $async
      * @param string $log
      * @param bool $isExec
+     * @throws CommandException
      * @return array
      */
     public function exec(
@@ -80,20 +83,15 @@ class CommandRunner {
         string $log = '/dev/null',
         bool $isExec = true
     ) {
-        if(!$this->isNextFlag) {
-            throw new CommandException('Missing call isNextHandle()');
-        }
-        $this->isNextFlag = false;
+        $this->checkNextFlag();
         $params = '';
-        if($args)
-        {
+        if($args) {
             $params = implode(' ', $args);
         }
 
         $path = $execBinFile.' '.$commandRouter.' '.$params;
         $command = "{$path} >> {$log} 2>&1 && echo $$";
-        if($async)
-        {
+        if($async) {
             // echo $! 表示输出进程id赋值在output数组中
             $command = "nohup {$path} >> {$log} 2>&1 & echo $!";
         }
@@ -118,6 +116,54 @@ class CommandRunner {
         }
 
         return [$command, $output ?? [], $return ?? -1];
+    }
+
+    /**
+     * @param callable $callable
+     * @param string $execBinFile
+     * @param array $args
+     * @return mixed
+     * @throws CommandException
+     */
+    public function procOpen(
+        callable $callable,
+        string $execBinFile,
+        array $args = []
+    ) {
+        $this->checkNextFlag();
+        $params = '';
+        if($args) {
+            $params = implode(' ', $args);
+        }
+
+        $command = $execBinFile.' '.$params;
+        $descriptors = array(
+            0 => array('pipe', 'r'),
+            1 => array('pipe', 'w'),
+            2 => array('pipe', 'w')
+        );
+
+        GoCoroutine::go(function () use($callable, $command, $descriptors) {
+            $proc_process = proc_open($command, $descriptors, $pipes);
+            // in $callable forbidden create coroutine, because $proc_process had been bind in current coroutine
+            try {
+                $status = proc_get_status($proc_process);
+                if($status['pid'] ?? '')
+                {
+                    $this->channel->push([
+                        'pid' => $status['pid'],
+                        'start_time' => time()
+                    ],0.2);
+                }
+                array_push($pipes, $status);
+                return call_user_func_array($callable, $pipes);
+            }catch (\Throwable $e) {
+                throw $e;
+            }finally {
+                proc_close($proc_process);
+            }
+        });
+
     }
 
     /**
@@ -149,7 +195,7 @@ class CommandRunner {
                 $isNext = true;
             }else
             {
-                \Swoole\Coroutine\System::sleep(0.05);
+                \Swoole\Coroutine\System::sleep(0.1);
             }
         }else
         {
@@ -160,36 +206,23 @@ class CommandRunner {
     }
 
     /**
-     * @param callable $callable
-     * @param $execFile
-     * @param array $args
-     * @return mixed
-     * @throws \Throwable
+     * @throws CommandException
      */
-    public static function procOpen(callable $callable, $execFile, array $args = []) {
-        $params = '';
-        if($args)
-        {
-            $params = implode(' ', $args);
+    protected function checkNextFlag()
+    {
+        if(!$this->isNextFlag) {
+            throw new CommandException('Missing call isNextHandle()');
         }
+        $this->isNextFlag = false;
+    }
 
-        $command = $execFile.' '.$params;
-        $descriptors = array(
-            0 => array('pipe', 'r'),
-            1 => array('pipe', 'w'),
-            2 => array('pipe', 'w')
-        );
 
-        $proc_process = proc_open($command, $descriptors, $pipes);
-        // in $callable forbidden create coroutine, because $proc_process had been bind in current coroutine
-        try {
-            array_push($pipes, $command);
-            return call_user_func_array($callable, $pipes);
-        }catch (\Throwable $e) {
-            throw $e;
-        }finally {
-            proc_close($proc_process);
-        }
+    /**
+     * __clone
+     */
+    private function __clone()
+    {
+        // TODO: Implement __clone() method.
     }
 
 }
