@@ -16,6 +16,7 @@ sleep(2);
 
 if(getenv('type') == 'proc') {
     echo json_encode($_SERVER['argv']);
+    echo "bingcool";
 }else
 {
     echo 'exec return';

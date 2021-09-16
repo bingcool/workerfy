@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\Exec;
+namespace Workerfy\Tests\Exec\ProcWorker;
 
 use Workerfy\Command\CommandRunner;
 
@@ -12,7 +12,7 @@ class WorkerProc extends \Workerfy\AbstractProcess {
         while (true)
         {
             // 设置$concurrent =1 就相当于阻塞模式了，轮训一个一个消费
-            $runner = CommandRunner::getInstance('procOpen-test',5);
+            $runner = CommandRunner::getInstance('procOpen-test',2);
             try{
                 if($runner->isNextHandle())
                 {
@@ -21,14 +21,15 @@ class WorkerProc extends \Workerfy\AbstractProcess {
                     // 可以处理下一个的时候才从mq里面取出数据来消费，否则不要取数据
                     // todo
 
-                    $execFile = 'php '.__DIR__.'/TestCommand.php';
+                    $execFile = 'php '.__DIR__.'/../TestCommand.php';
                     $params = [
                         '--type=proc',
                         '--name=bingcool-'.rand(1,1000)
                     ];
                     // 调用命令程序
                     $runner->procOpen(function ($pipe0, $pipe1, $pipe2, $status) {
-                        var_dump(fread($pipe1, 8192));
+                        $buffer = fread($pipe1, 8192);
+                        var_dump(json_decode($buffer, true) ?? $buffer);
                         //var_dump($status);
                     } , $execFile, $params);
                 }

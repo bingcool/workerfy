@@ -104,15 +104,19 @@ class CommandRunner {
             {
                 $this->channel->push([
                     'pid' => $pid,
+                    'command' => $command,
                     'start_time' => time()
                 ],0.2);
             }
 
-            $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-            if(is_object($logger))
-            {
-                $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'return' => $return ?? '']);
+            // when exec error save log
+            if($return != 0) {
+                $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+                if(is_object($logger)) {
+                    $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'return' => $return ?? '']);
+                }
             }
+
         }
 
         return [$command, $output ?? [], $return ?? -1];
@@ -144,14 +148,18 @@ class CommandRunner {
         );
 
         GoCoroutine::go(function () use($callable, $command, $descriptors) {
-            $proc_process = proc_open($command, $descriptors, $pipes);
             // in $callable forbidden create coroutine, because $proc_process had been bind in current coroutine
             try {
+                $proc_process = proc_open($command, $descriptors, $pipes);
+                if(!is_resource($proc_process)) {
+                    throw new CommandException("Proc Open Command 【{$command}】 failed.");
+                }
                 $status = proc_get_status($proc_process);
                 if($status['pid'] ?? '')
                 {
                     $this->channel->push([
                         'pid' => $status['pid'],
+                        'command' => $command,
                         'start_time' => time()
                     ],0.2);
                 }
@@ -160,6 +168,9 @@ class CommandRunner {
             }catch (\Throwable $e) {
                 throw $e;
             }finally {
+                foreach($pipes as $pipe) {
+                    @fclose($pipe);
+                }
                 proc_close($proc_process);
             }
         });
@@ -179,9 +190,18 @@ class CommandRunner {
             {
                 $pid = $item['pid'];
                 $startTime = $item['start_time'];
-                if(\Swoole\Process::kill($pid,0) || ($startTime + 60) < time() )
+                if(\Swoole\Process::kill($pid,0) )
                 {
-                    $pids[] = $item;
+                    if(($startTime + 60) > time() ) {
+                        $pids[] = $item;
+                    }else {
+                        // 超过1分钟系统调用程序没执行完的都会记录一次
+                        $command = $item['command'] ?? '';
+                        $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+                        if(is_object($logger)) {
+                            $logger->info("CommandRunner Long Time Run Process,Pid={$pid},startTime={$startTime},Command={$command},please check it.");
+                        }
+                    }
                 }
             }
 
@@ -211,7 +231,7 @@ class CommandRunner {
     protected function checkNextFlag()
     {
         if(!$this->isNextFlag) {
-            throw new CommandException('Missing call isNextHandle()');
+            throw new CommandException('Missing call isNextHandle().');
         }
         $this->isNextFlag = false;
     }

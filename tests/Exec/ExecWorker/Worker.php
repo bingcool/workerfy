@@ -1,5 +1,5 @@
 <?php
-namespace Workerfy\Tests\Exec;
+namespace Workerfy\Tests\Exec\ExecWorker;
 
 use Workerfy\Command\CommandRunner;
 
@@ -12,7 +12,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         while (1)
         {
-            $runner = CommandRunner::getInstance('exec-test');
+            $runner = CommandRunner::getInstance('exec-test',1);
             try {
                 if($runner->isNextHandle())
                 {
@@ -28,7 +28,7 @@ class Worker extends \Workerfy\AbstractProcess {
                     // 调用命令程序
                     list($command, $output, $return) = $runner->exec(
                         $execBinFile,
-                        __DIR__.'/TestCommand.php',
+                        __DIR__ . '/../TestCommand.php',
                         $params,
                         true
                     );

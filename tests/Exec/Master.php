@@ -8,8 +8,8 @@ $processManager = \Workerfy\processManager::getInstance([
 
 
 $process_name = 'test-exec';
-$process_class = \Workerfy\Tests\Exec\Worker::class;
-$process_worker_num = 1;
+$process_class = \Workerfy\Tests\Exec\ExecWorker\Worker::class;
+$process_worker_num = 2;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -20,8 +20,8 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $process_name = 'test-procOpen';
-$process_class = \Workerfy\Tests\Exec\WorkerProc::class;
-$process_worker_num = 1;
+$process_class = \Workerfy\Tests\Exec\ProcWorker\WorkerProc::class;
+$process_worker_num = 2;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -29,7 +29,6 @@ $args = [
 $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
-
 
 
 $processManager->onStart = function ($pid) {};
