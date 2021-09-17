@@ -27,8 +27,7 @@ class Worker extends \Workerfy\AbstractProcess {
             }
 
             $type = $request->get['type'] ?? 0;
-            go(function () use($request, $response, $type)
-            {
+            go(function () use($request, $response, $type) {
                 if($type == 1)
                 {
                     \Co\System::sleep(6);

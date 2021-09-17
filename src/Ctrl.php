@@ -449,7 +449,7 @@ function setCliParamsEnv($cli_params) {
     {
         putenv("{$param}={$value}");
     }
-    putenv('workerfy_cli_params='.json_encode($param_keys));
+    putenv('WORKERFY_CLI_PARAMS='.json_encode($param_keys));
     defined('IS_DAEMON') or define('IS_DAEMON', getenv('daemon') ? true : false);
     $worker_num = (int)getenv('worker_num');
     if(isset($worker_num) && $worker_num > 0)

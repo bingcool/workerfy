@@ -1598,7 +1598,7 @@ class ProcessManager {
     private function getCliParams($showAll = false)
     {
         $cli_params = '';
-        $workerfy_cli_params = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
+        $workerfy_cli_params = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
 
         foreach($workerfy_cli_params as $param)
         {

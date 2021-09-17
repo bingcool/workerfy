@@ -70,7 +70,7 @@ class Helper
      */
     public static function getCliParams()
     {
-        $cliParams = getenv('workerfy_cli_params') ? json_decode(getenv('workerfy_cli_params'), true) : [];
+        $cliParams = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
         $params = [];
         foreach($cliParams as $param)
         {

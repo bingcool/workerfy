@@ -12,7 +12,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         while (1)
         {
-            $runner = CommandRunner::getInstance('exec-test',1);
+            $runner = CommandRunner::getInstance('exec-test',3);
             try {
                 if($runner->isNextHandle())
                 {

@@ -12,7 +12,7 @@ class WorkerProc extends \Workerfy\AbstractProcess {
         while (true)
         {
             // 设置$concurrent =1 就相当于阻塞模式了，轮训一个一个消费
-            $runner = CommandRunner::getInstance('procOpen-test',2);
+            $runner = CommandRunner::getInstance('procOpen-test',1);
             try{
                 if($runner->isNextHandle())
                 {
