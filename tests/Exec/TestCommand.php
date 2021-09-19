@@ -15,7 +15,7 @@ file_put_contents('./test.log','pid='.$pid.', bingcool-'.rand(1,1000));
 sleep(2);
 
 if(getenv('type') == 'proc') {
-    echo json_encode($_SERVER['argv']);
+    echo json_encode($_SERVER['argv'])."\r\n";
     echo "bingcool";
 }else
 {

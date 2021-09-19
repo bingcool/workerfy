@@ -11,6 +11,7 @@
 
 namespace Workerfy;
 
+use Workerfy\Exception\UserTriggerException;
 use Workerfy\Log\LogManager;
 use Workerfy\Memory\SysvmsgManager;
 use Workerfy\Exception\RuntimeException;
@@ -242,6 +243,7 @@ class ProcessManager {
         try {
             if(!empty($this->process_lists))
             {
+                $this->installErrorHandler();
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
                 $this->installReportStatus();
@@ -1463,6 +1465,29 @@ class ProcessManager {
                 @\Swoole\Process::signal(SIGTERM, null);
             }
             write_info("【Warning】终端关闭，master进程stop, master_pid={$this->master_pid}");
+        });
+    }
+
+    /**
+     * installErrorHandler
+     */
+    public function installErrorHandler() {
+        set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
+            switch($errNo) {
+                case E_ERROR:
+                case E_PARSE:
+                case E_CORE_ERROR:
+                case E_COMPILE_ERROR:
+                case E_USER_ERROR:
+                    @ob_end_clean();
+                    $errorStr = sprintf("%s in file %s on line %d",
+                        $errStr,
+                        $errFile,
+                        $errLine
+                    );
+                    $exception = new UserTriggerException($errorStr);
+                    $this->onHandleException->call($this, $exception);
+            }
         });
     }
 

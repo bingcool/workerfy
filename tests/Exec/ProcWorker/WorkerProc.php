@@ -27,10 +27,10 @@ class WorkerProc extends \Workerfy\AbstractProcess {
                         '--name=bingcool-'.rand(1,1000)
                     ];
                     // 调用命令程序
-                    $runner->procOpen(function ($pipe0, $pipe1, $pipe2, $status) {
-                        $buffer = fread($pipe1, 8192);
+                    $runner->procOpen(function ($pipe0, $pipe1, $pipe2, $status, $returnCode) {
+                        $buffer = fgets($pipe1, 8192);
                         var_dump(json_decode($buffer, true) ?? $buffer);
-                        //var_dump($status);
+                        //var_dump('returnCode='.$returnCode);
                     } , $execFile, $params);
                 }
             }catch (\Exception $e)

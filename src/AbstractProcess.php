@@ -15,6 +15,7 @@ use Swoole\Event;
 use Swoole\Process;
 use Swoole\Coroutine\Channel;
 use Workerfy\Crontab\CrontabManager;
+use Workerfy\Exception\UserTriggerException;
 
 /**
  * Class AbstractProcess
@@ -267,6 +268,7 @@ abstract class AbstractProcess {
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();
             $this->setUserAndGroup();
+            $this->installErrorHandler();
             if($this->async) {
                 Event::add($this->swooleProcess->pipe, function ()
                 {
@@ -459,6 +461,29 @@ abstract class AbstractProcess {
         }catch(\Throwable $throwable) {
             $this->onHandleException($throwable);
         }
+    }
+
+    /**
+     * installErrorHandler
+     */
+    public function installErrorHandler() {
+        set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
+            switch($errNo) {
+                case E_ERROR:
+                case E_PARSE:
+                case E_CORE_ERROR:
+                case E_COMPILE_ERROR:
+                case E_USER_ERROR:
+                    @ob_end_clean();
+                    $errorStr = sprintf("%s in file %s on line %d",
+                        $errStr,
+                        $errFile,
+                        $errLine
+                    );
+                    $exception = new UserTriggerException($errorStr);
+                    $this->onHandleException($exception);
+            }
+        });
     }
 
     /**

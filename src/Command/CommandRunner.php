@@ -186,11 +186,16 @@ class CommandRunner {
             $params = $this->parseEscapeShellArg($args);
         }
 
-        $command = $execBinFile.' '.$params;
+        $command = $execBinFile.' '.$params.'; echo $? >&3';
         $descriptors = array(
+            // stdout
             0 => array('pipe', 'r'),
+            // stdin
             1 => array('pipe', 'w'),
-            2 => array('pipe', 'w')
+            // stderr
+            2 => array('pipe', 'w'),
+            // return code
+            3 => array('pipe', 'w')
         );
 
         GoCoroutine::go(function () use($callable, $command, $descriptors) {
@@ -201,16 +206,23 @@ class CommandRunner {
                     throw new CommandException("Proc Open Command 【{$command}】 failed.");
                 }
                 $status = proc_get_status($proc_process);
-                if($status['pid'] ?? '')
-                {
+                if($status['pid'] ?? '') {
                     $this->channel->push([
                         'pid' => $status['pid'],
                         'command' => $command,
                         'start_time' => time()
                     ],0.2);
+
+                    $returnCode = fgets($pipes[3],10);
+                    if($returnCode != 0) {
+                        $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
+                        if(is_object($logger)) {
+                            $logger->info("CommandRunner Proc Open exitCode={$returnCode}", ['command' => $command, 'errorMsg'=>self::$exitCodes[$returnCode] ?? 'Unknown error']);
+                        }
+                    }
                 }
-                array_push($pipes, $status);
-                return call_user_func_array($callable, $pipes);
+                $params = [$pipes[0], $pipes[1], $pipes[2], $status, $returnCode ?? -1];
+                return call_user_func_array($callable, $params);
             }catch (\Throwable $e) {
                 throw $e;
             }finally {
