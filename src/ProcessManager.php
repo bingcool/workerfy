@@ -1485,7 +1485,7 @@ class ProcessManager {
                         $errFile,
                         $errLine
                     );
-                    $exception = new UserTriggerException($errorStr);
+                    $exception = new UserTriggerException($errorStr, $errNo);
                     $this->onHandleException->call($this, $exception);
             }
         });

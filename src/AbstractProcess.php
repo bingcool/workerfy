@@ -480,7 +480,7 @@ abstract class AbstractProcess {
                         $errFile,
                         $errLine
                     );
-                    $exception = new UserTriggerException($errorStr);
+                    $exception = new UserTriggerException($errorStr, $errNo);
                     $this->onHandleException($exception);
             }
         });
