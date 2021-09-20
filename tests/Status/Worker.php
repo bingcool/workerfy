@@ -35,8 +35,7 @@ class Worker extends \Workerfy\AbstractProcess {
         while (true)
         {
             try {
-                var_dump("nmmmmmmmm");
-                throw new \Exception('vvvvvv');
+                var_dump($value = @getenv('name'), $this->getCliEnvParam('name'));
             }catch (\Exception $e) {
                 $this->onHandleException($e);
             }

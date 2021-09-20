@@ -6,13 +6,13 @@ use Workerfy\Exception\InvalidArgumentException;
 class Helper
 {
     /**
-     * @param $controllerInstance
-     * @param $action
-     * @param $params
+     * @param $instance
+     * @param string $action
+     * @param array $params
      * @return array
      * @throws \ReflectionException
      */
-    public static function parseActionParams($instance, $action, array $params)
+    public static function parseActionParams($instance, string $action, array $params)
     {
         $method = new \ReflectionMethod($instance, $action);
         $args = [];
@@ -66,17 +66,24 @@ class Helper
     }
 
     /**
-     * @return array
+     * @param string $name
+     * @return array|null|string|false
      */
-    public static function getCliParams()
+    public static function getCliParams(string $name = '')
     {
-        $cliParams = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
-        $params = [];
-        foreach($cliParams as $param)
+        if($name)
         {
-            if($value = getenv($param))
+            $value = @getenv($name);
+            return $value !== false  ? $value : null;
+        }else {
+            $cliParams = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
+            $params = [];
+            foreach($cliParams as $param)
             {
-                $params[$param] = $value;
+                $value = @getenv($param);
+                if($value !== false) {
+                    $params[$param] = $value;
+                }
             }
         }
         return $params;

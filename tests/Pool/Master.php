@@ -4,12 +4,6 @@ require dirname(__DIR__).'/Common.php';
 
 ini_set('display_errors','on');
 
-// 注册
-set_error_handler(function ($error_type, $error_msg, $error_file, $error_line) {
-    $code = E_USER_WARNING;
-    var_dump($error_type, $error_line);
-});
-
 // Redis Pool
 $processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-pool-redis';

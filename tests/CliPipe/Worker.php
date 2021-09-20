@@ -4,13 +4,6 @@ namespace Workerfy\Tests\CliPipe;
 class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
-//        go(function () {
-//            sleep(10);
-//        });
-//
-//        go(function () {
-//            sleep(10);
-//        });
         // 模拟处理业务
         var_dump("start workerId:".$this->getProcessWorkerId());
         sleep(1);

@@ -201,6 +201,13 @@ function reload($cli_params) {
 }
 
 function restart($cli_params) {
+    print_r("Are you sure you want to restart process use daemon model? (yes or no):");
+    $handle = fopen("php://stdin","r");
+    $line = fgets($handle);
+    if(trim($line) != 'yes') {
+        write_info("【Warning】You give up to restart process.");
+        exit;
+    }
     if(is_file(PID_FILE)) {
         $master_pid = file_get_contents(PID_FILE);
         if(is_numeric($master_pid) && $master_pid > 0) {
@@ -229,6 +236,8 @@ function restart($cli_params) {
         write_info("【Warning】Master Process of Pid={$master_pid} not exist");
         exit;
     }
+    // restart must daemon model
+    putenv('daemon=1');
     setCliParamsEnv($cli_params);
     write_info("【Info】Master and Children Process ready to restart, please wait a time",'green');
 }

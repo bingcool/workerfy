@@ -919,11 +919,7 @@ abstract class AbstractProcess {
      * @return array|false|string|null
      */
     public function getCliEnvParam(string $name) {
-        $value = @getenv($name);
-        if($value !== false) {
-            return base64_decode($value) ?? $value;
-        }
-        return null;
+        return Helper::getCliParams($name);
     }
 
     /**

@@ -24,7 +24,7 @@ class CurlPoolWorker extends \Workerfy\AbstractProcess
                      */
                     $curlClient = $pool->get();
                     $result = $curlClient->get('https://www.baidu.com');
-                    var_dump($result);
+                    var_dump($result->getInfo());
 
                 }catch (\Throwable $e)
                 {
@@ -42,7 +42,7 @@ class CurlPoolWorker extends \Workerfy\AbstractProcess
                     $curlClient = $pool->get();
                     $curlClient = $pool->get();
                     $result = $curlClient->get('https://www.baidu.com');
-                    var_dump($result);
+                    var_dump($result->getContentType());
                 }catch (\Throwable $e)
                 {
                     $this->onHandleException($e);
@@ -58,7 +58,7 @@ class CurlPoolWorker extends \Workerfy\AbstractProcess
                      */
                     $curlClient = $pool->get();
                     $result = $curlClient->get('https://www.baidu.com');
-                    var_dump($result);
+                    var_dump($result->getStatusCode());
                 }catch (\Throwable $e)
                 {
                     $this->onHandleException($e);

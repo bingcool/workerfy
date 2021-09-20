@@ -6,10 +6,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public $runTime = 20;
 
     public function init() {
-        var_dump('ggggggggggggggggggggggg');
-        register_shutdown_function(function () {
-            var_dump('shutdown shutdown shutdown');
-        });
+        var_dump('start while loop test');
     }
 
 
