@@ -12,7 +12,7 @@ Swoole\Timer::set([
 ]);
 
 go(function () {
-    $db = \Workerfy\Tests\Db::getMasterMysql();
+    $db = \Workerfy\Tests\Make::makeMysql();
     $query = $db->query("select sleep(3)");
     $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
     var_dump($res);
@@ -21,7 +21,7 @@ go(function () {
 Swoole\Timer::tick(5*1000, function($timer_id) {
     // 单独一个mysql连接
     go(function () {
-        $db = \Workerfy\Tests\Db::getMasterMysql();
+        $db = \Workerfy\Tests\Make::makeMysql();
         $query = $db->query("select sleep(3)");
         $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
         var_dump($res);
@@ -32,7 +32,7 @@ $process = new Swoole\Process(function (Swoole\Process $worker) {
     // 子进程单独一个mysql连接，与父进程不互相影响，可以通过show processlist;或者show status like 'Threads%';看到不同连接
         var_dump('process start');
         while(1) {
-            $db = \Workerfy\Tests\Db::getMasterMysql();
+            $db = \Workerfy\Tests\Make::makeMysql();
             $query = $db->query("select sleep(5)");
             $res = $query->fetchAll(\PDO::FETCH_ASSOC);  //获取结果集中的所有数据
             var_dump($res);

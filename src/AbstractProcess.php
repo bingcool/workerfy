@@ -14,6 +14,7 @@ namespace Workerfy;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Coroutine\Channel;
+use Workerfy\Coroutine\GoCoroutine;
 use Workerfy\Crontab\CrontabManager;
 use Workerfy\Exception\UserTriggerException;
 
@@ -267,6 +268,7 @@ abstract class AbstractProcess {
             static::$processInstance = $this;
             $this->pid = $this->swooleProcess->pid;
             $this->coroutine_id = \Swoole\Coroutine::getCid();
+            @Process::signal(SIGUSR2, null);
             $this->setUserAndGroup();
             $this->installErrorHandler();
             if($this->async) {
@@ -411,7 +413,7 @@ abstract class AbstractProcess {
             });
 
             $this->master_live_timer_id = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function($timer_id) {
-                if($this->isMasterLive() === false)
+                if(!$this->isMasterLive())
                 {
                     \Swoole\Timer::clear($timer_id);
                     $this->master_live_timer_id = null;
@@ -421,13 +423,12 @@ abstract class AbstractProcess {
                     write_info("【Warning】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
-                if($this->getProcessWorkerId() == 0 && $this->master_pid)
+
+                if($this->isMasterLive() && $this->getProcessWorkerId() == 0 && $this->master_pid)
                 {
                     $this->saveMasterId($this->master_pid);
                 }
             });
-
-            @Process::signal(SIGUSR2, null);
 
             if(PHP_OS != 'Darwin')
             {
@@ -465,6 +466,7 @@ abstract class AbstractProcess {
 
     /**
      * installErrorHandler
+     * @return void
      */
     public function installErrorHandler() {
         set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
@@ -768,7 +770,7 @@ abstract class AbstractProcess {
      * @return bool
      */
     public function isStaticProcess() {
-        if($this->process_type == 1) {
+        if($this->process_type == self::PROCESS_STATIC_TYPE) {
             return true;
         }
         return false;
@@ -1121,7 +1123,7 @@ abstract class AbstractProcess {
      */
     protected function saveMasterId(int $master_pid) {
         if($master_pid == $this->master_pid) {
-            \Workerfy\Coroutine\GoCoroutine::go(function () use($master_pid) {
+            GoCoroutine::go(function () use($master_pid) {
                 @file_put_contents(PID_FILE, $master_pid);
             });
         }

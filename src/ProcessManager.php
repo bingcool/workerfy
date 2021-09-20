@@ -13,6 +13,7 @@ namespace Workerfy;
 
 use Workerfy\Exception\UserTriggerException;
 use Workerfy\Log\LogManager;
+use Workerfy\Memory\TableManager;
 use Workerfy\Memory\SysvmsgManager;
 use Workerfy\Exception\RuntimeException;
 use Workerfy\Exception\BroadcastException;
@@ -848,7 +849,7 @@ class ProcessManager {
                     }
                     write_info("【Info】Dynamic process={$process_name},worker_id={$worker_id} destroy successful");
                 }catch (\Throwable $e) {
-                    write_info("destroyDynamicProcess error message=".$e->getMessage());
+                    write_info("【Warning】DestroyDynamicProcess error message=".$e->getMessage());
                 }
             }
         }
@@ -1195,8 +1196,8 @@ class ProcessManager {
         }else if(is_array($process)) {
             $process_workers = $process;
         }
-        $is_proxy = false;
-        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId(), $is_proxy], JSON_UNESCAPED_UNICODE);
+        $proxy = false;
+        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId(), $proxy], JSON_UNESCAPED_UNICODE);
         foreach($process_workers as $process_worker_id => $process) {
             $process->getSwooleProcess()->write($message);
         }
@@ -1239,7 +1240,7 @@ class ProcessManager {
      * @param mixed $data
      * @return void
      */
-    public function broadcastProcessWorker(string $process_name = null, $data = '') {
+    public function broadcastProcessWorker(string $process_name, $data = '') {
         $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
         if($process_name) {
             $key = md5($process_name);
@@ -1258,14 +1259,7 @@ class ProcessManager {
                     $process_name
                 ));
             }
-        }else {
-            $exception = new BroadcastException(sprintf(
-                "%s::%s second param process_name is empty",
-                __CLASS__,
-                __FUNCTION__
-            ));
         }
-
         if(isset($exception) && $exception instanceof \Throwable) {
             $this->onHandleException->call($this, $exception);
         }
@@ -1305,7 +1299,7 @@ class ProcessManager {
      * @param bool $enable_pipe
      * @return void
      */
-    public function enableCliPipe(bool $enable_pipe = false) {
+    public function enableCliPipe(bool $enable_pipe = true) {
         $this->enable_pipe = $enable_pipe;
     }
 
@@ -1380,9 +1374,8 @@ class ProcessManager {
         if(isset($this->process_lists[$key])) {
             $this->createDynamicProcess($process_name, $num);
         }else {
-            write_info("【Warning】Not exist children_process_name = {$process_name}, add failed");
+            write_info("【Warning】Not exist children_process_name = {$process_name}, so add failed");
         }
-
     }
 
     /**
@@ -1408,8 +1401,7 @@ class ProcessManager {
         if(function_exists('getCliPipeFile'))
         {
             $pipe_file = getCliPipeFile();
-        }else
-        {
+        }else {
             $path_info = pathinfo(PID_FILE);
             $path_dir = $path_info['dirname'];
             $file_name = $path_info['basename'];
@@ -1471,7 +1463,7 @@ class ProcessManager {
     /**
      * installErrorHandler
      */
-    public function installErrorHandler() {
+    private function installErrorHandler() {
         set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
             switch($errNo) {
                 case E_ERROR:
@@ -1534,10 +1526,10 @@ class ProcessManager {
      * getSwooleTableInfo
      * @return string
      */
-    public function getSwooleTableInfo(bool $simple = true) {
+    private function getSwooleTableInfo(bool $simple = true) {
         $swoole_table_info = "Disable swoole table(没启用)";
         if(defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
-            $tableManager = \Workerfy\Memory\TableManager::getInstance();
+            $tableManager = TableManager::getInstance();
             if($simple) {
                 $all_table_name = $tableManager->getAllTableName();
                 if(!empty($all_table_name) && is_array($all_table_name)) {
@@ -1561,7 +1553,7 @@ class ProcessManager {
      * getSysvmsgInfo
      * @return array
      */
-    public function getSysvmsgInfo() {
+    private function getSysvmsgInfo() {
         $msg_sysvmsg_info = 'Disable sysvmsg(没启用)';
         $sysvmsgManager = SysvmsgManager::getInstance();
         if(defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1)
@@ -1605,7 +1597,6 @@ class ProcessManager {
         }
 
         return $this->onRegisterRuntimeLog->call($this);
-
     }
 
     /**
