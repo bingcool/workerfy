@@ -6,9 +6,6 @@
 *.log
 *.status
 */runtime
-/tests/Db.php
-/tests/Redis.php
-/tests/Test.php
 
 
 

@@ -440,7 +440,7 @@ abstract class AbstractProcess {
 
             try{
                 $targetAction = 'init';
-                if(method_exists($this,$targetAction))
+                if(method_exists($this, $targetAction))
                 {
                     // init() method will accept cli params from cli,as --sleep=5 --name=bing
                     list($method, $args) =  Helper::parseActionParams($this, $targetAction, Helper::getCliParams());

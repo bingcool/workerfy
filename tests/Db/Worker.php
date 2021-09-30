@@ -20,19 +20,27 @@ class Worker extends \Workerfy\AbstractProcess {
 
 	        while (true)
             {
-                // 限制消费速度，特别是在请求第三方数据的时候
-                if($this->getCurrentRunCoroutineNum() > 10)
+                try
                 {
-                    \Co::sleep(1);
+                    // 限制消费速度，特别是在请求第三方数据的时候
+                    if($this->getCurrentRunCoroutineNum() > 10)
+                    {
+                        \Co::sleep(1);
+                    }
+
+                    go(function () {
+                        $db = \Workerfy\Tests\Make::makeCommonDb();
+                        $res = $db->query("select * from `tbl_order` limit 1");
+                        var_dump($res);
+                        //var_dump($this->getCurrentRunCoroutineNum());
+                    });
+
+                    \Co::sleep(0.1);
+                }catch (\Throwable $e)
+                {
+                    $this->onHandleException($e);
                 }
 
-                go(function () {
-                    $db = \Workerfy\Tests\Make::makeCommonDb();
-                    $res = $db->query("select * from `tbl_order` limit 1");
-                    //var_dump($this->getCurrentRunCoroutineNum());
-                });
-
-                \Co::sleep(0.1);
             }
 
 	        //var_dump("yes");

@@ -32,7 +32,7 @@ class TableManager {
             ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
         ]
      ]
-     * @throws Exception
+     * @throws \Exception
      */
     public function addTable(string $table_name, array $setting) {
         if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table)
@@ -92,7 +92,6 @@ class TableManager {
 
     /**
      * @param string $table_name
-     * @throws Exception
      * @return mixed
      */
     public function getTable(string $table_name) {
@@ -119,7 +118,6 @@ class TableManager {
     /**
      * getAllTableKeyMapRowValue 获取所有table的key和value信息
      * @return array
-     * @throws Exception
      */
     public function getAllTableKeyMapRowValue() {
         $table_infos = [];
@@ -134,7 +132,6 @@ class TableManager {
     /**
      * @param string $table_name
      * @return mixed
-     * @throws Exception
      */
     public function getTableSetting(string $table_name) {
         $table = $this->getTable($table_name);
@@ -148,7 +145,6 @@ class TableManager {
      * 获取table占用的内存，单位字节
      * @param string $table_name
      * @return mixed
-     * @throws \Exception
      */
     public function getTableMemory(string $table_name) {
         $table = $this->getTable($table_name);
@@ -163,7 +159,6 @@ class TableManager {
      * 返回table基本信息
      * @param string $table_name
      * @return array 返回格式 = [$size, $memory, $setting]
-     * @throws Exception
      */
     public function getTableInfo(string $table_name) {
         $info = [];
@@ -194,7 +189,6 @@ class TableManager {
      * 获取已设置的key
      * @param string $table
      * @return array
-     * @throws Exception
      */
     public function getTableKeys(string $table) {
         $keys = [];
@@ -217,7 +211,6 @@ class TableManager {
      * 获取table的key映射的每一行数据rowValue
      * @param string $table
      * @return array
-     * @throws Exception
      */
     public function getKeyMapRowValue(string $table) {
         $table_rows = [];
