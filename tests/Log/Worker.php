@@ -17,9 +17,8 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
         \Workerfy\Coroutine\GoCoroutine::go(function ($name, $sex) {
-            var_dump($name, $sex);
-
-            $logManager = \Workerfy\Log\LogManager::getInstance()->getLogger(LogManager::DEFAULT_TYPE);
+            //var_dump($name, $sex);
+            $logManager = \Workerfy\Log\LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
             $logManager->info('coroutine create',['name' => $name, 'sex'=>$sex]);
 
             defer(function () {

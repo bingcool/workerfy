@@ -25,7 +25,6 @@ class LogManager {
 
     /**
      * __construct
-     * @param mixed $log
      */
     private function __construct() {}
 
@@ -66,7 +65,7 @@ class LogManager {
      * getLogger
      * @return LogHandle
      */
-    public function getLogger($type = self::DEFAULT_TYPE) {
+    public function getLogger(string $type = self::DEFAULT_TYPE) {
         return $this->loggers[$type] ?? null;
     }
 }

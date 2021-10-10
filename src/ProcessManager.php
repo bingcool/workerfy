@@ -11,13 +11,13 @@
 
 namespace Workerfy;
 
-use Workerfy\Exception\UserTriggerException;
 use Workerfy\Log\LogManager;
 use Workerfy\Memory\TableManager;
 use Workerfy\Memory\SysvmsgManager;
 use Workerfy\Exception\RuntimeException;
 use Workerfy\Exception\BroadcastException;
 use Workerfy\Exception\DynamicException;
+use Workerfy\Exception\UserTriggerException;
 
 /**
  * Class ProcessManager
@@ -154,7 +154,7 @@ class ProcessManager {
     /**
      * @var \Closure
      */
-    public $onRegisterRuntimeLog;
+    public $onRegisterLogger;
 
     const NUM_PEISHU = 8;
     const REPORT_STATUS_TICK_TIME = 5;
@@ -1579,11 +1579,9 @@ class ProcessManager {
      * @return Log\LogHandle
      */
     protected function registerRuntimeLog() {
-        if(!$this->onRegisterRuntimeLog instanceof \Closure)
-        {
+        if(!$this->onRegisterLogger instanceof \Closure) {
             // default register runtimeLog
-            $this->onRegisterRuntimeLog = function()
-            {
+            $this->onRegisterLogger = function() {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                 if(!is_object($logger))
                 {
@@ -1596,7 +1594,7 @@ class ProcessManager {
             };
         }
 
-        return $this->onRegisterRuntimeLog->call($this);
+        return $this->onRegisterLogger->call($this);
     }
 
     /**

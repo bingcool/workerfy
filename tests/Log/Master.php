@@ -1,5 +1,8 @@
 #!/usr/bin/php
 <?php
+
+use Workerfy\Log\LogManager;
+
 require dirname(__DIR__).'/Common.php';
 
 // 用户业务注册log操作对象
@@ -13,7 +16,7 @@ $process_worker_num = getenv('num') ?: 2;
 
 $async = true;
 $args = [
-    'wait_time' => 1
+    'wait_time' => 1,
 ];
 $extend_data = null;
 
@@ -21,7 +24,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 $processManager->onStart = function ($pid) {
-    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger();
+    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
     $logger->info('中国有{num}人口',['{num}'=>10000000000],false);
 
     \Workerfy\Coroutine\GoCoroutine::go(function () use($pid) {
@@ -29,15 +32,16 @@ $processManager->onStart = function ($pid) {
         $res = $db->query("select * from tbl_users limit 1");
         var_dump($res);
     });
+
 };
 
-// 注册运行时的错误记录日志
-$processManager->onRegisterRuntimeLog = function () {
-    $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
+// 注册运行时的错误记录日志 实际生产中$runtimeLog 最好设置在独立目录
+$processManager->onRegisterLogger = function () {
+    $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
     if(!is_object($logger)) {
-        $pid_file_root = pathinfo(PID_FILE)['dirname'];
-        $runtime_log = $pid_file_root.'/runtime.log';
-        $logger = \Workerfy\Log\LogManager::getInstance()->registerLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE, $runtime_log);
+        $pidFileRoot = pathinfo(PID_FILE,PATHINFO_DIRNAME);
+        $runtimeLog = $pidFileRoot.'/runtime.log';
+        $logger = LogManager::getInstance()->registerLogger(LogManager::RUNTIME_ERROR_TYPE, $runtimeLog);
     }
     $logger->info("默认Runtime日志注册成功",[],false);
     return $logger;

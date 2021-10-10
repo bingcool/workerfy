@@ -43,10 +43,10 @@ class LogHandle {
      * __construct
      */
     public function __construct(
-        string $channel = null,
-        string $logFilePath = null,
-        string $output = null,
-        string $dateformat = null)
+        ?string $channel = null,
+        ?string $logFilePath = null,
+        ?string $output = null,
+        ?string $dateformat = null)
     {
         $this->channel = $channel;
         $this->logFilePath = $logFilePath;
@@ -57,7 +57,7 @@ class LogHandle {
     /**
      * setChannel
      * @param    string $channel
-     * @return   mixed  $this
+     * @return   $this
      */
     public function setChannel($channel) {
         $this->channel = $channel;
@@ -67,7 +67,7 @@ class LogHandle {
     /**
      * setLogFilePath
      * @param   string $logFilePath
-     * @return  mixed  $this
+     * @return  $this
      */
     public function setLogFilePath($logFilePath) {
         $this->logFilePath = $logFilePath;
@@ -77,7 +77,7 @@ class LogHandle {
     /**
      * setOutputFormat
      * @param    string $output
-     * @return   mixed $this
+     * @return   $this
      */
     public function setOutputFormat($output) {
         $this->output = $output;
@@ -112,7 +112,7 @@ class LogHandle {
      * @param array $context
      * @param bool $enable_continue
      */
-    public function info($logInfo, array $context = [], $enable_continue = true) {
+    public function info($logInfo, array $context = [], bool $enable_continue = true) {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::INFO);
     }
 
@@ -123,7 +123,7 @@ class LogHandle {
      * @param bool $enable_continue
      * @param \Throwable
      */
-    public function notice($logInfo, array $context = [], $enable_continue = true) {
+    public function notice($logInfo, array $context = [], bool $enable_continue = true) {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::NOTICE);
     }
 
@@ -133,7 +133,7 @@ class LogHandle {
      * @param bool $enable_continue
      * @param array $context
      */
-    public function warning($logInfo, array $context = [], $enable_continue = true) {
+    public function warning($logInfo, array $context = [], bool $enable_continue = true) {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::WARNING);
     }
 
@@ -143,7 +143,7 @@ class LogHandle {
      * @param bool $enable_continue
      * @param array $context
      */
-    public function error($logInfo, array $context = [], $enable_continue = true) {
+    public function error($logInfo, array $context = [], bool $enable_continue = true) {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::ERROR);
     }
 
@@ -153,7 +153,7 @@ class LogHandle {
      * @param bool $enable_continue
      * @param $logType
      */
-    public function logHandle($logInfo, $context = [], $enable_continue = true, $logType = Logger::ERROR) {
+    public function logHandle($logInfo, array $context = [], bool $enable_continue = true, $logType = Logger::ERROR) {
         try{
             if($enable_continue) {
                 Coroutine::create(function() use($logInfo, $context, $logType) {
@@ -184,7 +184,7 @@ class LogHandle {
             // add records to the log
             $log->addRecord($type, $logInfo, $context);
         }catch (\Throwable $throwable) {
-            var_dump(sprintf("%s on File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
+            print_r(sprintf("%s in File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
         }
     }
 

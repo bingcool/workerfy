@@ -12,7 +12,6 @@
 namespace Workerfy\Crontab;
 
 use Cron\CronExpression;
-
 use Workerfy\Coroutine\GoCoroutine;
 use Workerfy\Exception\CrontabException;
 
@@ -62,7 +61,7 @@ class CrontabManager {
 
     /**
      * CrontabManager constructor.
-     * @throws \Exception
+     * @throws CrontabException
      */
 	protected function __construct() {
 	    if(function_exists('in_children_process_env'))
