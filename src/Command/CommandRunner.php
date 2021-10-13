@@ -305,6 +305,8 @@ class CommandRunner {
 
     /**
      * __clone
+     *
+     * @throws CommandException
      */
     private function __clone()
     {

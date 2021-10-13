@@ -107,12 +107,12 @@ class TableManager {
      * @return array
      */
     public function getAllTableName() {
-        $table_names = [];
+        $tableNames = [];
         if(isset($this->swooleTables) && !empty($this->swooleTables))
         {
-            $table_names = array_keys($this->swooleTables);
+            $tableNames = array_keys($this->swooleTables);
         }
-        return $table_names;
+        return $tableNames;
     }
 
     /**
@@ -120,13 +120,13 @@ class TableManager {
      * @return array
      */
     public function getAllTableKeyMapRowValue() {
-        $table_infos = [];
-        $table_names = $this->getAllTableName();
-        foreach($table_names as $table_name)
+        $tableInfos = [];
+        $tableNames = $this->getAllTableName();
+        foreach($tableNames as $tableName)
         {
-            $table_infos[$table_name] = $this->getKeyMapRowValue($table_name);
+            $tableInfos[$tableName] = $this->getKeyMapRowValue($tableName);
         }
-        return $table_infos;
+        return $tableInfos;
     }
 
     /**
@@ -194,8 +194,8 @@ class TableManager {
         $keys = [];
         if(is_string($table))
         {
-            $table_name = $table;
-            $table = $this->getTable($table_name);
+            $tableName = $table;
+            $table = $this->getTable($tableName);
         }
         if(is_object($table) && $table instanceof \Swoole\Table)
         {
@@ -213,7 +213,7 @@ class TableManager {
      * @return array
      */
     public function getKeyMapRowValue(string $table) {
-        $table_rows = [];
+        $tableRows = [];
         if(is_string($table))
         {
             $table_name = $table;
@@ -223,9 +223,9 @@ class TableManager {
         {
             foreach ($table as $key => $item)
             {
-                $table_rows[$key] = $item;
+                $tableRows[$key] = $item;
             }
         }
-        return $table_rows;
+        return $tableRows;
     }
 }
