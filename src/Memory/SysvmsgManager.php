@@ -87,54 +87,42 @@ class SysvmsgManager {
      * @param string $path_name
      * @param string $project
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project)
     {
-        $isSuccess = true;
         if(!extension_loaded('sysvmsg')) {
-            $errorMsg = sprintf("【Warning】%s::%s missing sysvmsg extension",
+            throw new \Exception(sprintf("【Warning】%s::%s missing sysvmsg extension",
                 __CLASS__,
                 __FUNCTION__
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
 
         if(strlen($project) !=1) {
-            $errorMsg = sprintf("【Warning】%s::%s. the params of project require only one string charset",
+            throw new \Exception(sprintf("【Warning】%s::%s. the params of project require only one string charset",
                 __CLASS__,
                 __FUNCTION__
-            );
-            write_info($errorMsg);
-            $isSuccess = false;
+            ));
         }
 
         $msgQueueNameKey = md5($msg_queue_name);
         $pathNameKey = md5($path_name);
-        if(!isset($this->msgProject[$pathNameKey][$project])) {
-            $this->msgProject[$pathNameKey][$project] = $project;
-        }else {
-            $errorMsg = sprintf("【Warning】%s::%s. the params of project is had setting",
+
+        if(isset($this->msgProject[$pathNameKey][$project])) {
+            throw new \Exception(sprintf("【Warning】%s::%s. the params of project is had setting",
                 __CLASS__,
                 __FUNCTION__
-            );
-            write_info($errorMsg);
-            $isSuccess = false;
+            ));
         }
+
+        $this->msgProject[$pathNameKey][$project] = $project;
 
         $msgKey = ftok($path_name, $project);
         if($msgKey < 0) {
-            $errorMsg = sprintf("【Warning】%s::%s create msg_key failed",
+            throw new \Exception(sprintf("【Warning】%s::%s create msg_key failed",
                 __CLASS__,
                 __FUNCTION__
-            );
-            write_info($errorMsg);
-            $isSuccess = false;
-        }
-
-        if(!$isSuccess) {
-            throw new \Exception("【Warning】create msg_queue_name={$msg_queue_name} of sysvmsg failed");
+            ));
         }
 
         $msgQueue = msg_get_queue($msgKey,0666);
@@ -144,6 +132,7 @@ class SysvmsgManager {
             $this->msgQueues[$msgQueueNameKey] = $msgQueue;
             defined('ENABLE_WORKERFY_SYSVMSG_MSG') or define('ENABLE_WORKERFY_SYSVMSG_MSG', 1);
         }
+
         return true;
     }
 
@@ -173,7 +162,7 @@ class SysvmsgManager {
      * @param string $msg_type_name
      * @param int $msg_type
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function registerMsgType(
         string $msg_queue_name,
@@ -181,30 +170,25 @@ class SysvmsgManager {
         int $msg_type = 1
     ) {
         if($msg_type <=0) {
-            $errorMsg = sprintf("【Warning】%s::%s third param of msg_flag_num need to > 0",
+            throw new \Exception(sprintf("【Warning】%s::%s third param of msg_flag_num need to > 0",
                 __CLASS__,
                 __FUNCTION__
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
 
         $msgQueueNameKey = md5($msg_queue_name);
         $msgTypeNameKey = md5($msg_type_name);
         if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
-            $errorMsg = sprintf("【Warning】%s::%s second params of msg_type_name=%s had setting",
+            throw new \Exception(sprintf("【Warning】%s::%s second params of msg_type_name=%s had setting",
                 __CLASS__,
                 __FUNCTION__,
                 $msg_type_name
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
 
         if(isset($this->msgTypes[$msgQueueNameKey])) {
             $registerMsgTypes = array_values($this->msgTypes[$msgQueueNameKey]);
-            if(!in_array($msg_type, $registerMsgTypes))
-            {
+            if(!in_array($msg_type, $registerMsgTypes)) {
                 $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey] = $msg_type;
                 return true;
             }
@@ -220,48 +204,40 @@ class SysvmsgManager {
      * @param $msg
      * @param string|null $msg_type_name
      * @return bool
-     * @throws Exception
+     * @throws \Exception
      */
     public function push(string $msg_queue_name, $msg, ?string $msg_type_name = null)
     {
         $msgQueueNameKey = md5($msg_queue_name);
         if(!isset($this->msgQueues[$msgQueueNameKey])) {
-            $errorMsg = sprintf("【Warning】%s::%s queue=%s is not exist",
+            throw new \Exception(sprintf("【Warning】%s::%s queue=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
                 $msg_queue_name
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
 
         $msgType = self::COMMON_MSG_TYPE;
         if($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
-            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey]))
-            {
+            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgType = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
-            }else
-            {
-                $errorMsg = sprintf("【Warning】%s::%s msg type=%s is not exist",
+            }else {
+                throw new \Exception(sprintf("【Warning】%s::%s msg type=%s is not exist",
                     __CLASS__,
                     __FUNCTION__,
                     $msg_type_name
-                );
-                write_info($errorMsg);
-                throw new \Exception($errorMsg);
+                ));
             }
         }
 
         $msgQueue = $this->msgQueues[$msgQueueNameKey];
         $res = msg_send($msgQueue, $msgType, $msg, $serialize = true, $blocking = false, $errorCode);
         if($res === false) {
-            $errorMsg = sprintf("【Warning】%s::%s msg_send error, error code=%d",
+            throw new \Exception(sprintf("【Warning】%s::%s msg_send error, error code=%d",
                 __CLASS__,
                 __FUNCTION__,
-                $errorCode);
-            write_info($errorMsg);
-            return false;
+                $errorCode));
         }
         return true;
     }
@@ -272,7 +248,7 @@ class SysvmsgManager {
      * @param string|null $msg_type_name
      * @param int $max_size
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function pop(
         string $msg_queue_name,
@@ -281,29 +257,23 @@ class SysvmsgManager {
     ) {
         $msgQueueNameKey = md5($msg_queue_name);
         if(!isset($this->msgQueues[$msgQueueNameKey])) {
-            $errorMsg = sprintf("【Warning】%s::%s queue=%s is not exist",
+            throw new \Exception(sprintf("【Warning】%s::%s queue=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
                 $msg_queue_name
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
 
         if($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
-            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey]))
-            {
+            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgTypeFlagNum = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
-            }else
-            {
-                $errorMsg = sprintf("【Warning】%s::%s msg type=%s is not exist",
+            }else {
+                throw new \Exception(sprintf("【Warning】%s::%s msg type=%s is not exist",
                     __CLASS__,
                     __FUNCTION__,
                     $msg_type_name
-                );
-                write_info($errorMsg);
-                throw new \Exception($errorMsg);
+                ));
             }
         }else {
             $msgTypeFlagNum = self::COMMON_MSG_TYPE;
@@ -312,13 +282,11 @@ class SysvmsgManager {
         $msgQueue = $this->msgQueues[$msgQueueNameKey];
         $res = msg_receive($msgQueue, $msgTypeFlagNum, $msgType, $max_size, $msg, true, 0, $errorCode);
         if($res === false) {
-            $errorMsg = sprintf("【Warning】%s::%s. msg_receive() accept msg error, code=%d",
+            throw new \Exception(sprintf("【Warning】%s::%s. msg_receive() accept msg error, code=%d",
                 __CLASS__,
                 __FUNCTION__,
                 $errorCode
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
         return $msg;
     }
@@ -327,20 +295,19 @@ class SysvmsgManager {
      * getMsgQueue 获取队列实例
      * @param string $msg_queue_name
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function getMsgQueue(string $msg_queue_name)
     {
         $msgQueueNameKey = md5($msg_queue_name);
         if(!isset($this->msgQueues[$msgQueueNameKey])) {
-            $errorMsg = sprintf("【Warning】%s::%s. queue msg=%s is not exist",
+            throw new \Exception(sprintf("【Warning】%s::%s. queue msg=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
                 $msg_queue_name
-            );
-            write_info($errorMsg);
-            throw new \Exception($errorMsg);
+            ));
         }
+
         return $this->msgQueues[$msgQueueNameKey];
     }
 
@@ -349,7 +316,7 @@ class SysvmsgManager {
      * @param string $msg_queue_name
      * @param string|null $msg_type_name
      * @return int|mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function getMsgType(string $msg_queue_name, ?string $msg_type_name = null)
     {
@@ -360,13 +327,11 @@ class SysvmsgManager {
             if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgType = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
             }else {
-                $errorMsg = sprintf("【Warning】s%::s% msg type=s% is not exist",
+                throw new \Exception(sprintf("【Warning】s%::s% msg type=s% is not exist",
                     __CLASS__,
                     __FUNCTION__,
                     $msg_queue_name
-                );
-                write_info($errorMsg);
-                throw new \Exception($errorMsg);
+                ));
             }
         }
         return $msgType;
@@ -376,7 +341,7 @@ class SysvmsgManager {
      * getMsgQueueWaitToPopNum 获取队列里面待读取消息体数量
      * @param string $msg_queue_name
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function getMsgQueueWaitToPopNum(string $msg_queue_name)
     {
@@ -394,7 +359,7 @@ class SysvmsgManager {
      * 队列容量大小，单位字节
      * @param string $msg_queue_name
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function getMsgQueueSize(string $msg_queue_name)
     {
