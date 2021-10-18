@@ -36,7 +36,7 @@ class ConfigLoad {
             throw new \Exception("Load config path is not a file");
         }
 
-        $config = require_once $config_file_path;
+        $config = require $config_file_path;
         if(!is_array($config)) {
             throw new \Exception("Config file {$config_file_path} is not return array");
         }
@@ -45,6 +45,15 @@ class ConfigLoad {
 
         return $this->config;
 	}
+
+    /**
+     * @param string|null $config_file_path
+     * @return array
+     * @throws Exception
+     */
+	public function reloadConfig(?string $config_file_path = null) {
+        return $this->loadConfig($config_file_path);
+    }
 
 	/**
 	 * setConfig

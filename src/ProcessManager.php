@@ -1043,20 +1043,16 @@ class ProcessManager {
         }
         // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
         //出现unable to create Swoole\Process with async-io threads
-        if(version_compare(swoole_version(),'4.6.0','<'))
-        {
+        if(version_compare(swoole_version(),'4.6.0','<')) {
             \Swoole\Timer::set([
                 'enable_coroutine' => false,
             ]);
-        }else
-        {
-            if(function_exists('swoole_async_set'))
-            {
+        }else {
+            if(function_exists('swoole_async_set')) {
                 swoole_async_set([
                     'enable_coroutine' => false,
                 ]);
-            }else
-            {
+            }else {
                 /**
                  * 4.6 Async Event、Timer、Process::signal moveto Swoole\Async library
                  */
