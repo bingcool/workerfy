@@ -1035,8 +1035,7 @@ abstract class AbstractProcess {
     {
         $tickSecond = 2;
         $waitTime = 5;
-        if(is_numeric($cron_expression))
-        {
+        if(is_numeric($cron_expression)) {
             // for Example reboot/600s after 600s reboot this process
             if($cron_expression < 120)
             {
@@ -1045,14 +1044,13 @@ abstract class AbstractProcess {
             {
                 $sleep = $cron_expression;
             }
-            \Swoole\Timer::tick(120 * 1000, function() use($sleep, $waitTime) {
+            \Swoole\Timer::tick(60 * 1000, function() use($sleep, $waitTime) {
                 if(time() - $this->getStartTime() >= $sleep)
                 {
                     $this->reboot($waitTime);
                 }
             });
-        }else
-        {
+        }else {
             // crontab expression of timer to reboot this process
             CrontabManager::getInstance()->addRule(
                 'register-tick-reboot',
