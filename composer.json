@@ -31,18 +31,7 @@
     "ext-pdo": "*",
     "ext-curl": "*",
     "dragonmantank/cron-expression" : "2.3.0",
-    "bingcool/library": "dev-master",
-    "malkusch/lock": "dev-master",
-    "php-amqplib/php-amqplib": "^3.0@dev",
-    "php-ffmpeg/php-ffmpeg": "v1.x-dev",
-    "symfony/string": "5.4.x-dev",
-    "slim/slim": "4.*",
-    "slim/psr7": "^1.4",
-    "nyholm/psr7": "1.4.x-dev",
-    "nyholm/psr7-server": "dev-master",
-    "guzzlehttp/psr7": "2.1.x-dev",
-    "http-interop/http-factory-guzzle": "^1.1",
-    "laminas/laminas-diactoros": "2.4.x-dev"
+    "bingcool/library": "dev-master"
   },
   "require-dev": {
     "kwn/php-rdkafka-stubs": "@dev",
