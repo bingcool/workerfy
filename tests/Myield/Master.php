@@ -9,7 +9,7 @@ $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
 $sysvmsgManager->addMsgFtok(MSG_QUEUE_NAME_ORDER, __FILE__, 'o');
 $sysvmsgManager->registerMsgType(MSG_QUEUE_NAME_ORDER,"add_order",2);
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-yield';
 $process_class = \Workerfy\Tests\Myield\Worker::class;
 $process_worker_num = 1;

@@ -2,7 +2,7 @@
 <?php
 require dirname(dirname(__DIR__)).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-tmp-script';
 $process_class = \Workerfy\Tests\Tmpscript\Fixorder\Worker::class;
 $process_worker_num = 1;

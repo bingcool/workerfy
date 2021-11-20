@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance([
+$processManager = \Workerfy\ProcessManager::getInstance([
     'report_status_tick_time' => 5
 ]);
 $process_name = 'test-FFmpeg';

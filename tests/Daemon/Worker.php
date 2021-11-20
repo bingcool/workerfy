@@ -58,7 +58,7 @@ class Worker extends \Workerfy\AbstractProcess {
                 if ($this->getProcessWorkerId() == 0) {
                     $this->getCurrentRunCoroutineNum();
                     $this->test = 2;
-                    $processManager = \Workerfy\processManager::getInstance();
+                    $processManager = \Workerfy\ProcessManager::getInstance();
                     $to_process = $processManager->getProcessByName('worker', 0);
                     $test = $to_process->test;
                     var_dump($test);

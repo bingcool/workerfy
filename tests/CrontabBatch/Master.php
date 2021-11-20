@@ -3,7 +3,7 @@
 
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-batch-crontab';
 $process_class = \Workerfy\Tests\CrontabBatch\Worker::class;
 $process_worker_num = 1;

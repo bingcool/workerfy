@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-uuid-service';
 $process_class = \Workerfy\Tests\UuidService\Worker::class;
 $process_worker_num = getenv('worker_num') ? getenv('worker_num') : 2;

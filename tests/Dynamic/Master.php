@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 // 业务进程
 $process_name = 'test-dynamic';
 $process_class = \Workerfy\Tests\Dynamic\Worker::class;

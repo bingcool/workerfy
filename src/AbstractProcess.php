@@ -503,7 +503,7 @@ abstract class AbstractProcess {
         int $process_worker_id = 0,
         bool $is_use_master_proxy = true
     ) {
-        $processManager = \Workerfy\processManager::getInstance();
+        $processManager = \Workerfy\ProcessManager::getInstance();
         $isMaster = $processManager->isMaster($process_name);
         $fromProcessName = $this->getProcessName();
         $fromProcessWorkerId = $this->getProcessWorkerId();

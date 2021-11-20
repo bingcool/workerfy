@@ -6,7 +6,7 @@ ini_set('memory_limit','20M');
 
 
 // 绝对匹对订阅
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-subscribe';
 $process_class = \Workerfy\Tests\Subscribe\SubscribeWorker::class;
 
@@ -23,7 +23,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 // 模式订阅
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-psubscribe';
 $process_class = \Workerfy\Tests\Subscribe\PsubscribeWorker::class;
 

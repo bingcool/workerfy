@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-while-test';
 $process_class = \Workerfy\Tests\WhileTest\Worker::class;
 $process_worker_num = getenv('num') ?: 1;

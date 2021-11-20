@@ -4,7 +4,7 @@
 require dirname(__DIR__).'/Common.php';
 
 // redis 队列消费
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 
 $process_name = 'test-queue';
 $process_class = \Workerfy\Tests\Queue\QueueConsumerWorker::class;
@@ -18,7 +18,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 // redis延迟队列消费
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-delay-queue';
 $process_class = \Workerfy\Tests\Queue\DelayConsumerWorker::class;
 $process_worker_num = 2; // 启动两个子进程，worker_id 分别为0 ，1

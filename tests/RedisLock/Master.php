@@ -4,7 +4,7 @@ require dirname(__DIR__).'/Common.php';
 
 ini_set('memory_limit','20M');
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-redislock';
 $process_class = \Workerfy\Tests\RedisLock\Worker::class;
 
@@ -19,7 +19,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-redislock1';
 $process_class = \Workerfy\Tests\RedisLock\Worker1::class;
 $process_worker_num = 2;

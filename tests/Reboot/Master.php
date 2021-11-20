@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance([
+$processManager = \Workerfy\ProcessManager::getInstance([
     'coroutine_setting' => [
         'enable_deadlock_check' => true,
         'log_level' => SWOOLE_LOG_TRACE,

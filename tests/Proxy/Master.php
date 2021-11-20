@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-proxy';
 $process_class = \Workerfy\Tests\Proxy\Worker::class;
 $process_worker_num = 2; // 启动两个子进程，worker_id 分别为0 ，1

@@ -3,7 +3,7 @@
 require dirname(__DIR__).'/Common.php';
 
 // 创建进程管理实例
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-cli-pipe';
 $process_class = \Workerfy\Tests\CliPipe\Worker::class;
 $process_worker_num = defined("WORKER_NUM") ? WORKER_NUM : 3;

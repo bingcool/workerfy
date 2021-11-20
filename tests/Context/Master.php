@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 
 $process_name = 'test-context-test';
 $process_class = \Workerfy\Tests\Context\Worker::class;

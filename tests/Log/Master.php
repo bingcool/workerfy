@@ -8,7 +8,7 @@ require dirname(__DIR__).'/Common.php';
 // 用户业务注册log操作对象
 $logManager = \Workerfy\Log\LogManager::getInstance()->registerLogger('default', __DIR__.'/'.pathinfo(__FILE__)['filename'].'.log');
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-logger-test';
 $process_class = \Workerfy\Tests\Log\Worker::class;
 

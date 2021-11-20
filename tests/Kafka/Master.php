@@ -4,7 +4,7 @@ require dirname(__DIR__).'/Common.php';
 
 
 // 生产进程
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-kafka-produce';
 $process_class = \Workerfy\Tests\Kafka\ProduceWorker::class;
 $process_worker_num = 1;
@@ -17,7 +17,7 @@ $processManager->addProcess($process_name, $process_class, $process_worker_num, 
 
 
 // 多进程消费
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-kafka-consumer';
 $process_class = \Workerfy\Tests\Kafka\ConsumerWorker::class;
 $process_worker_num = 2;

@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-pipe';
 $process_class = \Workerfy\Tests\Pipe\Worker::class;
 $process_worker_num = 1;

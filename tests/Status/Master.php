@@ -4,7 +4,7 @@ require dirname(__DIR__).'/Common.php';
 
 ini_set('memory_limit','20M');
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-status';
 $process_class = \Workerfy\Tests\Status\Worker::class;
 $process_worker_num = 3;

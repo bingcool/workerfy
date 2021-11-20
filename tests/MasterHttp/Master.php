@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-master-http';
 $process_class = \Workerfy\Tests\MasterHttp\Worker::class;
 $process_worker_num = 3;

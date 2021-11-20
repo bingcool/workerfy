@@ -12,7 +12,7 @@ $sysvmsgManager->registerMsgType(MSG_QUEUE_NAME_ORDER,"add_order",2);
 // 添加多一个队列，不注册事件类型，则投递在默认的消息类型中
 $sysvmsgManager->addMsgFtok('user', __FILE__, 'v');
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-sysvmsg';
 $process_class = \Workerfy\Tests\Sysvmsg\Worker::class;
 $process_worker_num = 4;

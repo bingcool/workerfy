@@ -2,7 +2,7 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $woker_process_name = 'worker-daemon-test';
 $process_class = \Workerfy\Tests\Daemon\Worker::class;
 $process_worker_num = 10;

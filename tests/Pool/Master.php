@@ -30,7 +30,7 @@ $extend_data = null;
 
 
 // Curl Pool
-$processManager = \Workerfy\processManager::getInstance();
+$processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-pool-curl';
 $process_class = \Workerfy\Tests\Pool\CurlPoolWorker::class;
 $process_worker_num = 1;
