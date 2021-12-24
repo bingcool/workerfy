@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Coroutine;
@@ -15,7 +15,8 @@ use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Workerfy\AbstractProcess;
 
-class GoWaitGroup {
+class GoWaitGroup
+{
     /**
      * @var int
      */
@@ -34,34 +35,33 @@ class GoWaitGroup {
     /**
      * WaitGroup constructor
      */
-    public function __construct() {
+    public function __construct()
+    {
         $this->channel = new Channel;
     }
 
     /**
      * go function
      */
-    public function go(\Closure $callBack, ...$params) {
+    public function go(\Closure $callBack, ...$params)
+    {
         $exception = '';
-        Coroutine::create(function (...$params) use($callBack, &$exception) {
-            try{
+        Coroutine::create(function (...$params) use ($callBack, &$exception) {
+            try {
                 $this->count++;
                 call_user_func($callBack, ...$params);
-            }catch (\Throwable $throwable) {
+            } catch (\Throwable $throwable) {
                 $this->count--;
                 $processInstance = AbstractProcess::getProcessInstance();
-                if($processInstance instanceof AbstractProcess)
-                {
+                if ($processInstance instanceof AbstractProcess) {
                     AbstractProcess::getProcessInstance()->onHandleException($throwable);
-                }else
-                {
+                } else {
                     $exception = $throwable;
                 }
             }
         }, ...$params);
 
-        if($exception instanceof \Throwable)
-        {
+        if ($exception instanceof \Throwable) {
             throw $exception;
         }
     }
@@ -103,22 +103,20 @@ class GoWaitGroup {
      * @param float $timeOut
      * @return array
      */
-    public static function multiCall(array $callBacks, float $timeOut = 3.0) {
+    public static function multiCall(array $callBacks, float $timeOut = 3.0)
+    {
         $goWait = new static();
-        foreach($callBacks as $key=>$callBack)
-        {
-            Coroutine::create(function () use($key, $callBack, $goWait)
-            {
-                try{
+        foreach ($callBacks as $key => $callBack) {
+            Coroutine::create(function () use ($key, $callBack, $goWait) {
+                try {
                     $goWait->count++;
                     $goWait->initResult($key, null);
                     $result = call_user_func($callBack);
                     $goWait->done($key, $result, 3.0);
-                }catch (\Throwable $throwable) {
+                } catch (\Throwable $throwable) {
                     $goWait->count--;
                     $processInstance = AbstractProcess::getProcessInstance();
-                    if($processInstance instanceof AbstractProcess)
-                    {
+                    if ($processInstance instanceof AbstractProcess) {
                         AbstractProcess::getProcessInstance()->onHandleException($throwable);
                     }
                 }
@@ -132,7 +130,8 @@ class GoWaitGroup {
      * start
      * @return int
      */
-    public function start() {
+    public function start()
+    {
         $this->count++;
         return $this->count;
     }
@@ -141,8 +140,9 @@ class GoWaitGroup {
      * done
      * @return void
      */
-    public function done(string $key = null, $data = null, float $timeout = -1) {
-        if(!empty($key) && !empty($data)) {
+    public function done(string $key = null, $data = null, float $timeout = -1)
+    {
+        if (!empty($key) && !empty($data)) {
             $this->result[$key] = $data;
         }
         $this->channel->push(1, $timeout);
@@ -153,7 +153,8 @@ class GoWaitGroup {
      * @param null $data
      * @return void
      */
-    public function initResult(string $key, $data = null) {
+    public function initResult(string $key, $data = null)
+    {
         $this->result[$key] = $data;
     }
 
@@ -161,8 +162,9 @@ class GoWaitGroup {
      * wait
      * @return array
      */
-    public function wait(float $timeout = 0) {
-        while($this->count-- > 0) {
+    public function wait(float $timeout = 0)
+    {
+        while ($this->count-- > 0) {
             $this->channel->pop($timeout);
         }
         $result = $this->result;
@@ -174,7 +176,8 @@ class GoWaitGroup {
      * reset
      * @return void
      */
-    public function reset() {
+    public function reset()
+    {
         $this->result = [];
         $this->count = 0;
     }

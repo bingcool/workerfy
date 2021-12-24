@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Coroutine;
@@ -14,17 +14,18 @@ namespace Workerfy\Coroutine;
 use ArrayObject;
 use Workerfy\Exception\RuntimeException;
 
-class Context {
+class Context
+{
     /**
      * @return ArrayObject|null
      * @throws RuntimeException
      */
-    public static function getContext() {
-        if(\Swoole\Coroutine::getCid() > 0)
-        {
+    public static function getContext()
+    {
+        if (\Swoole\Coroutine::getCid() > 0) {
             $context = \Swoole\Coroutine::getContext();
             return $context;
-        }else {
+        } else {
             throw new RuntimeException("Not in Coroutine Environment");
         }
     }
@@ -35,10 +36,10 @@ class Context {
      * @return bool
      * @throws RuntimeException
      */
-    public static function set($name, $value) {
+    public static function set($name, $value)
+    {
         $context = self::getContext();
-        if($context)
-        {
+        if ($context) {
             $context[$name] = $value;
             return true;
         }
@@ -50,10 +51,10 @@ class Context {
      * @return bool|null
      * @throws RuntimeException
      */
-    public static function get($name) {
+    public static function get($name)
+    {
         $context = self::getContext();
-        if($context)
-        {
+        if ($context) {
             return $context[$name];
         }
         return null;
@@ -64,12 +65,11 @@ class Context {
      * @return bool
      * @throws RuntimeException
      */
-    public static function has($name) {
+    public static function has($name)
+    {
         $context = self::getContext();
-        if($context)
-        {
-            if(isset($context[$name]))
-            {
+        if ($context) {
+            if (isset($context[$name])) {
                 return true;
             }
             return false;
@@ -80,7 +80,8 @@ class Context {
     /**
      * @return int
      */
-    public static function getCid() {
+    public static function getCid()
+    {
         return \Swoole\Coroutine::getCid();
     }
 
@@ -88,7 +89,8 @@ class Context {
      * @param callable $func
      * @return void
      */
-    public static function defer(callable $func) {
+    public static function defer(callable $func)
+    {
         \Swoole\Coroutine::defer($func);
     }
 }

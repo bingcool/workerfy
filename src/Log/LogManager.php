@@ -1,19 +1,20 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| swoolefy framework bases on swoole extension development, we can use it easily!
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | swoolefy framework bases on swoole extension development, we can use it easily!
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Log;
 
 use Workerfy\Traits\SingletonTrait;
 
-class LogManager {
+class LogManager
+{
 
     use SingletonTrait;
 
@@ -26,14 +27,16 @@ class LogManager {
     /**
      * __construct
      */
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     /**
      * registerLogger
-     * @param  string|null $channel    
-     * @param  string|null $logFilePath
-     * @param  string|null $output     
-     * @param  string|null $dateformat 
+     * @param string|null $channel
+     * @param string|null $logFilePath
+     * @param string|null $output
+     * @param string|null $dateformat
      * @return LogHandle
      */
     public function registerLogger(
@@ -42,8 +45,9 @@ class LogManager {
         string $channel = 'workerfy',
         string $output = null,
         string $dateformat = null
-    ) {
-        if($channel && $logFilePath) {
+    )
+    {
+        if ($channel && $logFilePath) {
             $this->loggers[$type] = new LogHandle($channel, $logFilePath, $output, $dateformat);
         }
 
@@ -52,11 +56,12 @@ class LogManager {
 
     /**
      * registerLoggerByClosure
-     * @param  \Closure  $func
-     * @param  string $log_name
+     * @param \Closure $func
+     * @param string $log_name
      * @return mixed
      */
-    public function registerLoggerByClosure(\Closure $func, string $type = self::DEFAULT_TYPE) {
+    public function registerLoggerByClosure(\Closure $func, string $type = self::DEFAULT_TYPE)
+    {
         $this->loggers[$type] = call_user_func($func, $type);
         return $this->loggers[$type];
     }
@@ -65,7 +70,8 @@ class LogManager {
      * getLogger
      * @return LogHandle
      */
-    public function getLogger(string $type = self::DEFAULT_TYPE) {
+    public function getLogger(string $type = self::DEFAULT_TYPE)
+    {
         return $this->loggers[$type] ?? null;
     }
 }

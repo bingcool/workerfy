@@ -1,17 +1,18 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy;
 
-class EachColor {
+class EachColor
+{
     /**
      * @var array
      */
@@ -25,7 +26,8 @@ class EachColor {
     /**
      * EachColor constructor.
      */
-    public function __construct() {
+    public function __construct()
+    {
         // Set up shell colors
         $this->foregroundColors['black'] = '0;30';
         $this->foregroundColors['dark_gray'] = '1;30';
@@ -60,7 +62,8 @@ class EachColor {
      * @param null $background_color
      * @return string
      */
-    public function getColoredString($string, $foreground_color = null, $background_color = null) {
+    public function getColoredString($string, $foreground_color = null, $background_color = null)
+    {
         $coloredString = "";
 
         // Check if given foreground color found
@@ -73,7 +76,7 @@ class EachColor {
         }
 
         // Add string and end coloring
-        $coloredString .=  $string . "\033[0m";
+        $coloredString .= $string . "\033[0m";
 
         return $coloredString;
     }
@@ -81,14 +84,16 @@ class EachColor {
     /**
      * @return array
      */
-    public function getForegroundColors() {
+    public function getForegroundColors()
+    {
         return array_keys($this->foregroundColors);
     }
 
     /**
      * @return array
      */
-    public function getBackgroundColors() {
+    public function getBackgroundColors()
+    {
         return array_keys($this->backgroundColors);
     }
 }

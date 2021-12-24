@@ -1,31 +1,31 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 /**
  * 在使用该模块时，必须提前设置这些值达到一定的值
-/proc/sys/kernel/msgmax　　　 单个消息的最大值　　　　  缺省值为 8192
-/proc/sys/kernel/msgmnb  　　 单个消息队列的容量的最大值　缺省值为 16384
-/proc/sys/kernel/msgmni  　　 消息体的数量　　　　　　　缺省值为　16
-可通过下面的方式进行设置
-echo 819200 > /proc/sys/kernel/msgmax
-echo 1638400 > /proc/sys/kernel/msgmnb
-echo 1600 > /proc/sys/kernel/msgmni
-
-需要注意的是，一般是通过公式 msgmax * msgmni < msgmnb 来设置
+ * /proc/sys/kernel/msgmax　　　 单个消息的最大值　　　　  缺省值为 8192
+ * /proc/sys/kernel/msgmnb  　　 单个消息队列的容量的最大值　缺省值为 16384
+ * /proc/sys/kernel/msgmni  　　 消息体的数量　　　　　　　缺省值为　16
+ * 可通过下面的方式进行设置
+ * echo 819200 > /proc/sys/kernel/msgmax
+ * echo 1638400 > /proc/sys/kernel/msgmnb
+ * echo 1600 > /proc/sys/kernel/msgmni
+ *
+ * 需要注意的是，一般是通过公式 msgmax * msgmni < msgmnb 来设置
  */
 
 /**
  * $msgStat = msg_stat_queue($msgQueue);
-    print_r($msgStat);
- 打印出如下：
+ * print_r($msgStat);
+ * 打印出如下：
  * msg_perm.uid The uid of the owner of the queue.
  * msg_perm.gid The gid of the owner of the queue.
  * msg_perm.mode The file access mode of the queue.
@@ -40,7 +40,8 @@ echo 1600 > /proc/sys/kernel/msgmni
 
 namespace Workerfy\Memory;
 
-class SysvmsgManager {
+class SysvmsgManager
+{
 
     use \Workerfy\Traits\SingletonTrait;
 
@@ -91,14 +92,14 @@ class SysvmsgManager {
      */
     public function addMsgFtok(string $msg_queue_name, string $path_name, string $project)
     {
-        if(!extension_loaded('sysvmsg')) {
+        if (!extension_loaded('sysvmsg')) {
             throw new \Exception(sprintf("【Warning】%s::%s missing sysvmsg extension",
                 __CLASS__,
                 __FUNCTION__
             ));
         }
 
-        if(strlen($project) !=1) {
+        if (strlen($project) != 1) {
             throw new \Exception(sprintf("【Warning】%s::%s. the params of project require only one string charset",
                 __CLASS__,
                 __FUNCTION__
@@ -108,7 +109,7 @@ class SysvmsgManager {
         $msgQueueNameKey = md5($msg_queue_name);
         $pathNameKey = md5($path_name);
 
-        if(isset($this->msgProject[$pathNameKey][$project])) {
+        if (isset($this->msgProject[$pathNameKey][$project])) {
             throw new \Exception(sprintf("【Warning】%s::%s. the params of project is had setting",
                 __CLASS__,
                 __FUNCTION__
@@ -118,17 +119,17 @@ class SysvmsgManager {
         $this->msgProject[$pathNameKey][$project] = $project;
 
         $msgKey = ftok($path_name, $project);
-        if($msgKey < 0) {
+        if ($msgKey < 0) {
             throw new \Exception(sprintf("【Warning】%s::%s create msg_key failed",
                 __CLASS__,
                 __FUNCTION__
             ));
         }
 
-        $msgQueue = msg_get_queue($msgKey,0666);
+        $msgQueue = msg_get_queue($msgKey, 0666);
         $this->msgNameMapQueue[$msgQueueNameKey] = $msg_queue_name;
 
-        if(is_resource($msgQueue) && msg_queue_exists($msgKey)) {
+        if (is_resource($msgQueue) && msg_queue_exists($msgKey)) {
             $this->msgQueues[$msgQueueNameKey] = $msgQueue;
             defined('ENABLE_WORKERFY_SYSVMSG_MSG') or define('ENABLE_WORKERFY_SYSVMSG_MSG', 1);
         }
@@ -143,7 +144,7 @@ class SysvmsgManager {
      */
     public function getSysKernelInfo(bool $force = false)
     {
-        if(isset($this->sysKernelInfo) && !empty($this->sysKernelInfo) && !$force) {
+        if (isset($this->sysKernelInfo) && !empty($this->sysKernelInfo) && !$force) {
             return $this->sysKernelInfo;
         }
         // 单个消息体最大限制，单位字节
@@ -152,7 +153,7 @@ class SysvmsgManager {
         $msgmnb = @file_get_contents("/proc/sys/kernel/msgmnb");
         // 队列能存消息体的最大的数量个数
         $msgmni = @file_get_contents("/proc/sys/kernel/msgmni");
-        $this->sysKernelInfo = ['msgmax'=>(int)$msgMax,'msgmnb'=>(int)$msgmnb,'msgmni'=>(int)$msgmni];
+        $this->sysKernelInfo = ['msgmax' => (int)$msgMax, 'msgmnb' => (int)$msgmnb, 'msgmni' => (int)$msgmni];
         return $this->sysKernelInfo;
     }
 
@@ -168,8 +169,9 @@ class SysvmsgManager {
         string $msg_queue_name,
         string $msg_type_name,
         int $msg_type = 1
-    ) {
-        if($msg_type <=0) {
+    )
+    {
+        if ($msg_type <= 0) {
             throw new \Exception(sprintf("【Warning】%s::%s third param of msg_flag_num need to > 0",
                 __CLASS__,
                 __FUNCTION__
@@ -178,7 +180,7 @@ class SysvmsgManager {
 
         $msgQueueNameKey = md5($msg_queue_name);
         $msgTypeNameKey = md5($msg_type_name);
-        if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
+        if (isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
             throw new \Exception(sprintf("【Warning】%s::%s second params of msg_type_name=%s had setting",
                 __CLASS__,
                 __FUNCTION__,
@@ -186,13 +188,13 @@ class SysvmsgManager {
             ));
         }
 
-        if(isset($this->msgTypes[$msgQueueNameKey])) {
+        if (isset($this->msgTypes[$msgQueueNameKey])) {
             $registerMsgTypes = array_values($this->msgTypes[$msgQueueNameKey]);
-            if(!in_array($msg_type, $registerMsgTypes)) {
+            if (!in_array($msg_type, $registerMsgTypes)) {
                 $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey] = $msg_type;
                 return true;
             }
-        }else {
+        } else {
             $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey] = $msg_type;
             return true;
         }
@@ -209,7 +211,7 @@ class SysvmsgManager {
     public function push(string $msg_queue_name, $msg, ?string $msg_type_name = null)
     {
         $msgQueueNameKey = md5($msg_queue_name);
-        if(!isset($this->msgQueues[$msgQueueNameKey])) {
+        if (!isset($this->msgQueues[$msgQueueNameKey])) {
             throw new \Exception(sprintf("【Warning】%s::%s queue=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
@@ -218,11 +220,11 @@ class SysvmsgManager {
         }
 
         $msgType = self::COMMON_MSG_TYPE;
-        if($msg_type_name) {
+        if ($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
-            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
+            if (isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgType = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
-            }else {
+            } else {
                 throw new \Exception(sprintf("【Warning】%s::%s msg type=%s is not exist",
                     __CLASS__,
                     __FUNCTION__,
@@ -233,7 +235,7 @@ class SysvmsgManager {
 
         $msgQueue = $this->msgQueues[$msgQueueNameKey];
         $res = msg_send($msgQueue, $msgType, $msg, $serialize = true, $blocking = false, $errorCode);
-        if($res === false) {
+        if ($res === false) {
             throw new \Exception(sprintf("【Warning】%s::%s msg_send error, error code=%d",
                 __CLASS__,
                 __FUNCTION__,
@@ -254,9 +256,10 @@ class SysvmsgManager {
         string $msg_queue_name,
         ?string $msg_type_name = null,
         int $max_size = 65535
-    ) {
+    )
+    {
         $msgQueueNameKey = md5($msg_queue_name);
-        if(!isset($this->msgQueues[$msgQueueNameKey])) {
+        if (!isset($this->msgQueues[$msgQueueNameKey])) {
             throw new \Exception(sprintf("【Warning】%s::%s queue=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
@@ -264,24 +267,24 @@ class SysvmsgManager {
             ));
         }
 
-        if($msg_type_name) {
+        if ($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
-            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
+            if (isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgTypeFlagNum = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
-            }else {
+            } else {
                 throw new \Exception(sprintf("【Warning】%s::%s msg type=%s is not exist",
                     __CLASS__,
                     __FUNCTION__,
                     $msg_type_name
                 ));
             }
-        }else {
+        } else {
             $msgTypeFlagNum = self::COMMON_MSG_TYPE;
         }
 
         $msgQueue = $this->msgQueues[$msgQueueNameKey];
         $res = msg_receive($msgQueue, $msgTypeFlagNum, $msgType, $max_size, $msg, true, 0, $errorCode);
-        if($res === false) {
+        if ($res === false) {
             throw new \Exception(sprintf("【Warning】%s::%s. msg_receive() accept msg error, code=%d",
                 __CLASS__,
                 __FUNCTION__,
@@ -300,7 +303,7 @@ class SysvmsgManager {
     public function getMsgQueue(string $msg_queue_name)
     {
         $msgQueueNameKey = md5($msg_queue_name);
-        if(!isset($this->msgQueues[$msgQueueNameKey])) {
+        if (!isset($this->msgQueues[$msgQueueNameKey])) {
             throw new \Exception(sprintf("【Warning】%s::%s. queue msg=%s is not exist",
                 __CLASS__,
                 __FUNCTION__,
@@ -322,11 +325,11 @@ class SysvmsgManager {
     {
         $msgQueueNameKey = md5($msg_queue_name);
         $msgType = self::COMMON_MSG_TYPE;
-        if($msg_type_name) {
+        if ($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
-            if(isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
+            if (isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
                 $msgType = $this->msgTypes[$msgQueueNameKey][$msgTypeNameKey];
-            }else {
+            } else {
                 throw new \Exception(sprintf("【Warning】s%::s% msg type=s% is not exist",
                     __CLASS__,
                     __FUNCTION__,
@@ -347,8 +350,8 @@ class SysvmsgManager {
     {
         $msgQueue = $this->getMsgQueue($msg_queue_name);
         $status = msg_stat_queue($msgQueue);
-        if(!isset($this->sysKernelMsgmnb)) {
-            if(isset($status['msg_qbytes'])) {
+        if (!isset($this->sysKernelMsgmnb)) {
+            if (isset($status['msg_qbytes'])) {
                 $this->sysKernelMsgmnb = $status['msg_qbytes'];
             }
         }
@@ -363,12 +366,12 @@ class SysvmsgManager {
      */
     public function getMsgQueueSize(string $msg_queue_name)
     {
-        if(isset($this->sysKernelMsgmnb)) {
+        if (isset($this->sysKernelMsgmnb)) {
             return $this->sysKernelMsgmnb;
         }
         $msgQueue = $this->getMsgQueue($msg_queue_name);
         $status = msg_stat_queue($msgQueue);
-        if(isset($status['msg_qbytes'])) {
+        if (isset($status['msg_qbytes'])) {
             $this->sysKernelMsgmnb = $status['msg_qbytes'];
         }
         return $this->sysKernelMsgmnb;
@@ -381,18 +384,18 @@ class SysvmsgManager {
      */
     public function destroyMsgQueue(string $msg_queue_name = null)
     {
-        if($msg_queue_name) {
+        if ($msg_queue_name) {
             $msgQueue = $this->getMsgQueue($msg_queue_name);
             is_resource($msgQueue) && msg_remove_queue($msgQueue);
             return true;
         }
         // remove all
-        if(!empty($this->msgQueues)) {
-            foreach($this->msgQueues as $msgQueue) {
+        if (!empty($this->msgQueues)) {
+            foreach ($this->msgQueues as $msgQueue) {
                 // 存在数据，不应该强制删除
-                if(is_resource($msgQueue)) {
+                if (is_resource($msgQueue)) {
                     $status = msg_stat_queue($msgQueue);
-                    if($status['msg_qnum'] == 0) {
+                    if ($status['msg_qnum'] == 0) {
                         msg_remove_queue($msgQueue);
                     }
                 }
@@ -407,11 +410,11 @@ class SysvmsgManager {
     public function getAllMsgQueueWaitToPopNum()
     {
         $result = [];
-        foreach($this->msgQueues as $key=>$msgQueue) {
-            if(is_resource($msgQueue)) {
+        foreach ($this->msgQueues as $key => $msgQueue) {
+            if (is_resource($msgQueue)) {
                 $status = msg_stat_queue($msgQueue);
                 $waitToReadNum = $status['msg_qnum'];
-                if($msgQueueName = $this->msgNameMapQueue[$key]) {
+                if ($msgQueueName = $this->msgNameMapQueue[$key]) {
                     $result[] = [$msgQueueName, $waitToReadNum];
                 }
             }

@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Command;
@@ -16,7 +16,8 @@ use Swoole\Coroutine\Channel;
 use Workerfy\Coroutine\GoCoroutine;
 use Workerfy\Exception\CommandException;
 
-class CommandRunner {
+class CommandRunner
+{
     /**
      * @var array
      */
@@ -90,19 +91,17 @@ class CommandRunner {
      */
     public static function getInstance(string $runnerName, int $concurrent = 5)
     {
-        if(!isset(static::$instances[$runnerName]))
-        {
-            /**@var CommandRunner $runner*/
+        if (!isset(static::$instances[$runnerName])) {
+            /**@var CommandRunner $runner */
             $runner = new static();
-            if($concurrent >= 10)
-            {
+            if ($concurrent >= 10) {
                 $concurrent = 10;
             }
             $runner->concurrent = $concurrent;
             $runner->channel = new Channel($runner->concurrent);
             static::$instances[$runnerName] = $runner;
-        }else {
-            /**@var CommandRunner $runner*/
+        } else {
+            /**@var CommandRunner $runner */
             $runner = static::$instances[$runnerName];
         }
 
@@ -118,8 +117,8 @@ class CommandRunner {
      * @param bool $async
      * @param string $log
      * @param bool $isExec
-     * @throws CommandException
      * @return array
+     * @throws CommandException
      */
     public function exec(
         string $execBinFile,
@@ -128,38 +127,37 @@ class CommandRunner {
         bool $async = false,
         string $log = '/dev/null',
         bool $isExec = true
-    ) {
+    )
+    {
         $this->checkNextFlag();
         $params = '';
-        if($args) {
+        if ($args) {
             $params = $this->parseEscapeShellArg($args);
         }
 
-        $path = $execBinFile.' '.$commandRouter.' '.$params;
+        $path = $execBinFile . ' ' . $commandRouter . ' ' . $params;
         $command = "{$path} >> {$log} 2>&1 && echo $$";
-        if($async) {
+        if ($async) {
             // echo $! 表示输出进程id赋值在output数组中
             $command = "nohup {$path} >> {$log} 2>&1 & echo $!";
         }
 
-        if($isExec)
-        {
-            exec($command,$output,$return);
+        if ($isExec) {
+            exec($command, $output, $return);
             $pid = $output[0] ?? '';
-            if($pid)
-            {
+            if ($pid) {
                 $this->channel->push([
                     'pid' => $pid,
                     'command' => $command,
                     'start_time' => time()
-                ],0.2);
+                ], 0.2);
             }
 
             // when exec error save log
-            if($return != 0) {
+            if ($return != 0) {
                 $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                if(is_object($logger)) {
-                    $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output'=>$output ?? '', 'returnCode' => $return ?? '', 'errorMsg'=>self::$exitCodes[$return] ?? 'Unknown error']);
+                if (is_object($logger)) {
+                    $logger->info("CommandRunner Exec return={$return}", ['command' => $command, 'output' => $output ?? '', 'returnCode' => $return ?? '', 'errorMsg' => self::$exitCodes[$return] ?? 'Unknown error']);
                 }
             }
 
@@ -179,14 +177,15 @@ class CommandRunner {
         callable $callable,
         string $execBinFile,
         array $args = []
-    ) {
+    )
+    {
         $this->checkNextFlag();
         $params = '';
-        if($args) {
+        if ($args) {
             $params = $this->parseEscapeShellArg($args);
         }
 
-        $command = $execBinFile.' '.$params.'; echo $? >&3';
+        $command = $execBinFile . ' ' . $params . '; echo $? >&3';
         $descriptors = array(
             // stdout
             0 => array('pipe', 'r'),
@@ -198,38 +197,38 @@ class CommandRunner {
             3 => array('pipe', 'w')
         );
 
-        GoCoroutine::go(function () use($callable, $command, $descriptors) {
+        GoCoroutine::go(function () use ($callable, $command, $descriptors) {
             // in $callable forbidden create coroutine, because $proc_process had been bind in current coroutine
             try {
-                $proc_process = proc_open($command, $descriptors, $pipes);
-                if(!is_resource($proc_process)) {
+                $procProcess = proc_open($command, $descriptors, $pipes);
+                if (!is_resource($procProcess)) {
                     throw new CommandException("Proc Open Command 【{$command}】 failed.");
                 }
-                $status = proc_get_status($proc_process);
-                if($status['pid'] ?? '') {
+                $status = proc_get_status($procProcess);
+                if ($status['pid'] ?? '') {
                     $this->channel->push([
                         'pid' => $status['pid'],
                         'command' => $command,
                         'start_time' => time()
-                    ],0.2);
+                    ], 0.2);
 
-                    $returnCode = fgets($pipes[3],10);
-                    if($returnCode != 0) {
+                    $returnCode = fgets($pipes[3], 10);
+                    if ($returnCode != 0) {
                         $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                        if(is_object($logger)) {
-                            $logger->info("CommandRunner Proc Open exitCode={$returnCode}", ['command' => $command, 'errorMsg'=>self::$exitCodes[$returnCode] ?? 'Unknown error']);
+                        if (is_object($logger)) {
+                            $logger->info("CommandRunner Proc Open exitCode={$returnCode}", ['command' => $command, 'errorMsg' => self::$exitCodes[$returnCode] ?? 'Unknown error']);
                         }
                     }
                 }
                 $params = [$pipes[0], $pipes[1], $pipes[2], $status, $returnCode ?? -1];
                 return call_user_func_array($callable, $params);
-            }catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 throw $e;
-            }finally {
-                foreach($pipes as $pipe) {
+            } finally {
+                foreach ($pipes as $pipe) {
                     @fclose($pipe);
                 }
-                proc_close($proc_process);
+                proc_close($procProcess);
             }
         });
 
@@ -241,42 +240,35 @@ class CommandRunner {
     public function isNextHandle()
     {
         $this->isNextFlag = true;
-        if($this->channel->isFull())
-        {
+        if ($this->channel->isFull()) {
             $pids = [];
-            while($item = $this->channel->pop(0.05))
-            {
+            while ($item = $this->channel->pop(0.05)) {
                 $pid = $item['pid'];
                 $startTime = $item['start_time'];
-                if(\Swoole\Process::kill($pid,0) )
-                {
-                    if(($startTime + 60) > time() ) {
+                if (\Swoole\Process::kill($pid, 0)) {
+                    if (($startTime + 60) > time()) {
                         $pids[] = $item;
-                    }else {
+                    } else {
                         // 超过1分钟系统调用程序没执行完的都会记录一次
                         $command = $item['command'] ?? '';
                         $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
-                        if(is_object($logger)) {
+                        if (is_object($logger)) {
                             $logger->info("CommandRunner Long Time Run Process,Pid={$pid},startTime={$startTime},Command={$command},please check it.");
                         }
                     }
                 }
             }
 
-            foreach($pids as $item)
-            {
-                $this->channel->push($item,0.1);
+            foreach ($pids as $item) {
+                $this->channel->push($item, 0.1);
             }
 
-            if($this->channel->length() < $this->concurrent)
-            {
+            if ($this->channel->length() < $this->concurrent) {
                 $isNext = true;
-            }else
-            {
+            } else {
                 \Swoole\Coroutine\System::sleep(0.1);
             }
-        }else
-        {
+        } else {
             $isNext = true;
         }
 
@@ -288,7 +280,7 @@ class CommandRunner {
      */
     protected function checkNextFlag()
     {
-        if(!$this->isNextFlag) {
+        if (!$this->isNextFlag) {
             throw new CommandException('Missing call isNextHandle().');
         }
         $this->isNextFlag = false;

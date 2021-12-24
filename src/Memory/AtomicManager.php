@@ -1,17 +1,18 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Memory;
 
-class AtomicManager {
+class AtomicManager
+{
 
     use \Workerfy\Traits\SingletonTrait;
 
@@ -41,9 +42,9 @@ class AtomicManager {
      * @param int $init_value
      * @return mixed
      */
-    public function addAtomic(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swooleAtomic[$atomic_name]))
-        {
+    public function addAtomic(string $atomic_name, int $init_value = 0)
+    {
+        if (!isset($this->swooleAtomic[$atomic_name])) {
             $atomic = new \Swoole\Atomic($init_value);
             $this->swooleAtomic[$atomic_name] = $atomic;
         }
@@ -52,13 +53,13 @@ class AtomicManager {
 
     /**
      * addAtomicLong
-     * @param string      $atomic_name
+     * @param string $atomic_name
      * @param int|integer $init_value
      * @return mixed
      */
-    public function addAtomicLong(string $atomic_name, int $init_value = 0) {
-        if(!isset($this->swooleAtomicLong[$atomic_name]))
-        {
+    public function addAtomicLong(string $atomic_name, int $init_value = 0)
+    {
+        if (!isset($this->swooleAtomicLong[$atomic_name])) {
             $atomic = new \Swoole\Atomic\Long($init_value);
             $this->swooleAtomicLong[$atomic_name] = $atomic;
         }
@@ -67,39 +68,38 @@ class AtomicManager {
 
     /**
      * getAtomic
-     * @param  string $atomic_name
+     * @param string $atomic_name
      * @return mixed
      */
-    public function getAtomic(string $atomic_name) {
+    public function getAtomic(string $atomic_name)
+    {
         return $this->swooleAtomic[$atomic_name] ?? null;
     }
 
     /**
      * getAtomicLong
-     * @param  string $atomic_name
+     * @param string $atomic_name
      * @return mixed
      */
-    public function getAtomicLong(string $atomic_name) {
+    public function getAtomicLong(string $atomic_name)
+    {
         return $this->swooleAtomicLong[$atomic_name] ?? null;
     }
 
     /**
      * getAllAtomicName
-     * @param  int $type
+     * @param int $type
      * @return array
      */
-    public function getAllAtomicName(int $type = self::ATOMIC_SHORT) {
+    public function getAllAtomicName(int $type = self::ATOMIC_SHORT)
+    {
         $atomicName = [];
-        if($type === self::ATOMIC_SHORT)
-        {
-            if(isset($this->swooleAtomic) && !empty($this->swooleAtomic))
-            {
+        if ($type === self::ATOMIC_SHORT) {
+            if (isset($this->swooleAtomic) && !empty($this->swooleAtomic)) {
                 $atomicName = array_keys($this->swooleAtomic);
             }
-        }else if($type === self::ATOMIC_LONG)
-        {
-            if(isset($this->swooleAtomicLong) && !empty($this->swooleAtomicLong))
-            {
+        } else if ($type === self::ATOMIC_LONG) {
+            if (isset($this->swooleAtomicLong) && !empty($this->swooleAtomicLong)) {
                 $atomicName = array_keys($this->swooleAtomicLong);
             }
         }

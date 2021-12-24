@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| swoolefy framework bases on swoole extension development, we can use it easily!
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | swoolefy framework bases on swoole extension development, we can use it easily!
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Log;
@@ -14,7 +14,8 @@ namespace Workerfy\Log;
 use Swoole\Coroutine;
 use Workerfy\Log\Formatter\LineFormatter;
 
-class LogHandle {
+class LogHandle
+{
     /**
      * $channel,日志的通过主题，关于那方面的日志
      * @var null
@@ -56,30 +57,33 @@ class LogHandle {
 
     /**
      * setChannel
-     * @param    string $channel
+     * @param string $channel
      * @return   $this
      */
-    public function setChannel($channel) {
+    public function setChannel($channel)
+    {
         $this->channel = $channel;
         return $this;
     }
 
     /**
      * setLogFilePath
-     * @param   string $logFilePath
+     * @param string $logFilePath
      * @return  $this
      */
-    public function setLogFilePath($logFilePath) {
+    public function setLogFilePath($logFilePath)
+    {
         $this->logFilePath = $logFilePath;
         return $this;
     }
 
     /**
      * setOutputFormat
-     * @param    string $output
+     * @param string $output
      * @return   $this
      */
-    public function setOutputFormat($output) {
+    public function setOutputFormat($output)
+    {
         $this->output = $output;
         $this->formatter = new LineFormatter($this->output, $dateformat = null);
         return $this;
@@ -88,21 +92,24 @@ class LogHandle {
     /**
      * @return null|string
      */
-    public function getChannel() {
+    public function getChannel()
+    {
         return $this->channel;
     }
 
     /**
      * @return null|string
      */
-    public function getLogFilePath() {
+    public function getLogFilePath()
+    {
         return $this->logFilePath;
     }
 
     /**
      * @return null|string
      */
-    public function getOutputFormat() {
+    public function getOutputFormat()
+    {
         return $this->formatter;
     }
 
@@ -112,7 +119,8 @@ class LogHandle {
      * @param array $context
      * @param bool $enable_continue
      */
-    public function info($logInfo, array $context = [], bool $enable_continue = true) {
+    public function info($logInfo, array $context = [], bool $enable_continue = true)
+    {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::INFO);
     }
 
@@ -123,7 +131,8 @@ class LogHandle {
      * @param bool $enable_continue
      * @param \Throwable
      */
-    public function notice($logInfo, array $context = [], bool $enable_continue = true) {
+    public function notice($logInfo, array $context = [], bool $enable_continue = true)
+    {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::NOTICE);
     }
 
@@ -133,7 +142,8 @@ class LogHandle {
      * @param bool $enable_continue
      * @param array $context
      */
-    public function warning($logInfo, array $context = [], bool $enable_continue = true) {
+    public function warning($logInfo, array $context = [], bool $enable_continue = true)
+    {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::WARNING);
     }
 
@@ -143,7 +153,8 @@ class LogHandle {
      * @param bool $enable_continue
      * @param array $context
      */
-    public function error($logInfo, array $context = [], bool $enable_continue = true) {
+    public function error($logInfo, array $context = [], bool $enable_continue = true)
+    {
         $this->logHandle($logInfo, $context, $enable_continue, Logger::ERROR);
     }
 
@@ -153,16 +164,17 @@ class LogHandle {
      * @param bool $enable_continue
      * @param $logType
      */
-    public function logHandle($logInfo, array $context = [], bool $enable_continue = true, $logType = Logger::ERROR) {
-        try{
-            if($enable_continue) {
-                Coroutine::create(function() use($logInfo, $context, $logType) {
+    public function logHandle($logInfo, array $context = [], bool $enable_continue = true, $logType = Logger::ERROR)
+    {
+        try {
+            if ($enable_continue) {
+                Coroutine::create(function () use ($logInfo, $context, $logType) {
                     $this->insertLog($logInfo, $context, $logType);
                 });
-            }else {
+            } else {
                 $this->insertLog($logInfo, $context, $logType);
             }
-        }catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             $this->insertLog($logInfo, $context, Logger::ERROR);
         }
     }
@@ -172,9 +184,10 @@ class LogHandle {
      * @param $context
      * @param int $type
      */
-    public function insertLog($logInfo, array $context = [], $type = Logger::INFO) {
+    public function insertLog($logInfo, array $context = [], $type = Logger::INFO)
+    {
         try {
-            if(is_array($logInfo)) {
+            if (is_array($logInfo)) {
                 $logInfo = json_encode($logInfo, JSON_UNESCAPED_UNICODE);
             }
             $log = new Logger($this->channel);
@@ -183,7 +196,7 @@ class LogHandle {
             $log->pushHandler($stream);
             // add records to the log
             $log->addRecord($type, $logInfo, $context);
-        }catch (\Throwable $throwable) {
+        } catch (\Throwable $throwable) {
             print_r(sprintf("%s in File %s on Line %d", $throwable->getMessage(), $throwable->getFile(), $throwable->getLine()));
         }
     }

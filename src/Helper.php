@@ -1,4 +1,5 @@
 <?php
+
 namespace Workerfy;
 
 use Workerfy\Exception\InvalidArgumentException;
@@ -52,7 +53,7 @@ class Helper
             } elseif ($param->isDefaultValueAvailable()) {
                 $args[] = $actionParams[$name] = $param->getDefaultValue();
             } else {
-                $missing[] = '--'.$name;
+                $missing[] = '--' . $name;
             }
         }
 
@@ -71,17 +72,15 @@ class Helper
      */
     public static function getCliParams(string $name = '')
     {
-        if($name)
-        {
+        if ($name) {
             $value = @getenv($name);
-            return $value !== false  ? $value : null;
-        }else {
+            return $value !== false ? $value : null;
+        } else {
             $cliParams = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
             $params = [];
-            foreach($cliParams as $param)
-            {
+            foreach ($cliParams as $param) {
                 $value = @getenv($param);
-                if($value !== false) {
+                if ($value !== false) {
                     $params[$param] = $value;
                 }
             }
@@ -98,29 +97,23 @@ class Helper
     {
         $memoryNum = memory_get_usage($real_usage);
         $format = 'bytes';
-        if($format_flag)
-        {
-            if($memoryNum > 0 && $memoryNum < 1024)
-            {
+        if ($format_flag) {
+            if ($memoryNum > 0 && $memoryNum < 1024) {
                 return number_format($memoryNum) . ' ' . $format;
             }
-            if($memoryNum >= 1024 && $memoryNum < pow(1024, 2))
-            {
+            if ($memoryNum >= 1024 && $memoryNum < pow(1024, 2)) {
                 $p = 1;
                 $format = 'KB';
             }
-            if($memoryNum >= pow(1024, 2) && $memoryNum < pow(1024, 3))
-            {
+            if ($memoryNum >= pow(1024, 2) && $memoryNum < pow(1024, 3)) {
                 $p = 2;
                 $format = 'MB';
             }
-            if($memoryNum >= pow(1024, 3) && $memoryNum < pow(1024, 4))
-            {
+            if ($memoryNum >= pow(1024, 3) && $memoryNum < pow(1024, 4)) {
                 $p = 3;
                 $format = 'GB';
             }
-            if($memoryNum >= pow(1024, 4) && $memoryNum < pow(1024, 5))
-            {
+            if ($memoryNum >= pow(1024, 4) && $memoryNum < pow(1024, 5)) {
                 $p = 3;
                 $format = 'TB';
             }

@@ -1,12 +1,12 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Coroutine;
@@ -14,7 +14,8 @@ namespace Workerfy\Coroutine;
 use Swoole\Coroutine;
 use Workerfy\AbstractProcess;
 
-class GoCoroutine {
+class GoCoroutine
+{
 
     /**
      * @return mixed
@@ -28,28 +29,23 @@ class GoCoroutine {
      * @param callable $callback
      * @throws Throwable
      */
-    public static function go(callable $callback, ...$params) {
+    public static function go(callable $callback, ...$params)
+    {
         $exception = '';
-        Coroutine::create(function(...$params) use($callback, &$exception)
-        {
-            try
-            {
+        Coroutine::create(function (...$params) use ($callback, &$exception) {
+            try {
                 call_user_func($callback, ...$params);
-            }catch(\Throwable $throwable)
-            {
+            } catch (\Throwable $throwable) {
                 $processInstance = AbstractProcess::getProcessInstance();
-                if($processInstance instanceof AbstractProcess)
-                {
+                if ($processInstance instanceof AbstractProcess) {
                     AbstractProcess::getProcessInstance()->onHandleException($throwable);
-                }else
-                {
+                } else {
                     $exception = $throwable;
                 }
             }
         }, ...$params);
 
-        if($exception instanceof \Throwable)
-        {
+        if ($exception instanceof \Throwable) {
             throw $exception;
         }
     }
@@ -58,7 +54,8 @@ class GoCoroutine {
      * @param callable $callback
      * @return void
      */
-    public static function create(callable $callback, ...$params) {
+    public static function create(callable $callback, ...$params)
+    {
         self::go($callback, ...$params);
     }
 

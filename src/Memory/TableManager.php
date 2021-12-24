@@ -1,17 +1,18 @@
 <?php
 /**
-+----------------------------------------------------------------------
-| Daemon and Cli model about php process worker
-+----------------------------------------------------------------------
-| Licensed ( https://opensource.org/licenses/MIT )
-+----------------------------------------------------------------------
-| Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
-+----------------------------------------------------------------------
+ * +----------------------------------------------------------------------
+ * | Daemon and Cli model about php process worker
+ * +----------------------------------------------------------------------
+ * | Licensed ( https://opensource.org/licenses/MIT )
+ * +----------------------------------------------------------------------
+ * | Author: bingcool <bingcoolhuang@gmail.com || 2437667702@qq.com>
+ * +----------------------------------------------------------------------
  */
 
 namespace Workerfy\Memory;
 
-class TableManager {
+class TableManager
+{
 
     use \Workerfy\Traits\SingletonTrait;
 
@@ -24,27 +25,25 @@ class TableManager {
      * @param string $table_name
      * @param array $setting
      * [
-        // 每个内存表建立的行数
-        'size' => 4,
-        'conflict_proportion' => 0.2,
-        // 字段
-        'fields'=> [
-            ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
-        ]
-     ]
+     * // 每个内存表建立的行数
+     * 'size' => 4,
+     * 'conflict_proportion' => 0.2,
+     * // 字段
+     * 'fields'=> [
+     * ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
+     * ]
+     * ]
      * @throws \Exception
      */
-    public function addTable(string $table_name, array $setting) {
-        if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table)
-        {
+    public function addTable(string $table_name, array $setting)
+    {
+        if (isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {
             return $this->swooleTables[$table_name];
         }
 
-        if(isset($setting['fields']) && is_array($setting['fields']))
-        {
+        if (isset($setting['fields']) && is_array($setting['fields'])) {
             $fields = $setting['fields'];
-        }else
-        {
+        } else {
             throw new \Exception('Swoole table fields is not setting');
         }
 
@@ -69,10 +68,10 @@ class TableManager {
      * @param array $fields
      * @return \Swoole\Table
      */
-    private function setTableColumn(\Swoole\Table $table, array $fields) {
-        foreach($fields  as $field) {
-            switch (strtolower($field[1]))
-            {
+    private function setTableColumn(\Swoole\Table $table, array $fields)
+    {
+        foreach ($fields as $field) {
+            switch (strtolower($field[1])) {
                 case 'int':
                 case \Swoole\Table::TYPE_INT:
                     $table->column($field[0], \Swoole\Table::TYPE_INT, (int)$field[2]);
@@ -94,9 +93,9 @@ class TableManager {
      * @param string $table_name
      * @return mixed
      */
-    public function getTable(string $table_name) {
-        if(isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table)
-        {
+    public function getTable(string $table_name)
+    {
+        if (isset($this->swooleTables[$table_name]) && $this->swooleTables[$table_name] instanceof \Swoole\Table) {
             return $this->swooleTables[$table_name];
         }
         return null;
@@ -106,10 +105,10 @@ class TableManager {
      * 获取管理定义的table_name
      * @return array
      */
-    public function getAllTableName() {
+    public function getAllTableName()
+    {
         $tableNames = [];
-        if(isset($this->swooleTables) && !empty($this->swooleTables))
-        {
+        if (isset($this->swooleTables) && !empty($this->swooleTables)) {
             $tableNames = array_keys($this->swooleTables);
         }
         return $tableNames;
@@ -119,11 +118,11 @@ class TableManager {
      * getAllTableKeyMapRowValue 获取所有table的key和value信息
      * @return array
      */
-    public function getAllTableKeyMapRowValue() {
+    public function getAllTableKeyMapRowValue()
+    {
         $tableInfos = [];
         $tableNames = $this->getAllTableName();
-        foreach($tableNames as $tableName)
-        {
+        foreach ($tableNames as $tableName) {
             $tableInfos[$tableName] = $this->getKeyMapRowValue($tableName);
         }
         return $tableInfos;
@@ -133,10 +132,10 @@ class TableManager {
      * @param string $table_name
      * @return mixed
      */
-    public function getTableSetting(string $table_name) {
+    public function getTableSetting(string $table_name)
+    {
         $table = $this->getTable($table_name);
-        if(isset($table) && is_object($table) && isset($table->setting))
-        {
+        if (isset($table) && is_object($table) && isset($table->setting)) {
             return $table->setting;
         }
     }
@@ -146,10 +145,10 @@ class TableManager {
      * @param string $table_name
      * @return mixed
      */
-    public function getTableMemory(string $table_name) {
+    public function getTableMemory(string $table_name)
+    {
         $table = $this->getTable($table_name);
-        if(isset($table) && is_object($table) && isset($table->memorySize))
-        {
+        if (isset($table) && is_object($table) && isset($table->memorySize)) {
             return $table->memorySize;
         }
         return 0;
@@ -160,25 +159,23 @@ class TableManager {
      * @param string $table_name
      * @return array 返回格式 = [$size, $memory, $setting]
      */
-    public function getTableInfo(string $table_name) {
+    public function getTableInfo(string $table_name)
+    {
         $info = [];
         $table = $this->getTable($table_name);
-        if(isset($table->size))
-        {
+        if (isset($table->size)) {
             array_push($info, $table->size);
         }
 
-        if(isset($table->memorySize))
-        {
+        if (isset($table->memorySize)) {
             array_push($info, $table->memorySize);
-        }else {
+        } else {
             array_push($info, 0);
         }
 
-        if(isset($table->setting))
-        {
+        if (isset($table->setting)) {
             array_push($info, $table->setting);
-        }else {
+        } else {
             array_push($info, []);
         }
 
@@ -190,17 +187,15 @@ class TableManager {
      * @param string $table
      * @return array
      */
-    public function getTableKeys(string $table) {
+    public function getTableKeys(string $table)
+    {
         $keys = [];
-        if(is_string($table))
-        {
+        if (is_string($table)) {
             $tableName = $table;
             $table = $this->getTable($tableName);
         }
-        if(is_object($table) && $table instanceof \Swoole\Table)
-        {
-            foreach ($table as $key => $item)
-            {
+        if (is_object($table) && $table instanceof \Swoole\Table) {
+            foreach ($table as $key => $item) {
                 array_push($keys, $key);
             }
         }
@@ -212,17 +207,15 @@ class TableManager {
      * @param string $table
      * @return array
      */
-    public function getKeyMapRowValue(string $table) {
+    public function getKeyMapRowValue(string $table)
+    {
         $tableRows = [];
-        if(is_string($table))
-        {
+        if (is_string($table)) {
             $table_name = $table;
             $table = $this->getTable($table_name);
         }
-        if(is_object($table) && $table instanceof \Swoole\Table)
-        {
-            foreach ($table as $key => $item)
-            {
+        if (is_object($table) && $table instanceof \Swoole\Table) {
+            foreach ($table as $key => $item) {
                 $tableRows[$key] = $item;
             }
         }

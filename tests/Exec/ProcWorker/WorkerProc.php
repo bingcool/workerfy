@@ -16,7 +16,7 @@ class WorkerProc extends \Workerfy\AbstractProcess {
             try{
                 if($runner->isNextHandle())
                 {
-                    var_dump('procOpen next');
+                    //var_dump('procOpen next');
                     // $runner can do next item
                     // 可以处理下一个的时候才从mq里面取出数据来消费，否则不要取数据
                     // todo
@@ -37,7 +37,7 @@ class WorkerProc extends \Workerfy\AbstractProcess {
             {
                 $this->onHandleException($e);
             }
-            var_dump('proc end');
+            //var_dump('proc end');
         }
 
     }
