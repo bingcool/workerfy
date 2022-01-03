@@ -115,8 +115,8 @@ class CrontabManager
             $channel = $this->channelLoop($cron_name, $expression, $func, $msec);
             return $channel;
         } else {
-            $timer_id = $this->tickLoop($cron_name, $expression, $func, $msec);
-            return $timer_id;
+            $timerId = $this->tickLoop($cron_name, $expression, $func, $msec);
+            return $timerId;
         }
 
     }
@@ -242,7 +242,7 @@ class CrontabManager
 
     /**
      * @param string $cron_name
-     * @return mixed|null
+     * @return \Swoole\Coroutine\Channel|null
      */
     public function getChannelByName(string $cron_name)
     {

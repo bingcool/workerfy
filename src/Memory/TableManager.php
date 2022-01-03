@@ -24,6 +24,7 @@ class TableManager
     /**
      * @param string $table_name
      * @param array $setting
+     * @return \Swoole\Table
      * [
      * // 每个内存表建立的行数
      * 'size' => 4,
@@ -91,7 +92,7 @@ class TableManager
 
     /**
      * @param string $table_name
-     * @return mixed
+     * @return \Swoole\Table
      */
     public function getTable(string $table_name)
     {

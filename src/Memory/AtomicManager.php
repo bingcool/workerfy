@@ -40,7 +40,7 @@ class AtomicManager
      * addAtomic
      * @param string $atomic_name
      * @param int $init_value
-     * @return mixed
+     * @return \Swoole\Atomic
      */
     public function addAtomic(string $atomic_name, int $init_value = 0)
     {
@@ -55,7 +55,7 @@ class AtomicManager
      * addAtomicLong
      * @param string $atomic_name
      * @param int|integer $init_value
-     * @return mixed
+     * @return \Swoole\Atomic\Long
      */
     public function addAtomicLong(string $atomic_name, int $init_value = 0)
     {
@@ -69,7 +69,7 @@ class AtomicManager
     /**
      * getAtomic
      * @param string $atomic_name
-     * @return mixed
+     * @return \Swoole\Atomic
      */
     public function getAtomic(string $atomic_name)
     {
@@ -79,7 +79,7 @@ class AtomicManager
     /**
      * getAtomicLong
      * @param string $atomic_name
-     * @return mixed
+     * @return \Swoole\Atomic\Long
      */
     public function getAtomicLong(string $atomic_name)
     {
