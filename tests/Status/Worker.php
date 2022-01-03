@@ -5,7 +5,9 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function init()
     {
-
+        //var_dump(swoole_get_vm_status());
+        $isMethod = method_exists(static::class,'test');
+        var_dump($isMethod);
     }
 
     public function run() {
@@ -60,5 +62,10 @@ class Worker extends \Workerfy\AbstractProcess {
     public function __destruct()
     {
         var_dump("destruct");
+    }
+
+    private function test()
+    {
+
     }
 }
