@@ -26,13 +26,13 @@ class TableManager
      * @param array $setting
      * @return \Swoole\Table
      * [
-     * // 每个内存表建立的行数
-     * 'size' => 4,
-     * 'conflict_proportion' => 0.2,
-     * // 字段
-     * 'fields'=> [
-     * ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
-     * ]
+     *      // 每个内存表建立的行数
+     *      'size' => 4,
+     *      'conflict_proportion' => 0.2,
+     *      // 字段
+     *      'fields'=> [
+     *          ['tick_tasks', \Swoole\Table::TYPE_STRING, 8096]
+     *      ]
      * ]
      * @throws \Exception
      */
