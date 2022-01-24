@@ -30,7 +30,7 @@
     "ext-redis": "*",
     "ext-pdo": "*",
     "ext-curl": "*",
-    "dragonmantank/cron-expression" : "2.3.0",
+    "dragonmantank/cron-expression" : "*",
     "bingcool/library": "dev-master",
     "malkusch/lock": "dev-master"
   },

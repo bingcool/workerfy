@@ -36,7 +36,7 @@ class ProcessManager
     /**
      * @var array
      */
-    protected $default_coroutine_setting = [
+    protected $defaultCoroutineSetting = [
         'enable_deadlock_check' => false
     ];
 
@@ -170,7 +170,7 @@ class ProcessManager
     public function __construct(array $config = [], ...$args)
     {
         $this->config = $config;
-        $this->setCoroutineSetting(array_merge($this->default_coroutine_setting, $config['coroutine_setting'] ?? []));
+        $this->setCoroutineSetting(array_merge($this->defaultCoroutineSetting, $config['coroutine_setting'] ?? []));
         $this->registerRuntimeLog();
         $this->onHandleException = function (\Throwable $e) {
             $logger = \Workerfy\Log\LogManager::getInstance()->getLogger(\Workerfy\Log\LogManager::RUNTIME_ERROR_TYPE);
@@ -999,7 +999,7 @@ class ProcessManager
                 ]);
             } else {
                 /**
-                 * 4.6 Async Event、Timer、Process::signal moveto Swoole\Async library
+                 * 4.6 Async AbstractEventHandle、Timer、Process::signal moveto Swoole\Async library
                  */
                 $isSetFlag = false;
                 if (class_exists('Swoole\Async')) {
