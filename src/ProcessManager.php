@@ -352,7 +352,7 @@ class ProcessManager
     {
         if (!$this->isDaemon) {
             // Ctrl+C 退出，master如果使用了协程，可能会出现Segmentation fault，因为是在退出阶段，对业务影响不大，可以忽略
-            \Swoole\Process::signal(SIGINT, $this->signalHandle());
+            \Swoole\Process::signal(SIGHUP, $this->signalHandle());
             return;
         }
         \Swoole\Process::signal(SIGTERM, $this->signalHandle());
@@ -367,6 +367,7 @@ class ProcessManager
         return function ($signal) {
             switch ($signal) {
                 case SIGINT:
+                case SIGHUP:
                 case SIGTERM:
                     if (!$this->isExit) {
                         $this->isExit = true;

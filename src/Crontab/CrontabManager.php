@@ -132,7 +132,7 @@ class CrontabManager
     {
         $channel = new \Swoole\Coroutine\Channel(1);
         GoCoroutine::go(function ($cron_name, $expression, $func, $msec) use ($channel) {
-            if (is_array($func)) {
+            if (is_callable($func)) {
                 $timerId = \Swoole\Timer::tick($msec, $func, $expression);
             } else {
                 $timerId = \Swoole\Timer::tick($msec, function ($timer_id, $expression, $cron_name) use ($func) {
