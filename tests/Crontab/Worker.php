@@ -1,6 +1,7 @@
 <?php
 namespace Workerfy\Tests\Crontab;
 
+use Swoole\Timer;
 use Workerfy\Crontab\CrontabManager;
 use Workerfy\Exception\CrontabException;
 use Workerfy\ProcessManager;

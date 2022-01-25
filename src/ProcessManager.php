@@ -11,6 +11,7 @@
 
 namespace Workerfy;
 
+use Workerfy\Traits;
 use Workerfy\Log\LogManager;
 use Workerfy\Memory\TableManager;
 use Workerfy\Memory\SysvmsgManager;
@@ -26,7 +27,7 @@ use Workerfy\Exception\UserTriggerException;
 class ProcessManager
 {
 
-    use \Workerfy\Traits\SingletonTrait;
+    use Traits\SingletonTrait, Traits\SystemTrait;
 
     /**
      * @var array
@@ -989,37 +990,7 @@ class ProcessManager
         }
         // 必须设置不使用协程，否则master进程存在异步IO,后面子进程reboot()时
         //出现unable to create Swoole\Process with async-io threads
-        if (version_compare(swoole_version(), '4.6.0', '<')) {
-            \Swoole\Timer::set([
-                'enable_coroutine' => false,
-            ]);
-        } else {
-            if (function_exists('swoole_async_set')) {
-                swoole_async_set([
-                    'enable_coroutine' => false,
-                ]);
-            } else {
-                /**
-                 * 4.6 Async AbstractEventHandle、Timer、Process::signal moveto Swoole\Async library
-                 */
-                $isSetFlag = false;
-                if (class_exists('Swoole\Async')) {
-                    \Swoole\Async::set([
-                        'enable_coroutine' => false,
-                    ]);
-                    $isSetFlag = true;
-                }
-
-                if (!$isSetFlag) {
-                    if (method_exists('Swoole\Timer', 'set')) {
-                        @\Swoole\Timer::set([
-                            'enable_coroutine' => false,
-                        ]);
-                    }
-                }
-            }
-
-        }
+        $this->resetAsyncCoroutine(false);
 
         $timerId = \Swoole\Timer::tick($tickTime * 1000, function ($timer_id) {
             try {
