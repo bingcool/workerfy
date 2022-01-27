@@ -73,8 +73,6 @@ class Worker extends AbstractProcess {
 
         sleep(3);
         var_dump("jjjjjjjjjjjj");
-
-
     }
 
 }

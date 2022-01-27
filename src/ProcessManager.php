@@ -524,9 +524,19 @@ class ProcessManager
                                 unset($this->processWorkers[$key]);
                             }
                         }
+                        \Swoole\Event::del($process->getSwooleProcess()->pipe);
                         if (count($this->processWorkers) == 0) {
                             $this->saveStatusToFile();
-                            exit(0);
+                            $masterPid = $this->getMasterPid();
+                            if(!\Swoole\Process::kill($masterPid, 0)) {
+                                $masterPid = posix_getpid();
+                            }
+                            if(version_compare(phpversion(), '8.0.0', '>=')) {
+                                @\Swoole\Process::kill($masterPid, SIGKILL);
+                                exit(0);
+                            }else {
+                                exit(0);
+                            }
                         }
                         break;
                     // reboot
