@@ -129,7 +129,7 @@ function start($cli_params)
         }
     }
     setCliParamsEnv($cli_params);
-    write_info("【Info】Master && Children Process ready to start, please wait a time ......", 'green');
+    write_info("【Info】Master && Children Process ready to start, please wait a time ......", 'light_green');
 }
 
 function stop($cli_params)
@@ -151,7 +151,7 @@ function stop($cli_params)
             $res = \Swoole\Process::kill($masterPid, SIGTERM);
         }
         if ($res) {
-            write_info("【Info】Master and Children Process start to stop, please wait a time", 'green');
+            write_info("【Info】Master and Children Process start to stop, please wait a time", 'light_green');
         }
         $startStopTime = time();
         while (\Swoole\Process::kill($masterPid, 0)) {
@@ -164,7 +164,7 @@ function stop($cli_params)
         if (\Swoole\Process::kill($masterPid, 0)) {
             \Swoole\Process::kill($masterPid, SIGKILL);
         }
-        write_info("【Info】Master and Children Process has stopped", 'green');
+        write_info("【Info】Master and Children Process has stopped", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} is not exist");
     }
@@ -186,7 +186,7 @@ function reload($cli_params)
     if (\Swoole\Process::kill($masterPid, 0)) {
         $res = \Swoole\Process::kill($masterPid, SIGUSR2);
         if ($res) {
-            write_info("【Info】Children Process start to reload, please wait a time", 'green');
+            write_info("【Info】Children Process start to reload, please wait a time", 'light_green');
         }
         $startStopTime = time();
         while (\Swoole\Process::kill($masterPid, 0)) {
@@ -204,7 +204,9 @@ function reload($cli_params)
 
 function restart($cli_params)
 {
-    print_r("Are you sure you want to restart process use daemon model? (yes or no):");
+    $colors = new \Workerfy\EachColor();
+    echo PHP_EOL;
+    echo $colors->getColoredString('Are you sure you want to restart process use daemon model? (yes or no):', $foreground = "red", $background = "black");
     $handle = fopen("php://stdin", "r");
     $line = fgets($handle);
     if (trim($line) != 'yes') {
@@ -224,7 +226,7 @@ function restart($cli_params)
     if (\Swoole\Process::kill($masterPid, 0)) {
         $res = \Swoole\Process::kill($masterPid, SIGKILL);
         if ($res) {
-            write_info("【Info】Master and Children Process start to stop, please wait a time", 'green');
+            write_info("【Info】Master and Children Process start to stop, please wait a time", 'light_green');
         }
         $startStopTime = time();
         while (\Swoole\Process::kill($masterPid, 0)) {
@@ -233,7 +235,7 @@ function restart($cli_params)
             }
             sleep(1);
         }
-        write_info("【Info】Master and Children Process has stopped", 'green');
+        write_info("【Info】Master and Children Process has stopped", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} not exist");
         exit;
@@ -241,7 +243,7 @@ function restart($cli_params)
     // restart must daemon model
     putenv('daemon=1');
     setCliParamsEnv($cli_params);
-    write_info("【Info】Master and Children Process ready to restart, please wait a time", 'green');
+    write_info("【Info】Master and Children Process ready to restart, please wait a time", 'light_green');
 }
 
 function status($cli_params)
@@ -283,7 +285,7 @@ function status($cli_params)
 
     \Swoole\Event::add($ctlPipe, function () use ($ctlPipe) {
         $msg = fread($ctlPipe, 8192);
-        write_info($msg, 'green');
+        write_info($msg, 'light_green');
         \Swoole\Event::exit();
     });
     sleep(1);
@@ -325,7 +327,7 @@ function pipe($cli_params)
 
     $msg = $cli_params['msg'] ?? '';
     if ($msg) {
-        write_info("【Info】Start write msg={$msg} to master", 'green');
+        write_info("【Info】Start write msg={$msg} to master", 'light_green');
         fwrite($pipe, $msg);
     } else {
         fclose($pipe);
@@ -368,7 +370,7 @@ function add($cli_params, int $wait_time = 3)
     $num = $cli_params['num'] ?? 1;
     $pipeMsg = json_encode([CLI_ADD, $name, $num], JSON_UNESCAPED_UNICODE);
     if ($name) {
-        write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)", 'green');
+        write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)", 'light_green');
         fwrite($pipe, $pipeMsg);
     } else {
         write_info("【Warning】 Please use: add --name=xxxxx --num=1");
@@ -413,7 +415,7 @@ function remove($cli_params, int $wait_time = 3)
     $num = $cli_params['num'] ?? 1;
     $pipeMsg = json_encode([CLI_REMOVE, $name, $num], JSON_UNESCAPED_UNICODE);
     if (isset($name)) {
-        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)", 'green');
+        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)", 'light_green');
         fwrite($pipe, $pipeMsg);
     } else {
         write_info("【Warning】 Please use: remove --name=xxxxx");
@@ -487,12 +489,15 @@ function setCliParamsEnv($cli_params)
  * @param string $foreground
  * @param string $background
  */
-function write_info($msg, $foreground = "red", $background = "black")
+function write_info($msg, $foreground = "red", $background = 'black')
 {
     // Create new Colors class
     static $colors;
     if (!isset($colors)) {
         $colors = new \Workerfy\EachColor();
+    }
+    if($foreground == 'green') {
+        $foreground = 'light_green';
     }
     $formatMsg = "--------------{$msg} --------------";
     echo $colors->getColoredString($formatMsg, $foreground, $background) . "\n\n";
@@ -507,7 +512,7 @@ function write_info($msg, $foreground = "red", $background = "black")
         }
         $logFd = fopen(CTL_LOG_FILE, 'a+');
         $date = date("Y-m-d H:i:s");
-        $writeMsg = "【{$date}】" . $msg . "\n\r";
+        $writeMsg = "【{$date}】" . $msg . "\n\n";
         fwrite($logFd, $writeMsg);
         fclose($logFd);
     }

@@ -188,12 +188,21 @@ class ActionHandle
      */
     private $response;
 
+    /**
+     * @param $request
+     * @param $response
+     */
     public function __construct($request, $response)
     {
         $this->request = $request;
         $this->response = $response;
     }
 
+    /**
+     * @param string|null $username
+     * @param string|null $password
+     * @return bool
+     */
     public function basicAuth(string $username = null, string $password = null)
     {
         $isPass = true;
@@ -215,6 +224,11 @@ class ActionHandle
 
     }
 
+    /**
+     * @param string|null $username
+     * @param string|null $password
+     * @return array|null[]
+     */
     public function basicAuthCredentials(string $username = null, string $password = null)
     {
         return $this->getBasicAuthCredentials();
@@ -251,18 +265,30 @@ class ActionHandle
         return explode(':', $decoded, 2);
     }
 
+    /**
+     * @param string $command
+     * @return mixed
+     */
     public function startProcess(string $command)
     {
         $ret = \Swoole\Coroutine\System::exec($command);
         return $ret;
     }
 
+    /**
+     * @param string $command
+     * @return mixed
+     */
     public function stopProcess(string $command)
     {
         $ret = \Swoole\Coroutine\System::exec($command);
         return $ret;
     }
 
+    /**
+     * @param string $pid_filename
+     * @return false|string
+     */
     public function processStatus(string $pid_filename)
     {
         $status_msg = '{}';
@@ -273,6 +299,10 @@ class ActionHandle
         return $status_msg;
     }
 
+    /**
+     * @param string $pid_filename
+     * @return bool
+     */
     public function isRunning(string $pid_filename)
     {
         $pid_file_path = $this->getPidFile($pid_filename);
@@ -293,6 +323,11 @@ class ActionHandle
         return $isRunning;
     }
 
+    /**
+     * @param string $pid_filename
+     * @param int $n
+     * @return array|false
+     */
     public function showLog(string $pid_filename, int $n = 100)
     {
         $ctl_log_file_path = $this->getCtlLogFile($pid_filename);
@@ -300,12 +335,20 @@ class ActionHandle
         return $line_contents;
     }
 
+    /**
+     * @param string $script_filename
+     * @return string
+     */
     public function getStartScriptFile(string $script_filename)
     {
         $start_script_file_path = rtrim(PROJECT_ROOT, '/') . '/' . trim($script_filename);
         return $start_script_file_path;
     }
 
+    /**
+     * @param string $pid_filename
+     * @return string
+     */
     public function getCtlLogFile(string $pid_filename)
     {
         list($dir,) = explode('/', $pid_filename);
@@ -313,6 +356,10 @@ class ActionHandle
         return $ctl_log_file_path;
     }
 
+    /**
+     * @param string $pid_filename
+     * @return string
+     */
     public function getPidFile(string $pid_filename)
     {
         $pid_filename = str_replace('.pid', '.pid', $pid_filename);
@@ -320,6 +367,10 @@ class ActionHandle
         return $pid_file_path;
     }
 
+    /**
+     * @param string $pid_filename
+     * @return string
+     */
     public function getStatusFile(string $pid_filename)
     {
         $pid_filename = str_replace('.pid', '.status', $pid_filename);
@@ -327,6 +378,10 @@ class ActionHandle
         return $status_file_path;
     }
 
+    /**
+     * @param $params
+     * @return string
+     */
     public function parseParams($params)
     {
         $env_params = '';
@@ -340,6 +395,11 @@ class ActionHandle
         return $env_params;
     }
 
+    /**
+     * @param string $filename
+     * @param int $count
+     * @return array|false
+     */
     public function getLastLines(string $filename, int $count = 100)
     {
         if (!file_exists($filename) || !$fp = fopen($filename, 'r')) {
@@ -371,6 +431,11 @@ class ActionHandle
         return array_filter($line_contents);
     }
 
+    /**
+     * @param int $ret
+     * @param string $msg
+     * @param array $data
+     */
     public function returnJson($ret = 0, $msg = '', $data = [])
     {
         $result = [
