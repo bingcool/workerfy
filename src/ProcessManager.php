@@ -373,12 +373,12 @@ class ProcessManager
                     if (!$this->isExit) {
                         $this->isExit = true;
                         foreach ($this->processWorkers as $key => $processes) {
-                            foreach ($processes as $worker_id => $process) {
+                            foreach ($processes as $workerId => $process) {
                                 try {
-                                    $process_name = $process->getProcessName();
-                                    $this->writeByProcessName($process_name, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $worker_id);
+                                    $processName = $process->getProcessName();
+                                    $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $workerId);
                                 } catch (\Throwable $exception) {
-                                    write_info("【Error】Master handle Signal (SIGINT,SIGTERM) error Process={$process_name},worker_id={$worker_id} exit failed, error=" . $exception->getMessage());
+                                    write_info("【Error】Master handle Signal (SIGINT,SIGTERM) error Process={$processName},worker_id={$workerId} exit failed, error=" . $exception->getMessage());
                                 }
                             }
                         }

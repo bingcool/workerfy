@@ -1,5 +1,7 @@
 <?php
-
+/**
+ * control process start、stop、reload、 status of http api
+ */
 //defined('USER_NAME') or define('USER_NAME', 'workerfy');
 //defined('PASSWORD') or define('PASSWORD', '123456');
 
@@ -17,23 +19,32 @@ define('PID_FILE_ROOT', PID_ROOT);
 //日志错误目录
 define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 
-$http = new Swoole\Http\Server("*", 9502, SWOOLE_PROCESS);
+$http = new Swoole\Http\Server("*", 9509, SWOOLE_PROCESS);
 
-$http->set([
-    'worker_num' => 1,
+$setting = [
+    'worker_num' => 5,
     'max_request' => 10000
-]);
+];
+
+$daemon = $_SERVER['argv'][1] ?? '';
+if(in_array($daemon, ['-d', '-D'])) {
+    $setting['daemonize'] = 1;
+}else {
+    $setting['daemonize'] = 0;
+}
+
+$http->set($setting);
 
 $http->on('start', function ($server) {
-    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-master-process');
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-master-supervisor');
 });
 
 $http->on('managerStart', function ($server) {
-    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-manager-process');
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-manager-supervisor');
 });
 
 $http->on('workerStart', function ($server, int $worker_id) {
-    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-worker-process@' . $worker_id);
+    (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-worker-supervisor@' . $worker_id);
 });
 
 $http->on('request', function ($request, $response) use ($http) {

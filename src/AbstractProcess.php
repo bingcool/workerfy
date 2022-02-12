@@ -355,49 +355,14 @@ abstract class AbstractProcess
 
             // exit
             Process::signal(SIGTERM, function ($signo) {
-                try {
-                    if (method_exists($this, '__destruct') && (version_compare(swoole_version(), '4.6.0', '<'))) {
-                        $this->__destruct();
-                    }
-                    $this->writeStopFormatInfo();
-                    // clear
-                    if ($this->masterLiveTimerId) {
-                        @\Swoole\Timer::clear($this->masterLiveTimerId);
-                    }
-                    $processName = $this->getProcessName();
-                    $workerId = $this->getProcessWorkerId();
-                    write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
-                } catch (\Throwable $throwable) {
-                    write_info("【Error】Exit error, Process={$processName}, error:" . $throwable->getMessage());
-                } finally {
-                    Event::del($this->swooleProcess->pipe);
-                    Event::exit();
-                    $this->swooleProcess->exit(SIGTERM);
-                }
+                $function = $this->exitSingleHandle($signo);
+                $function();
             });
 
             // reboot
             Process::signal(SIGUSR1, function ($signo) {
-                // clear
-                try {
-                    // destroy
-                    if (method_exists($this, '__destruct')) {
-                        $this->__destruct();
-                    }
-
-                    if ($this->masterLiveTimerId) {
-                        @\Swoole\Timer::clear($this->masterLiveTimerId);
-                    }
-                    $processName = $this->getProcessName();
-                    $workerId = $this->getProcessWorkerId();
-                    write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
-                } catch (\Throwable $throwable) {
-                    write_info("【Error】Reboot error, Process={$processName}, error:" . $throwable->getMessage());
-                } finally {
-                    Event::del($this->swooleProcess->pipe);
-                    Event::exit();
-                    $this->swooleProcess->exit(SIGUSR1);
-                }
+                $function = $this->rebootSingleHandle();
+                $function();
             });
 
             $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timer_id) {
@@ -425,7 +390,7 @@ abstract class AbstractProcess
 
             try {
                 $targetAction = 'init';
-                if (method_exists($this, $targetAction)) {
+                if (method_exists(static::class, $targetAction)) {
                     // init() method will accept cli params from cli,as --sleep=5 --name=bing
                     list($method, $args) = Helper::parseActionParams($this, $targetAction, Helper::getCliParams());
                     $this->cliInitParams = $args;
@@ -433,7 +398,7 @@ abstract class AbstractProcess
                 }
 
                 // reboot after handle can do send or record msg log or report msg
-                if ($this->getRebootCount() > 0 && method_exists($this, 'afterReboot')) {
+                if ($this->getRebootCount() > 0 && method_exists(static::class, 'afterReboot')) {
                     $this->afterReboot();
                 }
 
@@ -448,10 +413,69 @@ abstract class AbstractProcess
     }
 
     /**
+     * @param int $signo
+     * @return \Closure
+     */
+    private function exitSingleHandle(int $signo)
+    {
+        return function() use($signo){
+            try {
+                if (method_exists(static::class, '__destruct')) {
+                    $this->__destruct();
+                }
+                $this->writeStopFormatInfo();
+                // clear
+                if ($this->masterLiveTimerId) {
+                    @\Swoole\Timer::clear($this->masterLiveTimerId);
+                }
+                $processName = $this->getProcessName();
+                $workerId = $this->getProcessWorkerId();
+                write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
+            } catch (\Throwable $throwable) {
+                write_info("【Error】Exit error, Process={$processName}, error:" . $throwable->getMessage());
+            } finally {
+                Event::del($this->swooleProcess->pipe);
+                Event::exit();
+                $this->swooleProcess->exit($signo);
+            }
+        };
+    }
+
+    /**
+     *
+     * @param int $signo 信号为用户自定义user1信号
+     * @return \Closure
+     */
+    private function rebootSingleHandle()
+    {
+        return function () {
+            try {
+                // destroy
+                if (method_exists(static::class, '__destruct')) {
+                    $this->__destruct();
+                }
+
+                if ($this->masterLiveTimerId) {
+                    @\Swoole\Timer::clear($this->masterLiveTimerId);
+                }
+                $processName = $this->getProcessName();
+                $workerId = $this->getProcessWorkerId();
+                write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
+            } catch (\Throwable $throwable) {
+                write_info("【Error】Reboot error, Process={$processName}, error:" . $throwable->getMessage());
+            } finally {
+                Event::del($this->swooleProcess->pipe);
+                Event::exit();
+                $this->swooleProcess->exit(SIGUSR1);
+            }
+        };
+    }
+
+    /**
      * installErrorHandler
      * @return void
      */
-    public function installErrorHandler()
+    protected function installErrorHandler()
     {
         set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
             switch ($errNo) {
@@ -1087,7 +1111,14 @@ abstract class AbstractProcess
     public function kill($pid, $signal)
     {
         if (Process::kill($pid, 0)) {
-            Process::kill($pid, $signal);
+            // force exit
+            if($signal === SIGKILL) {
+                $function = $this->exitSingleHandle($signal);
+                $function();
+            }else {
+                Process::kill($pid, $signal);
+            }
+
         }
     }
 
