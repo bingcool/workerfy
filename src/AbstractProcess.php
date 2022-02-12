@@ -420,7 +420,7 @@ abstract class AbstractProcess
     {
         return function() use($signo){
             try {
-                if (method_exists(static::class, '__destruct')) {
+                if (method_exists(static::class, '__destruct') && version_compare(phpversion(), '8.0.0', '>=')) {
                     $this->__destruct();
                 }
                 $this->writeStopFormatInfo();
@@ -451,7 +451,7 @@ abstract class AbstractProcess
         return function () {
             try {
                 // destroy
-                if (method_exists(static::class, '__destruct')) {
+                if (method_exists(static::class, '__destruct') && version_compare(phpversion(), '8.0.0', '>=') ) {
                     $this->__destruct();
                 }
 
