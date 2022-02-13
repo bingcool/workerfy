@@ -274,6 +274,7 @@ abstract class AbstractProcess
             $this->coroutineId = \Swoole\Coroutine::getCid();
             @Process::signal(SIGUSR2, null);
             $this->setUserAndGroup();
+            $this->installRegisterShutdownFunction();
             $this->installErrorHandler();
             if ($this->async) {
                 Event::add($this->swooleProcess->pipe, function () {
@@ -420,14 +421,9 @@ abstract class AbstractProcess
     {
         return function() use($signo){
             try {
-                if (method_exists(static::class, '__destruct') && version_compare(phpversion(), '8.0.0', '>=')) {
-                    $this->__destruct();
-                }
+                // destroy
+                $this->exitAndRebootDefer();
                 $this->writeStopFormatInfo();
-                // clear
-                if ($this->masterLiveTimerId) {
-                    @\Swoole\Timer::clear($this->masterLiveTimerId);
-                }
                 $processName = $this->getProcessName();
                 $workerId = $this->getProcessWorkerId();
                 write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
@@ -451,13 +447,8 @@ abstract class AbstractProcess
         return function () {
             try {
                 // destroy
-                if (method_exists(static::class, '__destruct') && version_compare(phpversion(), '8.0.0', '>=') ) {
-                    $this->__destruct();
-                }
-
-                if ($this->masterLiveTimerId) {
-                    @\Swoole\Timer::clear($this->masterLiveTimerId);
-                }
+                $this->exitAndRebootDefer();
+                $this->writeStopFormatInfo();
                 $processName = $this->getProcessName();
                 $workerId = $this->getProcessWorkerId();
                 write_info("【Info】Start to reboot process={$processName}, worker_id={$workerId}");
@@ -472,7 +463,58 @@ abstract class AbstractProcess
     }
 
     /**
+     * exitAndRebootDefer
+     */
+    private function exitAndRebootDefer()
+    {
+        // destroy
+        if (method_exists(static::class, '__destruct') && version_compare(phpversion(), '8.0.0', '>=') ) {
+            $this->__destruct();
+        }
+
+        if ($this->masterLiveTimerId) {
+            @\Swoole\Timer::clear($this->masterLiveTimerId);
+        }
+    }
+
+    /**
+     * catch out of memory
+     *
+     * installRegisterShutdownFunction
+     */
+    protected function installRegisterShutdownFunction()
+    {
+        register_shutdown_function(function () {
+            $error = error_get_last();
+            if(null !== $error) {
+                $errorStr = sprintf("%s in file %s on line %d",
+                    $error['message'],
+                    $error['file'],
+                    $error['line']
+                );
+                // out of memory
+                if (false !== strpos($error['message'], 'Allowed memory size of')) {
+                    $processName = $this->getProcessName().'@'.$this->getProcessWorkerId();
+                    write_info("【Error】{$errorStr}, process_name={$processName}");
+                }
+
+                $errorStr = sprintf("%s in file %s on line %d",
+                    $error['message'],
+                    $error['file'],
+                    $error['line']
+                );
+
+                if(!in_array($error['type'], [E_NOTICE, E_WARNING]) ) {
+                    $exception = new \Exception($errorStr, $error['type']);
+                    $this->onHandleException($exception);
+                }
+            }
+        });
+    }
+
+    /**
      * installErrorHandler
+     *
      * @return void
      */
     protected function installErrorHandler()

@@ -1358,29 +1358,32 @@ class ProcessManager
     private function installRegisterShutdownFunction()
     {
         register_shutdown_function(function () {
-            try {
-                // exit handle
-                is_callable($this->onExit) && $this->onExit->call($this);
+            // children process extends this register_shutdown_function, so ignore for children process
+            if(in_master_process_env()) {
+                try {
+                    // exit handle
+                    is_callable($this->onExit) && $this->onExit->call($this);
 
-            } catch (\Throwable $throwable) {
-                $this->onHandleException->call($this, $throwable);
-            } finally {
-                // close pipe fifo
-                if (is_resource($this->cliPipeFd)) {
-                    @\Swoole\Event::del($this->cliPipeFd);
-                    fclose($this->cliPipeFd);
-                    @unlink($this->getCliPipeFile());
+                } catch (\Throwable $throwable) {
+                    $this->onHandleException->call($this, $throwable);
+                } finally {
+                    // close pipe fifo
+                    if (is_resource($this->cliPipeFd)) {
+                        @\Swoole\Event::del($this->cliPipeFd);
+                        fclose($this->cliPipeFd);
+                        @unlink($this->getCliPipeFile());
+                    }
+                    // remove sysvmsg queue
+                    $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
+                    $sysvmsgManager->destroyMsgQueue();
+                    unset($sysvmsgManager);
+                    // remove signal
+                    @\Swoole\Process::signal(SIGUSR1, null);
+                    @\Swoole\Process::signal(SIGUSR2, null);
+                    @\Swoole\Process::signal(SIGTERM, null);
                 }
-                // remove sysvmsg queue
-                $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
-                $sysvmsgManager->destroyMsgQueue();
-                unset($sysvmsgManager);
-                // remove signal
-                @\Swoole\Process::signal(SIGUSR1, null);
-                @\Swoole\Process::signal(SIGUSR2, null);
-                @\Swoole\Process::signal(SIGTERM, null);
+                write_info("【Warning】终端关闭，master进程stop, master_pid={$this->masterPid}");
             }
-            write_info("【Warning】终端关闭，master进程stop, master_pid={$this->masterPid}");
         });
     }
 

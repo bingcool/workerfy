@@ -2,12 +2,10 @@
 <?php
 require dirname(__DIR__).'/Common.php';
 
-ini_set('memory_limit','20M');
-
 $processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-status';
 $process_class = \Workerfy\Tests\Status\Worker::class;
-$process_worker_num = 3;
+$process_worker_num = 1;
 $async = true;
 $args = [
     'wait_time' => 1
@@ -27,7 +25,5 @@ $processManager->onStart = function ($pid) {
 $processManager->onExit = function() {
     //var_dump("master exit");
 };
-
-var_dump(ini_get('memory_limit'));
 
 $master_pid = $processManager->start();

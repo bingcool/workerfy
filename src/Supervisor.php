@@ -9,7 +9,7 @@ if (PHP_OS == 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 } else {
-    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/bingcool/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/data/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }
 
@@ -19,7 +19,7 @@ define('PID_FILE_ROOT', PID_ROOT);
 //日志错误目录
 define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 
-$http = new Swoole\Http\Server("*", 9509, SWOOLE_PROCESS);
+$http = new Swoole\Http\Server("*", 9502, SWOOLE_PROCESS);
 
 $setting = [
     'worker_num' => 5,
@@ -418,7 +418,7 @@ class ActionHandle
         }
         $total_line = 0;
         if ($fp) {
-            while (stream_get_line($fp, 8192, "\n")) {
+            while (stream_get_line($fp, 8192, "\n\n")) {
                 $total_line++;
             }
             fclose($fp);//关闭文件
