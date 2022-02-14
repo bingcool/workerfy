@@ -49,4 +49,25 @@ trait SystemTrait
             }
         }
     }
+
+    /**
+     * getHookFlags
+     * @param $hook_flags
+     * @return int
+     */
+    protected function getHookFlags($hook_flags)
+    {
+        $hookFlags = $hook_flags ?? '';
+        if (empty($hookFlags)) {
+            if (version_compare(swoole_version(), '4.7.0', '>=')) {
+                $hookFlags = SWOOLE_HOOK_ALL | SWOOLE_HOOK_NATIVE_CURL;
+            } else if (version_compare(swoole_version(), '4.6.0', '>=')) {
+                $hookFlags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
+            } else {
+                $hookFlags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
+            }
+        }
+
+        return $hookFlags;
+    }
 }

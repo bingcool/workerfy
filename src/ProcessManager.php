@@ -292,13 +292,13 @@ class ProcessManager
                 $this->installMasterStopSignal();
                 $this->installMasterReloadSignal();
                 $this->installRegisterShutdownFunction();
-                $this->registerSignal();
+                $this->installSignal();
                 $this->swooleEventAdd();
                 $this->setStartTime();
             }
             // set process start after
             $masterPid = $this->getMasterPid();
-            $this->saveMasterPidTofile($masterPid);
+            $this->saveMasterPidToFile($masterPid);
             $this->saveStatusToFile();
             if ($masterPid && is_callable($this->onStart)) {
                 try {
@@ -319,29 +319,9 @@ class ProcessManager
      */
     public function setCoroutineSetting(array $setting)
     {
-        $setting['hook_flags'] = $this->getHookFlags();
+        $setting['hook_flags'] = $this->getHookFlags($this->config['coroutine_setting']['hook_flags'] ?? '');
         $setting = array_merge(\Swoole\Coroutine::getOptions() ?? [], $setting);
         !empty($setting) && \Swoole\Coroutine::set($setting);
-    }
-
-    /**
-     * getHookFlags
-     * @return int
-     */
-    public function getHookFlags()
-    {
-        $hookFlags = $this->config['coroutine_setting']['hook_flags'] ?? '';
-        if (empty($hookFlags)) {
-            if (version_compare(swoole_version(), '4.7.0', '>=')) {
-                $hookFlags = SWOOLE_HOOK_ALL | SWOOLE_HOOK_NATIVE_CURL;
-            } else if (version_compare(swoole_version(), '4.6.0', '>=')) {
-                $hookFlags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL | SWOOLE_HOOK_NATIVE_CURL;
-            } else {
-                $hookFlags = SWOOLE_HOOK_ALL ^ SWOOLE_HOOK_CURL;
-            }
-        }
-
-        return $hookFlags;
     }
 
     /**
@@ -619,7 +599,7 @@ class ProcessManager
         }
 
         foreach ($processWorkers as $key => $processes) {
-            foreach ($processes as $worker_id => $process) {
+            foreach ($processes as $process) {
                 $swooleProcess = $process->getSwooleProcess();
                 \Swoole\Event::add($swooleProcess->pipe, function ($pipe) use ($swooleProcess) {
                     $targetMsg = $swooleProcess->read(64 * 1024);
@@ -698,7 +678,7 @@ class ProcessManager
      * @param int $master_pid
      * @return void
      */
-    public function saveMasterPidTofile(int $master_pid)
+    public function saveMasterPidToFile(int $master_pid)
     {
         @file_put_contents(PID_FILE, $master_pid);
     }
@@ -778,7 +758,7 @@ class ProcessManager
                 );
                 $process->setProcessWorkerId($workerId);
                 $process->setMasterPid($this->masterPid);
-                $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);// 动态进程类型=2
+                $process->setProcessType(AbstractProcess::PROCESS_DYNAMIC_TYPE);
                 $process->setStartTime();
                 $this->processWorkers[$key][$workerId] = $process;
                 $process->start();
@@ -1208,7 +1188,7 @@ class ProcessManager
      * registerSignal
      * @return void
      */
-    private function registerSignal()
+    private function installSignal()
     {
         if (!empty($this->signal)) {
             foreach ($this->signal as $signalInfo) {

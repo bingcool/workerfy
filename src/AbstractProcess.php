@@ -497,13 +497,7 @@ abstract class AbstractProcess
                     $processName = $this->getProcessName().'@'.$this->getProcessWorkerId();
                     write_info("【Error】{$errorStr}, process_name={$processName}");
                 }
-
-                $errorStr = sprintf("%s in file %s on line %d",
-                    $error['message'],
-                    $error['file'],
-                    $error['line']
-                );
-
+                
                 if(!in_array($error['type'], [E_NOTICE, E_WARNING]) ) {
                     $exception = new \Exception($errorStr, $error['type']);
                     $this->onHandleException($exception);
