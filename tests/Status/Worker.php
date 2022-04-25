@@ -6,7 +6,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public $arr = [];
     public function init()
     {
-        ini_set('memory_limit','1M');
+        ini_set('memory_limit','15M');
         var_dump(swoole_get_vm_status());
         $isMethod = method_exists(static::class,'test');
         var_dump($isMethod);
@@ -19,11 +19,12 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
             //$this->reboot(); //可以观察到子进程pid在变化
-            while(1) {
-                $this->arr[] = new class{
-
-                };
-            }
+//            while(1) {
+//                // 此处测试内存溢出
+//                $this->arr[] = new class{
+//
+//                };
+//            }
         }
 
         if($this->getProcessWorkerId() == 1) {

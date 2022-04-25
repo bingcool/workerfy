@@ -9,7 +9,7 @@ if (PHP_OS == 'Darwin') {
     defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/Users/bingcool/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 } else {
-    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/data/wwwroot/workerfy/tests');
+    defined('PROJECT_ROOT') or define('PROJECT_ROOT', '/home/wwwroot/workerfy/tests');
     defined('PID_ROOT') or define('PID_ROOT', '/tmp/workerfy/log');
 }
 
@@ -19,6 +19,8 @@ define('PID_FILE_ROOT', PID_ROOT);
 //日志错误目录
 define('SYS_ERROR_LOG_ROOT', '/tmp/syslog');
 
+// 二进制bin,php|swoole-cli
+$binPath = 'php';
 $http = new Swoole\Http\Server("*", 9502, SWOOLE_PROCESS);
 
 $setting = [
@@ -47,7 +49,7 @@ $http->on('workerStart', function ($server, int $worker_id) {
     (PHP_OS != 'Darwin') && swoole_set_process_name('php-http-worker-supervisor@' . $worker_id);
 });
 
-$http->on('request', function ($request, $response) use ($http) {
+$http->on('request', function ($request, $response) use ($http, $binPath) {
     try {
         if ($request->server['path_info'] == '/favicon.ico' || $request->server['request_uri'] == '/favicon.ico') {
             $response->end();
@@ -87,10 +89,11 @@ $http->on('request', function ($request, $response) use ($http) {
                 if (!$handle->isRunning($pid_filename)) {
                     $env_params = $handle->parseParams($params);
                     if (!empty($env_params)) {
-                        $command = "nohup php {$start_script_file_path} start {$env_params} >> /dev/null 2>&1 &";
+                        $command = "nohup {$binPath} {$start_script_file_path} start {$env_params} >> /dev/null 2>&1 &";
                     } else {
-                        $command = "nohup php {$start_script_file_path} start >> /dev/null 2>&1 &";
+                        $command = "nohup {$binPath} {$start_script_file_path} start >> /dev/null 2>&1 &";
                     }
+
                     $ret = $handle->startProcess($command);
                     if (is_array($ret) && $ret['code'] == 0) {
                         sleep(2);
@@ -104,7 +107,7 @@ $http->on('request', function ($request, $response) use ($http) {
                 break;
             case 'stop':
                 if ($handle->isRunning($pid_filename)) {
-                    $command = "nohup php $start_script_file_path stop >> /dev/null 2>&1 &";
+                    $command = "nohup {$binPath} $start_script_file_path stop >> /dev/null 2>&1 &";
                     $ret = $handle->stopProcess($command);
                     if (is_array($ret) && $ret['code'] == 0) {
                         sleep(2);
@@ -399,8 +402,11 @@ class ActionHandle
         if (is_array($params)) {
             foreach ($params as $name => $value) {
                 $name = trim($name);
-                $value = base64_encode(trim($value));
-                $env_params .= " -{$name}={$value}";
+                $value = trim($value);
+                if(!is_numeric($value)) {
+                    $value = "'$value'";
+                }
+                $env_params .= " --{$name}={$value}";
             }
         }
         return $env_params;
@@ -452,6 +458,7 @@ class ActionHandle
         $result = [
             'ret' => $ret,
             'msg' => $msg,
+            'request_time' => date('Y-m-d H:i:s'),
             'data' => $data
         ];
         $this->response->header('Content-Type', 'application/json; charset=UTF-8');
