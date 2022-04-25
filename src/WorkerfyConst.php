@@ -9,3 +9,4 @@ define('CLI_STATUS', 'status');
 define('CLI_PIPE', 'pipe');
 define('CLI_ADD', 'add');
 define('CLI_REMOVE', 'remove');
+define('CLI_CHECK_REBOOT', 'checkReboot');

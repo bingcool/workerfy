@@ -98,6 +98,9 @@ switch ($command) {
     case CLI_STATUS :
         status($cliParams);
         break;
+    case CLI_CHECK_REBOOT:
+        checkReboot($cliParams);
+        break;
     case CLI_PIPE :
         pipe($cliParams);
         break;
@@ -295,6 +298,24 @@ function status($cli_params)
     fclose($pipe);
     unlink($ctlPipeFile);
     exit(0);
+}
+
+function checkReboot($cli_params)
+{
+    if (is_file(PID_FILE)) {
+        $masterPid = file_get_contents(PID_FILE);
+        if (is_numeric($masterPid)) {
+            $masterPid = (int)$masterPid;
+        } else {
+            write_info("【Warning】Master Pid is invalid");
+            exit(0);
+        }
+    }
+
+    // reboot
+    if (!\Swoole\Process::kill($masterPid, 0)) {
+        start($cli_params);
+    }
 }
 
 function pipe($cli_params)

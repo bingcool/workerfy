@@ -19,43 +19,48 @@ class ConfigLoad
     use \Workerfy\Traits\SingletonTrait;
 
     /**
+     * @var  string
+     */
+    protected $configFilePath;
+
+    /**
      * @var array
      */
     private $config = [];
 
     /**
-     * @param string|null $config_file_path
+     * @param string|null $configFilePath
      * @return array
      * @throws Exception
      */
-    public function loadConfig(?string $config_file_path = null)
+    public function loadConfig(string $configFilePath)
     {
-        if (empty($config_file_path)) {
+        if (empty($configFilePath)) {
             return [];
         }
 
-        if (!is_file($config_file_path)) {
+        if (!is_file($configFilePath)) {
             throw new \Exception("Load config path is not a file");
         }
 
-        $config = require $config_file_path;
+        $config = require $configFilePath;
         if (!is_array($config)) {
-            throw new \Exception("Config file {$config_file_path} is not return array");
+            throw new \Exception("Config file {$configFilePath} is not return array");
         }
 
+        $this->configFilePath = $configFilePath;
         $this->config = array_merge_recursive($this->config, $config);
 
         return $this->config;
     }
 
     /**
-     * @param string|null $config_file_path
      * @return array
      * @throws Exception
      */
-    public function reloadConfig(?string $config_file_path = null)
+    public function reloadConfig()
     {
-        return $this->loadConfig($config_file_path);
+        return $this->loadConfig($this->configFilePath);
     }
 
     /**
