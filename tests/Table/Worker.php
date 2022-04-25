@@ -4,7 +4,7 @@ namespace Workerfy\Tests\Table;
 class Worker extends \Workerfy\AbstractProcess {
 
     public function init() {
-        $config = \Workerfy\ConfigLoad::getInstance()->getConfig();
+        $config = \Workerfy\ConfigLoader::getInstance()->getConfig();
         defer(function() {
             //var_dump("coroutine_destruct");
         });

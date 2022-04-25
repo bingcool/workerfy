@@ -427,7 +427,7 @@ class ActionHandle
             while (stream_get_line($fp, 8192, "\n\n")) {
                 $total_line++;
             }
-            fclose($fp);//关闭文件
+            fclose($fp);
         }
         $line_contents = [];
         if ($total_line >= $count) {
@@ -437,12 +437,9 @@ class ActionHandle
             $count = $total_line;
         }
         $fp = new SplFileObject($filename, 'rb');
-        // 转到第N行, seek方法参数从0开始计数
         $fp->seek($start_line);
         for ($i = 0; $i <= $count; ++$i) {
-            // current()获取当前行内容
             $line_contents[] = trim($fp->current());
-            // 下一行
             $fp->next();
         }
         return array_filter($line_contents);

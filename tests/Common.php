@@ -12,4 +12,4 @@ define('APP_ROOT', dirname(__DIR__));
 include APP_ROOT . "/vendor/autoload.php";
 $configFilePath = __DIR__."/Config/config.php";
 // load config
-\Workerfy\ConfigLoad::getInstance()->loadConfig($configFilePath);
+\Workerfy\ConfigLoader::getInstance()->loadConfig($configFilePath);

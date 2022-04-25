@@ -159,6 +159,12 @@ abstract class AbstractProcess
     protected $cliInitParams = [];
 
     /**
+     * @var int
+     *
+     */
+    protected $initSystemCoroutineNum = 2;
+
+    /**
      * 静态进程
      * @var int
      */
@@ -259,7 +265,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * __start 创建process的成功回调处理
+     * __start
+     *
      * @param Process $swooleProcess
      * @return mixed
      */
@@ -366,6 +373,8 @@ abstract class AbstractProcess
                 $function();
             });
 
+            $this->initSystemCoroutineNum = $this->getCurrentRunCoroutineNum();
+
             $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timer_id) {
                 if (!$this->isMasterLive()) {
                     \Swoole\Timer::clear($timer_id);
@@ -392,7 +401,7 @@ abstract class AbstractProcess
             try {
                 $targetAction = 'init';
                 if (method_exists(static::class, $targetAction)) {
-                    // init() method will accept cli params from cli,as --sleep=5 --name=bing
+                    // init method will accept cli params from cli,as --sleep=5 --name=bing
                     list($method, $args) = Helper::parseActionParams($this, $targetAction, Helper::getCliParams());
                     $this->cliInitParams = $args;
                     $this->{$targetAction}(...$args);
@@ -439,7 +448,9 @@ abstract class AbstractProcess
 
     /**
      *
-     * @param int $signo 信号为用户自定义user1信号
+     * defined SIGUSR1 reboot handle
+     *
+     * @param int $signo
      * @return \Closure
      */
     private function rebootSingleHandle()
@@ -533,10 +544,10 @@ abstract class AbstractProcess
     }
 
     /**
-     * writeByProcessName worker进程向某个进程写数据
+     * writeByProcessName worker send message to process
      * @param string $process_name
      * @param $data
-     * @param int $process_worker_id process_worker_id=-1 表示向所有worker发信息
+     * @param int $process_worker_id process_worker_id=-1 all process
      * @param bool $is_use_master_proxy
      * @return bool
      * @throws Exception
@@ -592,8 +603,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * writeToMasterProcess 直接向master进程写数据
-     * @param string $process_name 读取固定常量
+     * writeToMasterProcess direct semd message to other process
+     * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
      * @return bool
@@ -612,7 +623,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * writeToWorkerByMasterProxy 向master进程写代理数据，master再代理转发worker进程
+     * writeToWorkerByMasterProxy, send message to other process by master proxy
+     *
      * @param string $process_name
      * @param mixed $data
      * @param int $process_worker_id
@@ -626,7 +638,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * notifyMasterCreateDynamicProcess 通知master进程动态创建进程
+     * notifyMasterCreateDynamicProcess
+     *
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
      * @return void
@@ -650,7 +663,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * notifyMasterDestroyDynamicProcess 通知master销毁动态创建的进程
+     * notifyMasterDestroyDynamicProcess
+     *
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
      * @return void
@@ -659,7 +673,6 @@ abstract class AbstractProcess
     public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1)
     {
         if (!$this->isDynamicDestroy) {
-            // 销毁进程，默认是销毁所有动态创建的进程，没有部分销毁,$dynamic_process_num设置没有意义
             $dynamic_process_num = -1;
             $data = [
                 'action' => ProcessManager::DESTROY_DYNAMIC_PROCESS_WORKER,
@@ -672,6 +685,7 @@ abstract class AbstractProcess
             $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
             // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
             $this->isDynamicDestroy(true);
+            $dynamicDestroyProcessTime = $this->waitTime + 10;
             if (isset($this->getArgs()['dynamic_destroy_process_time'])) {
                 $dynamicDestroyProcessTime = $this->getArgs()['dynamic_destroy_process_time'];
                 // max time can not too long
@@ -679,11 +693,7 @@ abstract class AbstractProcess
                     if ($dynamicDestroyProcessTime > 300) {
                         $dynamicDestroyProcessTime = self::DYNAMIC_DESTROY_PROCESS_TIME;
                     }
-                } else {
-                    $dynamicDestroyProcessTime = $this->waitTime + 10;
                 }
-            } else {
-                $dynamicDestroyProcessTime = $this->waitTime + 10;
             }
             // wait sleep
             \Swoole\Coroutine\System::sleep($dynamicDestroyProcessTime);
@@ -692,7 +702,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * 是否正在动态进程销毁中状态
+     *
      * @param bool $is_destroy
      * @return void
      */
@@ -818,6 +828,7 @@ abstract class AbstractProcess
 
     /**
      * 静态创建进程，属于进程池进程，可以自重启，退出
+     *
      * @return bool
      */
     public function isStaticProcess()
@@ -830,6 +841,7 @@ abstract class AbstractProcess
 
     /**
      * 动态创建进程,工作完只能退出，不能重启
+     *
      * @return bool
      */
     public function isDynamicProcess()
@@ -847,6 +859,7 @@ abstract class AbstractProcess
 
     /**
      * getProcessWorkerId
+     *
      * @return int
      */
     public function getProcessWorkerId()
@@ -876,6 +889,7 @@ abstract class AbstractProcess
 
     /**
      * getProcessName
+     *
      * @return string
      */
     public function getProcessName()
@@ -898,7 +912,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * getArgs 获取变量参数
+     * getArgs
      * @return mixed
      */
     public function getArgs()
@@ -924,7 +938,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * 是否启用协程
+     *
      * @return bool
      */
     public function isEnableCoroutine()
@@ -967,6 +981,7 @@ abstract class AbstractProcess
 
     /**
      * setStartTime
+     *
      * @return void
      */
     public function setStartTime()
@@ -983,7 +998,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * 获取cli命令行传入的参数选项
+     * cli params
+     *
      * @param string $name
      * @return array|false|string|null
      */
@@ -993,7 +1009,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * reboot 自动重启
+     * reboot
+     *
      * @param null|float $wait_time
      * @return bool
      */
@@ -1038,8 +1055,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * 直接退出进程
-     * @param bool $is_force 是否强制退出
+     *
+     * @param bool $is_force
      * @param float $wait_time
      * @return bool
      */
@@ -1084,7 +1101,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * registerTickReboot 注册定时重启, 一般在init()函数中注册
+     * registerTickReboot register time reboot, wiil be do in init() function
+     *
      * @param $cron_expression
      * @return void
      */
@@ -1119,7 +1137,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * clearRebootTimer 强制退出时，需要清理reboot的定时器
+     * clearRebootTimer
+     *
      * @return void
      */
     public function clearRebootTimer()
@@ -1132,6 +1151,7 @@ abstract class AbstractProcess
 
     /**
      * isForceExit
+     *
      * @return bool
      */
     public function isForceExit()
@@ -1160,6 +1180,7 @@ abstract class AbstractProcess
 
     /**
      * isMasterLive
+     *
      * @return bool
      */
     public function isMasterLive()
@@ -1174,7 +1195,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * worker0会定时设置master_pid在文件，防止误删该文件后找不到master_pid
+     * worker0 save master_pid to file, because sometime the file will be delete
+     *
      * @param int $master_pid
      * @return void
      */
@@ -1188,7 +1210,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * getCurrentRunCoroutineNum 获取当前进程中正在运行的协程数量，可以通过这个值判断比较，防止协程过多创建，可以设置sleep等待
+     * get coroutine num, wait to sleep second, then do something
+     *
      * @return int
      */
     public function getCurrentRunCoroutineNum()
@@ -1198,7 +1221,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * getCurrentCoroutineLastCid 获取当前进程的协程cid已分配到哪个值，可以根据这个值设置进程reboot,防止cid超出最大数
+     * get current coroutine last cid, compare num reachive value to reboot process
+     *
      * @return int
      */
     public function getCurrentCoroutineLastCid()
@@ -1208,9 +1232,10 @@ abstract class AbstractProcess
     }
 
     /**
-     * 对于运行态的协程，还没有执行完的，设置一个再等待时间$re_wait_time
-     * @param int $cycle_times 轮询次数
-     * @param int $re_wait_time 每次2s轮询
+     * wait to coroutine
+     *
+     * @param int $cycle_times
+     * @param int $re_wait_time
      * @return void
      */
     private function runtimeCoroutineWait(int $cycle_times = 5, int $re_wait_time = 2)
@@ -1219,10 +1244,10 @@ abstract class AbstractProcess
             $cycle_times = 2;
         }
         while ($cycle_times > 0) {
-            // 当前运行的coroutine
+            // current run coroutine
             $runCoroutineNum = $this->getCurrentRunCoroutineNum();
-            // 除了主协程和runtimeCoroutineWait跑在协程中，所以等于2个协程，还有其他协程没唤醒，则再等待
-            if ($runCoroutineNum > 2) {
+            // wait to coroutine to finish of doing something
+            if ($runCoroutineNum > ($this->initSystemCoroutineNum ?: 2)) {
                 --$cycle_times;
                 if (\Swoole\Coroutine::getCid() > 0) {
                     \Swoole\Coroutine\System::sleep($re_wait_time);
@@ -1342,6 +1367,7 @@ abstract class AbstractProcess
 
     /**
      * writeReloadFormatInfo
+     *
      * @return void
      */
     private function writeReloadFormatInfo()
@@ -1357,7 +1383,8 @@ abstract class AbstractProcess
     }
 
     /**
-     * run 进程创建后的run方法
+     * after start to run of process
+     *
      * @return void
      */
     public abstract function run();

@@ -14,7 +14,7 @@ $root_path = dirname($dir_config);
 
 include "../vendor/autoload.php";
 
-$config_file_path = "./Config/config.php";
+$config_file_path = "./Config/queue_conf.php";
 
 \Swoole\Coroutine::create(function () {
     $client = new \GuzzleHttp\Client();

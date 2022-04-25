@@ -164,7 +164,8 @@ class ProcessManager
     const DESTROY_DYNAMIC_PROCESS_WORKER = 'destroy_dynamic_process_worker';
 
     /**
-     * ProcessManager constructor.
+     * ProcessManager constructor
+     *
      * @param array $config
      * @param mixed ...$args
      */
@@ -233,6 +234,29 @@ class ProcessManager
             'extend_data' => $extend_data,
             'enable_coroutine' => $enable_coroutine
         ];
+    }
+
+    /**
+     * setting model add process
+     *
+     * @param array $conf
+     *
+     */
+    public function loadConf(array $conf)
+    {
+        foreach($conf['worker_conf'] ?? [] as $config)
+        {
+            $processName = $config['process_name'];
+            $processClass = $config['handler'];
+            $processWorkerNum = $config['worker_num'] ?? 1;
+            $async = true;
+            $args = $config['args'] ?? [];
+            $extendData = $config['extend_data'] ?? null;
+            $enableCoroutine = true;
+            $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
+        }
+
+        return $this;
     }
 
     /**
@@ -341,6 +365,7 @@ class ProcessManager
 
     /**
      * 终止进程处理函数
+     *
      * @return \Closure
      */
     private function signalHandle()
@@ -373,6 +398,7 @@ class ProcessManager
 
     /**
      * 父进程的status通过fifo有名管道信号回传
+     *
      * @param string $ctl_pipe_file
      * @return void
      */
@@ -451,6 +477,7 @@ class ProcessManager
 
     /**
      * installSigchldSignal 注册回收子进程信号
+     *
      * @return void
      */
     private function installSigchldSignal()
@@ -475,6 +502,7 @@ class ProcessManager
 
     /**
      * rebootOrExitHandle 信号处理函数
+     *
      * @return void
      */
     protected function rebootOrExitHandle()
@@ -697,6 +725,7 @@ class ProcessManager
 
     /**
      * dynamicCreateProcess 动态创建临时进程
+     *
      * @param string $process_name
      * @param int $process_num
      * @return mixed
@@ -774,6 +803,7 @@ class ProcessManager
 
     /**
      * destroyDynamicProcess 销毁动态创建的进程
+     *
      * @param string $process_name
      * @param int $process_num
      * @return void
@@ -802,6 +832,7 @@ class ProcessManager
 
     /**
      * getDynamicProcessNum
+     *
      * @param string $process_name
      * @return int
      * @throws \Exception
@@ -863,7 +894,8 @@ class ProcessManager
     }
 
     /**
-     * getProcessStatus 获取进程状态信息
+     * getProcessStatus
+     *
      * @return array
      */
     public function getProcessStatus(int $running_status = 1)

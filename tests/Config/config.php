@@ -50,6 +50,11 @@ $config = [
     'redis' => [
         'host'   => $dc['redis']['host'],
         'port'   => $dc['redis']['port'],
+    ],
+
+    'redis_queue' => [
+        'host'   => $dc['redis']['host'],
+        'port'   => $dc['redis']['port'],
     ]
 ];
 
