@@ -241,13 +241,13 @@ class CommandRunner
     {
         $this->isNextFlag = true;
         if ($this->channel->isFull()) {
-            $pids = [];
+            $itemList = [];
             while ($item = $this->channel->pop(0.05)) {
                 $pid = $item['pid'];
                 $startTime = $item['start_time'];
                 if (\Swoole\Process::kill($pid, 0)) {
                     if (($startTime + 60) > time()) {
-                        $pids[] = $item;
+                        $itemList[] = $item;
                     } else {
                         // 超过1分钟系统调用程序没执行完的都会记录一次
                         $command = $item['command'] ?? '';
@@ -259,7 +259,7 @@ class CommandRunner
                 }
             }
 
-            foreach ($pids as $item) {
+            foreach ($itemList as $item) {
                 $this->channel->push($item, 0.1);
             }
 
