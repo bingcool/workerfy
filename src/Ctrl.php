@@ -149,7 +149,16 @@ function stop($cli_params)
 
     if (\Swoole\Process::kill($masterPid, 0)) {
         if (getenv('force')) {
-            $res = \Swoole\Process::kill($masterPid, SIGKILL);
+            $pipeMsg = json_encode([CLI_STOP, '', ''], JSON_UNESCAPED_UNICODE);
+            $pipeFile = getCliPipeFile();
+            $pipe = @fopen($pipeFile, 'w+');
+            if (flock($pipe, LOCK_EX)) {
+                fwrite($pipe, $pipeMsg);
+                flock($pipe, LOCK_UN);
+            }
+            fclose($pipe);
+            sleep(2);
+            $res = @\Swoole\Process::kill($masterPid, SIGKILL);
         } else {
             $res = \Swoole\Process::kill($masterPid, SIGTERM);
         }
@@ -227,12 +236,21 @@ function restart($cli_params)
     }
 
     if (\Swoole\Process::kill($masterPid, 0)) {
-        $res = \Swoole\Process::kill($masterPid, SIGKILL);
+        $pipeMsg = json_encode([CLI_STOP, '', ''], JSON_UNESCAPED_UNICODE);
+        $pipeFile = getCliPipeFile();
+        $pipe = @fopen($pipeFile, 'w+');
+        if (flock($pipe, LOCK_EX)) {
+            fwrite($pipe, $pipeMsg);
+            flock($pipe, LOCK_UN);
+        }
+        fclose($pipe);
+        sleep(1);
+        $res = @\Swoole\Process::kill($masterPid, SIGKILL);
         if ($res) {
             write_info("【Info】Master and Children Process start to stop, please wait a time", 'light_green');
         }
         $startStopTime = time();
-        while (\Swoole\Process::kill($masterPid, 0)) {
+        while (@\Swoole\Process::kill($masterPid, 0)) {
             if (time() - $startStopTime > 5) {
                 break;
             }
@@ -314,7 +332,10 @@ function checkReboot($cli_params)
 
     // reboot
     if (!\Swoole\Process::kill($masterPid, 0)) {
-        start($cli_params);
+        sleep(1);
+        if(!\Swoole\Process::kill($masterPid, 0)) {
+            start($cli_params);
+        }
     }
 }
 

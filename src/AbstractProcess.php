@@ -205,7 +205,7 @@ abstract class AbstractProcess
      * 定时检查master是否存活的轮询时间
      * @var int
      */
-    const CHECK_MASTER_LIVE_TICK_TIME = 60;
+    const CHECK_MASTER_LIVE_TICK_TIME = 10;
 
     /**
      * AbstractProcess constructor.
@@ -366,7 +366,7 @@ abstract class AbstractProcess
                 $function();
             });
 
-            $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timer_id) {
+            $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 3)) * 1000, function ($timer_id) {
                 if (!$this->isMasterLive()) {
                     \Swoole\Timer::clear($timer_id);
                     $this->masterLiveTimerId = null;
