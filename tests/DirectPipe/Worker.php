@@ -29,7 +29,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
         if($worker_id == 1) {
             sleep(2);
-            // 重启后再次受到worker0的信息
+            // 重启后再次收到worker0的信息
             $this->reboot();
         }
 

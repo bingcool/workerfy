@@ -13,7 +13,7 @@ namespace Workerfy;
 
 use Exception;
 
-class ConfigLoad
+class ConfigLoader
 {
 
     use \Workerfy\Traits\SingletonTrait;

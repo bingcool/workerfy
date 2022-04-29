@@ -2,14 +2,25 @@
 namespace Workerfy\Tests\Jobfy;
 
 use Workerfy\ConfigLoader;
-use Workerfy\Tests\Make;
+use Common\Library\Cache\Redis;
 
-class worker1 extends QueueProcess
+class RedisQueue extends QueueProcess
 {
 
+    /**
+     * @var Redis
+     */
+    protected $redis;
+
+    /**
+     * @return Redis
+     */
     public function getQueueInstance()
     {
-        return Make::makeRedis();
+        $config = ConfigLoader::getInstance()->getConfig()[$this->driver];
+        $this->redis = new Redis();
+        $this->redis->connect($config['host'], $config['port'], $config['timeout']);
+        return $this->redis;
     }
 
     /**

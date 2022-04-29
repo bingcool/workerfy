@@ -7,7 +7,7 @@ return [
             'worker-queue1' => [
                 // 进程名
                 'process_name' => 'worker-queue1',
-                'handler' => \Workerfy\Tests\Jobfy\worker1::class,
+                'handler' => \Workerfy\Tests\Jobfy\RedisQueue::class,
                 'worker_num' => 2, // 默认动态进程数量
                 'max_handle' => 10000, //消费达到10000后reboot进程,
                 'dynamic_queue_create_backlog' => 500, //队列达到500积压，则动态创建进程
@@ -17,6 +17,7 @@ return [
                 'retry_delay_time' => 5, // 延迟5s后放回主队列重试
                 'ttl' => 300, // 超过多少秒没有被消费，就抛弃，0代表永不抛弃
                 'extend_data' => [], // 额外数据
+                'driver' => 'redis', // 对应config的配置项
             ],
 
             // 队列名称

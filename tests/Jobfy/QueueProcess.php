@@ -61,6 +61,11 @@ abstract class QueueProcess extends AbstractProcess
      */
     protected $ttl = 0;
 
+    /**
+     * @var string
+     */
+    protected $driver;
+
 
     /**
      * init
@@ -75,6 +80,7 @@ abstract class QueueProcess extends AbstractProcess
         $this->retryNum = $this->getArgs()['retry_num'] ?? $this->retryNum;
         $this->retryDelayTime = $this->getArgs()['retry_delay_time'] ?? $this->retryDelayTime;
         $this->ttl = $this->getArgs()['ttl'] ?? $this->ttl;
+        $this->driver = $this->getArgs()['driver'] ?? $this->driver;
     }
 
     /**
