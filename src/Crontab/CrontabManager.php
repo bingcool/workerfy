@@ -200,7 +200,6 @@ class CrontabManager
                 }
             }
 
-            // 防止万一出现的异常出现，比如没有命中任务， 19:05:00要命中的，由于其他网络或者服务器其他原因，阻塞了,造成延迟，现在时间已经到了19::05:05
             if ($nowTime > $this->cronNextDatetimeArr[$cron_name][$expressionKey] || $nowTime >= $cronNextDatetime) {
                 $this->cronNextDatetimeArr[$cron_name][$expressionKey] = $cronNextDatetime;
             }
@@ -256,7 +255,7 @@ class CrontabManager
             $channel->push(true);
             $channel->close();
             unset($this->channels[$cron_name]);
-        } else if ($loopType = self::loopTickType) {
+        } else if ($loopType == self::loopTickType) {
             $tick_id = $this->timerIds[$cron_name];
             \Swoole\Timer::clear($tick_id);
             unset($this->timerIds[$cron_name]);
