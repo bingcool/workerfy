@@ -12,7 +12,7 @@ $processManager = \Workerfy\ProcessManager::getInstance([
 
 $process_name = 'test-reboot';
 $process_class = \Workerfy\Tests\Reboot\Worker::class;
-$process_worker_num = 1;
+$process_worker_num = 2;
 $async = true;
 $args = [
     'wait_time' => 1

@@ -501,6 +501,30 @@ class ProcessManager
     }
 
     /**
+     * checkMasterToExit
+     */
+    protected function checkMasterToExit() {
+        if (count($this->processWorkers) == 0) {
+            $this->saveStatusToFile();
+            \Swoole\Coroutine::create(function () {
+                sleep(1);
+                $masterPid = $this->getMasterPid();
+                if(count($this->processWorkers) == 0) {
+                    if(!\Swoole\Process::kill($masterPid, 0)) {
+                        $masterPid = posix_getpid();
+                    }
+                    if(version_compare(phpversion(), '8.0.0', '>=')) {
+                        @\Swoole\Process::kill($masterPid, SIGKILL);
+                        exit(0);
+                    }else {
+                        exit(0);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
      * rebootOrExitHandle 信号处理函数
      *
      * @return void
@@ -533,19 +557,7 @@ class ProcessManager
                             }
                         }
                         \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                        if (count($this->processWorkers) == 0) {
-                            $this->saveStatusToFile();
-                            $masterPid = $this->getMasterPid();
-                            if(!\Swoole\Process::kill($masterPid, 0)) {
-                                $masterPid = posix_getpid();
-                            }
-                            if(version_compare(phpversion(), '8.0.0', '>=')) {
-                                @\Swoole\Process::kill($masterPid, SIGKILL);
-                                exit(0);
-                            }else {
-                                exit(0);
-                            }
-                        }
+                        $this->checkMasterToExit();
                         break;
                     // reboot
                     case SIGUSR1  :
@@ -1285,6 +1297,20 @@ class ProcessManager
                             case CLI_STATUS :
                                 $actionHandleFlag = true;
                                 $this->masterStatusToCliFifoPipe($processName);
+                                break;
+                            case CLI_STOP:
+                                $actionHandleFlag = true;
+                                foreach ($this->processWorkers as $processes) {
+                                    ksort($processes);
+                                    /**
+                                     * @var AbstractProcess $process
+                                     */
+                                    foreach ($processes as $process) {
+                                        $processName = $process->getProcessName();
+                                        $workerId = $process->getProcessWorkerId();
+                                        $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $workerId);
+                                    }
+                                }
                                 break;
                         }
                     }
