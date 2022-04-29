@@ -24,7 +24,6 @@ class worker1 extends QueueProcess
     public function receive()
     {
         $redis = $this->getQueueInstance();
-        $redis
     }
 
 
