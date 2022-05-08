@@ -49,6 +49,7 @@ class Manager extends ProcessManager
             $async = true;
             $args = $config['args'] ?? [];
             $args['max_handle'] = $config['max_handle'] ?? 10000;
+            $args['life_time'] = $config['life_time'] ?? 3600;
             $args['alias_queue_name'] = $aliasQueueName;
             $extendData = $config['extend_data'] ?? [];
             $enableCoroutine = true;
@@ -76,6 +77,8 @@ class Manager extends ProcessManager
             $processWorkerNum = $config['worker_num'] ?? 1;
             $async = true;
             $args = $config['args'] ?? [];
+            $args['max_handle'] = $config['max_handle'] ?? 10000;
+            $args['life_time'] = $config['life_time'] ?? 3600;
             $extendData = $config['extend_data'] ?? [];
             $enableCoroutine = true;
             $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);

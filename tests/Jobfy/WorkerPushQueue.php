@@ -43,7 +43,7 @@ class WorkerPushQueue extends AbstractProcess
             $this->queueName
         );
 
-        var_dump($this->queueName);
+
     }
 
 

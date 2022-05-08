@@ -1114,13 +1114,17 @@ abstract class AbstractProcess
         $tickSecond = 2;
         $waitTime = 5;
         if (is_numeric($cron_expression)) {
+            $randNum = rand(1, 10);
             // for Example reboot/600s after 600s reboot this process
             if ($cron_expression < 120) {
-                $sleep = 120;
+                $sleep = 60;
+                $tickTime = (30+$randNum) * 1000;
             } else {
                 $sleep = $cron_expression;
+                $tickTime = (60+$randNum) * 1000;
             }
-            \Swoole\Timer::tick(60 * 1000, function () use ($sleep, $waitTime) {
+
+            \Swoole\Timer::tick($tickTime, function () use ($sleep, $waitTime) {
                 if (time() - $this->getStartTime() >= $sleep) {
                     $this->reboot($waitTime);
                 }

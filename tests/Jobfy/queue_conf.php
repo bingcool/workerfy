@@ -10,7 +10,8 @@ return [
                 'process_name' => 'worker-queue1',
                 'handler' => \Workerfy\Tests\Jobfy\WorkerOrderQueue::class,
                 'worker_num' => 1, // 默认动态进程数量
-                'max_handle' => 100, //消费达到10000后reboot进程,
+                'max_handle' => 100, //消费达到10000后reboot进程
+                'life_time'  => 3600, // 每隔3600s重启进程
                 'extend_data' => [], // 额外数据
 
                 // queue option

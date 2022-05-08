@@ -21,6 +21,11 @@ abstract class QueueProcess extends AbstractProcess
     protected $maxHandle = 10000;
 
     /**
+     * @var int
+     */
+    protected $lifeTime = 3600;
+
+    /**
      * @var int 队列积压数
      */
     protected $dynamicQueueCreateBacklog = 500;
@@ -78,6 +83,7 @@ abstract class QueueProcess extends AbstractProcess
     {
         $this->queueName = static::PREFIX_KEY.$this->getArgs()['alias_queue_name'];
         $this->maxHandle = $this->getArgs()['max_handle'] ?? $this->maxHandle;
+        $this->lifeTime  = $this->getArgs()['life_time'] ?? $this->lifeTime;
         $this->dynamicQueueCreateBacklog = $this->getArgs()['dynamic_queue_create_backlog'] ?? $this->dynamicQueueCreateBacklog;
         $this->dynamicQueueDestroyBacklog = $this->getArgs()['dynamic_queue_destroy_backlog'] ?? $this->dynamicQueueDestroyBacklog;
         $this->dynamicQueueWorkerNum = $this->getArgs()['dynamic_queue_worker_num'] ?? $this->dynamicQueueWorkerNum;
@@ -87,6 +93,7 @@ abstract class QueueProcess extends AbstractProcess
         $this->driver = $this->getArgs()['driver'] ?? $this->driver;
         $this->queue = $this->getQueueInstance();
         $this->monitorQueue();
+        $this->registerTickReboot($this->lifeTime);
     }
 
     /**
