@@ -25,6 +25,8 @@ use Workerfy\Exception\UserTriggerException;
 abstract class AbstractProcess
 {
 
+    use \Workerfy\Traits\SystemTrait;
+
     /**
      * @var AbstractProcess
      */
@@ -283,6 +285,7 @@ abstract class AbstractProcess
             $this->setUserAndGroup();
             $this->installRegisterShutdownFunction();
             $this->installErrorHandler();
+            $this->resetAsyncCoroutine(true);
             if ($this->async) {
                 Event::add($this->swooleProcess->pipe, function () {
                     try {

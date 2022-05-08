@@ -23,28 +23,22 @@ trait SystemTrait
                 'enable_coroutine' => $enable_coroutine,
             ]);
         } else {
-            if (function_exists('swoole_async_set')) {
-                swoole_async_set([
+            /**
+             * 4.6 Async AbstractEventHandle、Timer、Process::signal moveto Swoole\Async library
+             */
+            $isSetFlag = false;
+            if (class_exists('Swoole\Async')) {
+                \Swoole\Async::set([
                     'enable_coroutine' => $enable_coroutine,
                 ]);
-            } else {
-                /**
-                 * 4.6 Async AbstractEventHandle、Timer、Process::signal moveto Swoole\Async library
-                 */
-                $isSetFlag = false;
-                if (class_exists('Swoole\Async')) {
-                    \Swoole\Async::set([
+                $isSetFlag = true;
+            }
+
+            if (!$isSetFlag) {
+                if (method_exists('Swoole\Timer', 'set')) {
+                    @\Swoole\Timer::set([
                         'enable_coroutine' => $enable_coroutine,
                     ]);
-                    $isSetFlag = true;
-                }
-
-                if (!$isSetFlag) {
-                    if (method_exists('Swoole\Timer', 'set')) {
-                        @\Swoole\Timer::set([
-                            'enable_coroutine' => $enable_coroutine,
-                        ]);
-                    }
                 }
             }
         }

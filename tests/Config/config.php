@@ -1,12 +1,14 @@
 <?php
-// dev环境加载
-$dev = true;
-if($dev)
+
+if(WORKERFY_ENV == 'dev')
 {
-    $dc = include_once "dc-dev.php";
+    $dc = include "dc-dev.php";
+}else if(WORKERFY_ENV == 'test')
+{
+    $dc = include "dc-test.php";
 }else
 {
-    $dc = include_once "dc-prd.php";
+    $dc = include "dc-prd.php";
 }
 
 $config = [
@@ -50,11 +52,13 @@ $config = [
     'redis' => [
         'host'   => $dc['redis']['host'],
         'port'   => $dc['redis']['port'],
+        'timeout' => 2.0
     ],
 
     'redis_queue' => [
         'host'   => $dc['redis']['host'],
         'port'   => $dc['redis']['port'],
+        'timeout' => 2.0
     ]
 ];
 

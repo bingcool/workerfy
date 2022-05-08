@@ -41,8 +41,8 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
         $member1 = json_encode(['lead_id'=>123,'name'=>'lead1']);
         $member2 = json_encode(['lead_id'=>124,'name'=>'lead2']);
 
-        $queue->addItem(time(), 123, 5)
-            ->addItem(time(), 124, 10)
+        $queue->addItem(time(), $member1, 5)
+            ->addItem(time(), $member2, 5)
             ->push();
 
         var_dump('延迟队列长度:'.$queue->count('-inf','+inf'));
@@ -74,7 +74,7 @@ class DelayConsumerWorker extends \Workerfy\AbstractProcess {
                     }
                 }
 
-                //var_dump($result);
+                var_dump($result);
 
             }catch (\Throwable $throwable)
             {

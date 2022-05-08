@@ -2,7 +2,9 @@
 
 namespace Workerfy\Tests\Jobfy;
 
-class Manager extends \Workerfy\ProcessManager
+use Workerfy\ProcessManager;
+
+class Manager extends ProcessManager
 {
 
     /**
@@ -11,24 +13,72 @@ class Manager extends \Workerfy\ProcessManager
      */
     public function loadConf(array $conf)
     {
-        foreach($conf['worker_conf'] ?? [] as $aliasQueueName=>$config)
+        foreach ($conf as $workerType => $workerConfItems)
+        {
+            switch ($workerType)
+            {
+                case 'worker_queue_conf':
+                    $this->initWorkerQueueConf($workerConfItems);
+                    break;
+                case 'worker_kafka_conf':
+                    $this->initWorkerKafkaConf($workerConfItems);
+                    break;
+                case 'worker_other_conf':
+                    $this->initWorkerOtherConf($workerConfItems);
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+
+        return $this;
+    }
+
+    /**
+     * @param array $workerConfItems
+     */
+    protected function initWorkerQueueConf(array $workerConfItems)
+    {
+        foreach($workerConfItems ?? [] as $aliasQueueName => $config)
         {
             $processName = $config['process_name'];
             $processClass = $config['handler'];
             $processWorkerNum = $config['worker_num'] ?? 1;
             $async = true;
-            $args = [
-                'alias_queue_name'       => $aliasQueueName,
-                'max_handle'             => $config['$config'] ?? null,
-                'dynamic_queue_create_backlog'  => $config['dynamic_queue_backlog'] ?? null,
-                'dynamic_queue_destroy_backlog' => $config['dynamic_queue_destroy_backlog'] ?? null,
-                'dynamic_queue_worker_num' => $config['dynamic_queue_worker_num'] ?? null
-            ];
+            $args = $config['args'] ?? [];
+            $args['max_handle'] = $config['max_handle'] ?? 10000;
+            $args['alias_queue_name'] = $aliasQueueName;
             $extendData = $config['extend_data'] ?? [];
             $enableCoroutine = true;
             $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
         }
+    }
 
-        return $this;
+    /**
+     * @param array $workerConfItems
+     */
+    protected function initWorkerKafkaConf(array $workerConfItems)
+    {
+
+    }
+
+    /**
+     * @param array $workerConfItems
+     */
+    protected function initWorkerOtherConf(array $workerConfItems)
+    {
+        foreach($workerConfItems ?? [] as $aliasName => $config)
+        {
+            $processName = $config['process_name'];
+            $processClass = $config['handler'];
+            $processWorkerNum = $config['worker_num'] ?? 1;
+            $async = true;
+            $args = $config['args'] ?? [];
+            $extendData = $config['extend_data'] ?? [];
+            $enableCoroutine = true;
+            $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
+        }
     }
 }

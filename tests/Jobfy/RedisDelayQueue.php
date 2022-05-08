@@ -3,17 +3,17 @@ namespace Workerfy\Tests\Jobfy;
 
 use Workerfy\ConfigLoader;
 use Common\Library\Cache\Redis;
-use Common\Library\Queues\Queue;
+use Common\Library\Queues\RedisDelayQueue as DelayQueue;
 
-abstract class RedisQueue extends QueueProcess
+abstract class RedisDelayQueue extends QueueProcess
 {
     /**
-     * @var Queue $queue
+     * @var DelayQueue $queue
      */
     protected $queue;
 
     /**
-     * @return Queue
+     * @return DelayQueue
      */
     public function getQueueInstance()
     {
@@ -28,7 +28,7 @@ abstract class RedisQueue extends QueueProcess
             $config['read_timeout'] ?? 0.0
         );
 
-        return new Queue(
+        return new DelayQueue(
             $redis,
             $this->queueName
         );
@@ -52,18 +52,21 @@ abstract class RedisQueue extends QueueProcess
                     continue;
                 }
 
-                $result = $this->queue->pop($timeOut = 0);
+                $result = $this->queue->rangeByScore('-inf', time(),  ['limit' =>[0, 2]]);
                 $this->handleNum++;
 
-                if($result)
-                {
-                    $data = json_decode($result[1], true) ?? [];
-                    $this->handle($data);
+                foreach($result as $item) {
+                    try {
+                        $this->handle($item);
+                    }catch (\Throwable $exception) {
+                        $this->onHandleException($exception, $item ?? []);
+                    }
                 }
+
             }catch (\Throwable $exception) {
-                $this->onHandleException($exception, $data ?? []);
+                $this->onHandleException($exception, $result ?? []);
             }
-            usleep(150000);
+            sleep(1);
         }
     }
 }

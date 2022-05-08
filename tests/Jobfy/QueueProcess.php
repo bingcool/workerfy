@@ -11,11 +11,6 @@ abstract class QueueProcess extends AbstractProcess
     const PREFIX_KEY = 'workerfy:queue:';
 
     /**
-     * @var mixed
-     */
-    protected $redis;
-
-    /**
      * @var string 队列名称
      */
     protected $queueName;
@@ -62,10 +57,19 @@ abstract class QueueProcess extends AbstractProcess
     protected $ttl = 0;
 
     /**
+     * @var int
+     */
+    protected $destroyPreTime = 0;
+
+    /**
+     * @var int
+     */
+    protected $handleNum = 0;
+
+    /**
      * @var string
      */
-    protected $driver;
-
+    protected $driver = 'redis-queue';
 
     /**
      * init
@@ -81,29 +85,46 @@ abstract class QueueProcess extends AbstractProcess
         $this->retryDelayTime = $this->getArgs()['retry_delay_time'] ?? $this->retryDelayTime;
         $this->ttl = $this->getArgs()['ttl'] ?? $this->ttl;
         $this->driver = $this->getArgs()['driver'] ?? $this->driver;
+        $this->queue = $this->getQueueInstance();
+        $this->monitorQueue();
     }
 
     /**
-     * @inheritDoc
+     * monitorQueue
      */
-    public function run()
+    protected function monitorQueue()
     {
-        while(true)
-        {
-            try {
-                $this->doHandle([]);
-            }catch (\Throwable $exception)
-            {
-                $this->onHandleException($exception);
-            } finally {
+        if($this->getProcessWorkerId() == 0) {
+            \Swoole\Timer::tick(5000, function () {
+                $queue = $this->getQueueInstance();
+                if($this instanceof RedisQueue) {
+                    $queueBacklog = $queue->count();
+                }else if($this instanceof RedisDelayQueue) {
+                    $queueBacklog = $queue->count('-inf', time() + 1);
+                }
 
-            }
-            sleep(1);
+                if(isset($queueBacklog)) {
+                    if($queueBacklog > $this->dynamicQueueCreateBacklog) {
+                        $this->notifyMasterCreateDynamicProcess($this->getProcessName(), $this->dynamicQueueWorkerNum);
+                    }
+                    if($queueBacklog < $this->dynamicQueueDestroyBacklog && (time() - $this->destroyPreTime) > 300) {
+                        $this->destroyPreTime = time();
+                        $this->notifyMasterDestroyDynamicProcess($this->getProcessName());
+                    }
+                }
+                unset($queue);
+            });
         }
     }
 
+    /**
+     * @return mixed
+     */
     abstract public function getQueueInstance();
 
-    abstract public function receive();
-
+    /**
+     * @param array $data
+     * @return mixed
+     */
+    abstract public function handle(array $data);
 }

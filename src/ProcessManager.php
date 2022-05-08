@@ -1640,6 +1640,7 @@ class ProcessManager
             $swooleTableInfo = $this->getSwooleTableInfo();
             $cliParams = $this->getCliParams(false);
             $maxNum = $this->getMaxProcessNum();
+            $hostname = gethostname();
             $info =
                 <<<EOF
 \r
@@ -1663,6 +1664,7 @@ class ProcessManager
         sysvmsg_kernel: $sysKernel
         sysvmsg_status: $msgSysvmsgInfo
         swoole_table_name: $swooleTableInfo
+        hostname: $hostname
         
  
  Children Process Runtime:
