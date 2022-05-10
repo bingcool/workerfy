@@ -3,10 +3,9 @@ namespace Workerfy\Tests\Jobfy;
 
 use Common\Library\Cache\Redis;
 use Common\Library\Queues\Queue;
-use Workerfy\AbstractProcess;
 use Workerfy\ConfigLoader;
 
-class WorkerPushQueue extends AbstractProcess
+class PushQueue extends DaemonProcess
 {
     /**
      * 队列前缀
@@ -25,6 +24,7 @@ class WorkerPushQueue extends AbstractProcess
 
     public function init()
     {
+        parent::init();
         $config = ConfigLoader::getInstance()->getConfig()['redis'];
         $redis = new Redis();
         $redis->connect(

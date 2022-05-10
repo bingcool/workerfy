@@ -933,6 +933,7 @@ class ProcessManager
         list($msgSysvmsgInfo, $sysKernel) = $this->getSysvmsgInfo();
         $swooleTableInfo = $this->getSwooleTableInfo(false);
         $cliParams = $this->getCliParams(true);
+        $hostName = gethostname();
         $status['master'] = [
             'start_script_file' => START_SCRIPT_FILE,
             'pid_file' => PID_FILE,
@@ -944,6 +945,7 @@ class ProcessManager
             'php_version' => $phpVersion,
             'swoole_version' => $swooleVersion,
             'enable_cli_pipe' => $enableCliPipe,
+            'hostname' => $hostName,
             'msg_sysvmsg_kernel' => $sysKernel,
             'msg_sysvmsg_info' => $msgSysvmsgInfo,
             'swoole_table_info' => $swooleTableInfo,

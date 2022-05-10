@@ -3,7 +3,7 @@ namespace Workerfy\Tests\Jobfy;
 
 use Workerfy\AbstractProcess;
 
-abstract class QueueProcess extends AbstractProcess
+abstract class QueueProcess extends DaemonProcess
 {
     /**
      * 队列前缀
@@ -14,16 +14,6 @@ abstract class QueueProcess extends AbstractProcess
      * @var string 队列名称
      */
     protected $queueName;
-
-    /**
-     * @var int 默认消费达到10000后reboot进程
-     */
-    protected $maxHandle = 10000;
-
-    /**
-     * @var int
-     */
-    protected $lifeTime = 3600;
 
     /**
      * @var int 队列积压数
@@ -81,9 +71,8 @@ abstract class QueueProcess extends AbstractProcess
      */
     public function init()
     {
+        parent::init();
         $this->queueName = static::PREFIX_KEY.$this->getArgs()['alias_queue_name'];
-        $this->maxHandle = $this->getArgs()['max_handle'] ?? $this->maxHandle;
-        $this->lifeTime  = $this->getArgs()['life_time'] ?? $this->lifeTime;
         $this->dynamicQueueCreateBacklog = $this->getArgs()['dynamic_queue_create_backlog'] ?? $this->dynamicQueueCreateBacklog;
         $this->dynamicQueueDestroyBacklog = $this->getArgs()['dynamic_queue_destroy_backlog'] ?? $this->dynamicQueueDestroyBacklog;
         $this->dynamicQueueWorkerNum = $this->getArgs()['dynamic_queue_worker_num'] ?? $this->dynamicQueueWorkerNum;
