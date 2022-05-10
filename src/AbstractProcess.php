@@ -204,6 +204,21 @@ abstract class AbstractProcess
     const WORKERFY_PROCESS_STATUS_FLAG = "process::worker::action::status";
 
     /**
+     * @var string
+     */
+    const WORKERFY_ON_EVENT_REBOOT = 'onAfterReboot';
+
+    /**
+     * @var string
+     */
+    const WORKERFY_ON_EVENT_CREATE_DYNAMIC_PROCESS = 'onCreateDynamicProcessCallback';
+
+    /**
+     * @var string
+     */
+    const WORKERFY_ON_EVENT_DESTROY_DYNAMIC_PROCESS = 'onDestroyDynamicProcessCallback';
+
+    /**
      * 动态进程销毁间隔多少秒后，才能再次接受动态创建，防止频繁销毁和创建，最大300s
      * @var int
      */
@@ -411,8 +426,9 @@ abstract class AbstractProcess
                 }
 
                 // reboot after handle can do send or record msg log or report msg
-                if ($this->getRebootCount() > 0 && method_exists(static::class, 'afterReboot')) {
-                    $this->afterReboot();
+                $method = self::WORKERFY_ON_EVENT_REBOOT;
+                if ($this->getRebootCount() > 0 && method_exists(static::class, $method)) {
+                    $this->$method();
                 }
 
                 $this->run();
@@ -663,6 +679,10 @@ abstract class AbstractProcess
                 ]
         ];
         $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+        $method = self::WORKERFY_ON_EVENT_CREATE_DYNAMIC_PROCESS;
+        if(method_exists(static::class, $method)) {
+            $this->$method($dynamic_process_name, $dynamic_process_num);
+        }
     }
 
     /**
@@ -671,7 +691,7 @@ abstract class AbstractProcess
      * @param string $dynamic_process_name
      * @param int $dynamic_process_num
      * @return void
-     * @throws \Exception
+     * @throws \Throwable
      */
     public function notifyMasterDestroyDynamicProcess(string $dynamic_process_name, int $dynamic_process_num = -1)
     {
@@ -686,21 +706,33 @@ abstract class AbstractProcess
                     ]
             ];
             $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
-            // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
-            $this->isDynamicDestroy(true);
-            $dynamicDestroyProcessTime = $this->waitTime + 10;
-            if (isset($this->getArgs()['dynamic_destroy_process_time'])) {
-                $dynamicDestroyProcessTime = $this->getArgs()['dynamic_destroy_process_time'];
-                // max time can not too long
-                if (is_numeric($dynamicDestroyProcessTime)) {
-                    if ($dynamicDestroyProcessTime > 300) {
-                        $dynamicDestroyProcessTime = self::DYNAMIC_DESTROY_PROCESS_TIME;
+            try {
+                // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
+                $this->isDynamicDestroy(true);
+                $dynamicDestroyProcessTime = $this->waitTime + 10;
+                if (isset($this->getArgs()['dynamic_destroy_process_time'])) {
+                    $dynamicDestroyProcessTime = $this->getArgs()['dynamic_destroy_process_time'];
+                    // max time can not too long
+                    if (is_numeric($dynamicDestroyProcessTime)) {
+                        if ($dynamicDestroyProcessTime > 300) {
+                            $dynamicDestroyProcessTime = self::DYNAMIC_DESTROY_PROCESS_TIME;
+                        }
                     }
                 }
+
+                $method = self::WORKERFY_ON_EVENT_DESTROY_DYNAMIC_PROCESS;
+                if(method_exists(static::class, $method)) {
+                    $this->$method($dynamic_process_name, $dynamic_process_num);
+                }
+
+                // wait sleep
+                \Swoole\Coroutine\System::sleep($dynamicDestroyProcessTime);
+            }catch (\Throwable $exception) {
+                throw $exception;
+            } finally {
+                $this->isDynamicDestroy(false);
             }
-            // wait sleep
-            \Swoole\Coroutine\System::sleep($dynamicDestroyProcessTime);
-            $this->isDynamicDestroy(false);
+
         }
     }
 
@@ -1117,15 +1149,15 @@ abstract class AbstractProcess
             $randNum = rand(1, 10);
             // for Example reboot/600s after 600s reboot this process
             if ($cron_expression < 120) {
-                $sleep = 60;
+                $sleepTime = 60;
                 $tickTime = (30+$randNum) * 1000;
             } else {
-                $sleep = $cron_expression;
+                $sleepTime = $cron_expression;
                 $tickTime = (60+$randNum) * 1000;
             }
 
-            \Swoole\Timer::tick($tickTime, function () use ($sleep, $waitTime) {
-                if (time() - $this->getStartTime() >= $sleep) {
+            \Swoole\Timer::tick($tickTime, function () use ($sleepTime, $waitTime) {
+                if (time() - $this->getStartTime() >= $sleepTime) {
                     $this->reboot($waitTime);
                 }
             });

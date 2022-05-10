@@ -3,6 +3,12 @@ namespace Workerfy\Tests\Jobfy;
 
 class WorkerOrderQueue extends RedisQueue
 {
+
+    public function onAfterReboot()
+    {
+        var_dump(__FUNCTION__);
+    }
+
     /**
      * @inheritDoc
      */

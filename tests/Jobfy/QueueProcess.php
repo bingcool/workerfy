@@ -69,9 +69,8 @@ abstract class QueueProcess extends DaemonProcess
     /**
      * init
      */
-    public function init()
+    public function onInit()
     {
-        parent::init();
         $this->queueName = static::PREFIX_KEY.$this->getArgs()['alias_queue_name'];
         $this->dynamicQueueCreateBacklog = $this->getArgs()['dynamic_queue_create_backlog'] ?? $this->dynamicQueueCreateBacklog;
         $this->dynamicQueueDestroyBacklog = $this->getArgs()['dynamic_queue_destroy_backlog'] ?? $this->dynamicQueueDestroyBacklog;
