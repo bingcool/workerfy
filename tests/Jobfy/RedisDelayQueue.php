@@ -42,13 +42,8 @@ abstract class RedisDelayQueue extends QueueProcess
         while(true)
         {
             try {
-                if($this->isExiting() || $this->isRebooting()) {
-                    sleep(1);
-                    continue;
-                }
-
-                if($this->isStaticProcess() && $this->handleNum > $this->maxHandle) {
-                    $this->reboot(2);
+                if(!$this->checkCanContinueHandle())
+                {
                     continue;
                 }
 

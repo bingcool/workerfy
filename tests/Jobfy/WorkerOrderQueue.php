@@ -1,6 +1,8 @@
 <?php
 namespace Workerfy\Tests\Jobfy;
 
+use function foo\func;
+
 class WorkerOrderQueue extends RedisQueue
 {
 
@@ -23,6 +25,10 @@ class WorkerOrderQueue extends RedisQueue
         if(isset($data['__retry_count']) && $data['__retry_count'] > $this->retryNum) {
             return;
         }
+
+        go(function() {
+            \Swoole\Coroutine\System::sleep(3);
+        });
 
         // 假设处理失败，然后放入失败重试队列，一定时间后再处理
 //        if(isset($data['id']) && $data['id'] == 2)

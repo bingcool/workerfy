@@ -10,13 +10,14 @@ return [
                 'process_name' => 'worker-queue1',
                 'handler' => \Workerfy\Tests\Jobfy\WorkerOrderQueue::class,
                 'worker_num' => 1, // 默认动态进程数量
-                'max_handle' => 100, //消费达到10000后reboot进程
+                'max_handle' => 10000, //消费达到10000后reboot进程
                 'life_time'  => 3600, // 每隔3600s重启进程
+                'limit_run_coroutine_num' => 10, // 当前进程的实时协程数量，如果协程数量超过此设置的数量，则禁止继续消费队列处理业务，而是在等待
                 'extend_data' => [], // 额外数据
 
                 // queue option
                 'args' => [
-                    'dynamic_queue_create_backlog' => 100, //队列达到500积压，则动态创建进程
+                    'dynamic_queue_create_backlog' => 3000, //队列达到500积压，则动态创建进程
                     'dynamic_queue_destroy_backlog' => 20, //队列少于300积压，则销毁，这个值不设置，则表示是500
                     'dynamic_queue_worker_num' => 2, //动态创建的进程数,
                     'retry_num' => 2, // 重试次数
@@ -40,14 +41,15 @@ return [
 
     ],
 
-    // 其他模式比如扫表
-    'worker_other_conf' => [
+    // 其他公共模式比如扫表
+    'worker_common_conf' => [
         'push_redis_queue' => [
             'process_name' => 'worker-push-queue-data',
             'handler' => \Workerfy\Tests\Jobfy\PushQueue::class,
             'worker_num' => 2, // 默认动态进程数量
             'max_handle' => 100, //消费达到10000后reboot进程
             'life_time'  => 3600, // 每隔3600s重启进程
+            'limit_run_coroutine_num' => 10, // 当前进程的实时协程数量，如果协程数量超过此设置的数量，则禁止继续消费队列处理业务，而是在等待
             'extend_data' => [],
             'args' => []
         ]

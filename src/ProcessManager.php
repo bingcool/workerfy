@@ -1411,8 +1411,8 @@ class ProcessManager
                     if (is_resource($this->cliPipeFd)) {
                         @\Swoole\Event::del($this->cliPipeFd);
                         fclose($this->cliPipeFd);
-                        @unlink($this->getCliPipeFile());
                     }
+                    @unlink($this->getCliPipeFile());
                     // remove sysvmsg queue
                     $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
                     $sysvmsgManager->destroyMsgQueue();

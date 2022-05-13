@@ -747,6 +747,14 @@ abstract class AbstractProcess
     }
 
     /**
+     * @return bool
+     */
+    public function isWorker0()
+    {
+        return $this->getProcessWorkerId() == 0;
+    }
+
+    /**
      * start
      * @return mixed
      */
@@ -1049,11 +1057,13 @@ abstract class AbstractProcess
      * @param null|float $wait_time
      * @return bool
      */
-    public function reboot(?float $wait_time = null)
+    public function reboot(?float $wait_time = null, bool $includeDynamicProcess = false)
     {
-        if (!$this->isStaticProcess()) {
-            $this->writeReloadFormatInfo();
-            return false;
+        if(!$includeDynamicProcess) {
+            if (!$this->isStaticProcess()) {
+                $this->writeReloadFormatInfo();
+                return false;
+            }
         }
 
         // reboot or exit status

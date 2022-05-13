@@ -85,6 +85,36 @@ abstract class QueueProcess extends DaemonProcess
     }
 
     /**
+     * @return bool
+     */
+    protected function checkCanContinueHandle()
+    {
+        if($this->isExiting() || $this->isRebooting()) {
+            sleep(1);
+            return false;
+        }
+
+        if($this->isStaticProcess() && $this->handleNum > $this->maxHandle) {
+            $this->reboot(2);
+            return false;
+        }
+
+        if($this->getCurrentCoroutineLastCid() > $this->currentRunCoroutineLastCid) {
+            $this->reboot(2, true);
+            return false;
+        }
+
+        if(!empty($this->limitCurrentRunCoroutineNum)) {
+            if($this->getCurrentRunCoroutineNum() > $this->limitCurrentRunCoroutineNum) {
+                \Swoole\Coroutine\System::sleep(0.5);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * monitorQueue
      */
     protected function monitorQueue()
