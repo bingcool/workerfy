@@ -63,7 +63,6 @@ abstract class RedisQueue extends QueueProcess
             }catch (\Throwable $exception) {
                 $this->onHandleException($exception, $data ?? []);
             }
-            usleep(150000);
         }
     }
 }

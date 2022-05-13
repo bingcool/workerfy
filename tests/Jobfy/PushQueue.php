@@ -22,6 +22,9 @@ class PushQueue extends DaemonProcess
      */
     protected $queueName;
 
+    /**
+     * init
+     */
     public function init()
     {
         parent::init();

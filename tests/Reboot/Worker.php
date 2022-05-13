@@ -38,7 +38,7 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     // 有时需要上报一下reboot的信息，主要是发生异常的时候或者业务上主动reboot，可以上报，方便随时了解信息
-    public function afterReboot()
+    public function onAfterReboot()
     {
         var_dump('after reboot-count='.$this->getRebootCount());
     }
