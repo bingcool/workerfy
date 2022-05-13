@@ -23,7 +23,7 @@ class Manager extends ProcessManager
                 case 'worker_kafka_conf':
                     $this->initWorkerKafkaConf($workerConfItems);
                     break;
-                case 'worker_other_conf':
+                case 'worker_common_conf':
                     $this->initWorkerOtherConf($workerConfItems);
                     break;
                 default:
@@ -48,9 +48,8 @@ class Manager extends ProcessManager
             $processWorkerNum = $config['worker_num'] ?? 1;
             $async = true;
             $args = $config['args'] ?? [];
-            $args['max_handle'] = $config['max_handle'] ?? 10000;
-            $args['life_time'] = $config['life_time'] ?? 3600;
             $args['alias_queue_name'] = $aliasQueueName;
+            $this->parseArgs($args, $config);
             $extendData = $config['extend_data'] ?? [];
             $enableCoroutine = true;
             $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
@@ -77,11 +76,21 @@ class Manager extends ProcessManager
             $processWorkerNum = $config['worker_num'] ?? 1;
             $async = true;
             $args = $config['args'] ?? [];
-            $args['max_handle'] = $config['max_handle'] ?? 10000;
-            $args['life_time'] = $config['life_time'] ?? 3600;
+            $this->parseArgs($args, $config);
             $extendData = $config['extend_data'] ?? [];
             $enableCoroutine = true;
             $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
         }
+    }
+
+    /**
+     * @param array $args
+     * @param array $config
+     */
+    protected function parseArgs(array &$args, array $config)
+    {
+        $args['max_handle'] = $config['max_handle'] ?? 10000;
+        $args['life_time'] = $config['life_time'] ?? 3600;
+        $args['limit_run_coroutine_num'] = $config['limit_run_coroutine_num'] ?? null;
     }
 }

@@ -42,16 +42,10 @@ abstract class RedisQueue extends QueueProcess
         while(true)
         {
             try {
-                if($this->isExiting() || $this->isRebooting()) {
-                    sleep(1);
+                if(!$this->checkCanContinueHandle())
+                {
                     continue;
                 }
-
-                if($this->isStaticProcess() && $this->handleNum > $this->maxHandle) {
-                    $this->reboot(2);
-                    continue;
-                }
-
                 $result = $this->queue->pop($timeOut = 0);
                 $this->handleNum++;
 

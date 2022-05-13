@@ -17,12 +17,24 @@ abstract class DaemonProcess extends AbstractProcess
     protected $lifeTime = 3600;
 
     /**
+     * @var int
+     */
+    protected $currentRunCoroutineLastCid = 50000;
+
+    /**
+     * @var null
+     */
+    protected $limitCurrentRunCoroutineNum = null;
+
+    /**
      * init
      */
     protected function init()
     {
         $this->maxHandle = $this->getArgs()['max_handle'] ?? $this->maxHandle;
         $this->lifeTime  = $this->getArgs()['life_time'] ?? $this->lifeTime;
+        $this->currentRunCoroutineLastCid = $this->getArgs()['current_run_coroutine_last_cid'] ?? $this->maxHandle * 10;
+        $this->limitCurrentRunCoroutineNum = $this->getArgs()['limit_run_coroutine_num'] ?? null;
         $this->onInit();
     }
 
