@@ -221,7 +221,7 @@ class ProcessManager
         }
 
         if ($process_worker_num > $maxProcessNum) {
-            write_info("【Warning】Params process_worker_num more then max_process_num={$maxProcessNum}");
+            write_info("【Warning】Process Name={$process_name}, params of process_worker_num more then max_process_num={$maxProcessNum}");
             $process_worker_num = $maxProcessNum;
         }
 

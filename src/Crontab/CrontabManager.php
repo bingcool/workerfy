@@ -284,7 +284,7 @@ class CrontabManager
     }
 
     /**
-     * 是否存在正在执行任务
+     *
      * @return bool
      */
     public function hasRunningCrontabTask()

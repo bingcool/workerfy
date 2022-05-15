@@ -9,8 +9,8 @@
  * +----------------------------------------------------------------------
  */
 
-include_once __DIR__ . '/WorkerfyConst.php';
-include_once __DIR__ . '/EachColor.php';
+include __DIR__ . '/WorkerfyConst.php';
+include __DIR__ . '/EachColor.php';
 
 if (!version_compare(phpversion(), '7.1.0', '>=')) {
     write_info("【Warning】php version require >= php7.1+");
