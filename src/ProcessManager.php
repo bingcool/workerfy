@@ -271,44 +271,7 @@ class ProcessManager
                 $this->daemon($is_daemon);
                 $this->setMasterPid();
                 $this->installReportStatus();
-                foreach ($this->processLists as $key => $list) {
-                    $processWorkerNum = $list['process_worker_num'] ?? 1;
-                    for ($workerId = 0; $workerId < $processWorkerNum; $workerId++) {
-                        try {
-                            $processName = $list['process_name'];
-                            $processClass = $list['process_class'];
-                            $async = $list['async'] ?? true;
-                            $args = $list['args'] ?? [];
-                            $extendData = $list['extend_data'] ?? null;
-                            $enableCoroutine = $list['enable_coroutine'] ?? true;
-                            /**
-                             * @var AbstractProcess $process
-                             */
-                            $process = new $processClass(
-                                $processName,
-                                $async,
-                                $args,
-                                $extendData,
-                                $enableCoroutine
-                            );
-                            $process->setProcessWorkerId($workerId);
-                            $process->setMasterPid($this->masterPid);
-                            $process->setStartTime();
-                            if (!isset($this->processWorkers[$key][$workerId])) {
-                                $this->processWorkers[$key][$workerId] = $process;
-                            }
-                            usleep(50000);
-                        } catch (\Throwable $throwable) {
-                            $this->onHandleException->call($this, $throwable);
-                        }
-                    }
-                }
-                foreach ($this->processWorkers as $key => $workers) {
-                    foreach ($workers as $workerId => $process) {
-                        $process->start();
-                        usleep(50000);
-                    }
-                }
+                $this->initStart();
                 // process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
                 $this->running();
                 $this->installCliPipe();
@@ -334,6 +297,51 @@ class ProcessManager
             return $masterPid;
         } catch (\Throwable $throwable) {
             $this->onHandleException->call($this, $throwable);
+        }
+    }
+
+    /**
+     * initStart
+     */
+    private function initStart()
+    {
+        foreach ($this->processLists as $key => $list) {
+            $processWorkerNum = $list['process_worker_num'] ?? 1;
+            for ($workerId = 0; $workerId < $processWorkerNum; $workerId++) {
+                try {
+                    $processName = $list['process_name'];
+                    $processClass = $list['process_class'];
+                    $async = $list['async'] ?? true;
+                    $args = $list['args'] ?? [];
+                    $extendData = $list['extend_data'] ?? null;
+                    $enableCoroutine = $list['enable_coroutine'] ?? true;
+                    /**
+                     * @var AbstractProcess $process
+                     */
+                    $process = new $processClass(
+                        $processName,
+                        $async,
+                        $args,
+                        $extendData,
+                        $enableCoroutine
+                    );
+                    $process->setProcessWorkerId($workerId);
+                    $process->setMasterPid($this->masterPid);
+                    $process->setStartTime();
+                    if (!isset($this->processWorkers[$key][$workerId])) {
+                        $this->processWorkers[$key][$workerId] = $process;
+                    }
+                    usleep(50000);
+                } catch (\Throwable $throwable) {
+                    $this->onHandleException->call($this, $throwable);
+                }
+            }
+        }
+        foreach ($this->processWorkers as $key => $workers) {
+            foreach ($workers as $workerId => $process) {
+                $process->start();
+                usleep(50000);
+            }
         }
     }
 
