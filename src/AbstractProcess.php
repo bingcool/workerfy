@@ -247,10 +247,10 @@ abstract class AbstractProcess
         bool $enable_coroutine = true
     )
     {
-        $this->async = $async;
-        $this->args = $args;
-        $this->extendData = $extend_data;
-        $this->processName = $process_name;
+        $this->async           = $async;
+        $this->args            = $args;
+        $this->extendData      = $extend_data;
+        $this->processName     = $process_name;
         $this->enableCoroutine = $enable_coroutine;
 
         if (isset($args['wait_time']) && is_numeric($args['wait_time'])) {
@@ -396,10 +396,10 @@ abstract class AbstractProcess
             $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timer_id) {
                 if (!$this->isMasterLive()) {
                     \Swoole\Timer::clear($timer_id);
+                    $processName     = $this->getProcessName();
+                    $workerId        = $this->getProcessWorkerId();
+                    $masterPid       = $this->getMasterPid();
                     $this->masterLiveTimerId = null;
-                    $processName = $this->getProcessName();
-                    $workerId = $this->getProcessWorkerId();
-                    $masterPid = $this->getMasterPid();
                     write_info("【Warning】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
                     $this->exit(true, 1);
                 }
@@ -453,7 +453,7 @@ abstract class AbstractProcess
                 $this->exitAndRebootDefer();
                 $this->writeStopFormatInfo();
                 $processName = $this->getProcessName();
-                $workerId = $this->getProcessWorkerId();
+                $workerId    = $this->getProcessWorkerId();
                 write_info("【Info】 Start to exit process={$processName}, worker_id={$workerId}");
             } catch (\Throwable $throwable) {
                 write_info("【Error】Exit error, Process={$processName}, error:" . $throwable->getMessage());
@@ -578,9 +578,9 @@ abstract class AbstractProcess
         bool $is_use_master_proxy = true
     )
     {
-        $processManager = \Workerfy\ProcessManager::getInstance();
-        $isMaster = $processManager->isMaster($process_name);
-        $fromProcessName = $this->getProcessName();
+        $processManager      = \Workerfy\ProcessManager::getInstance();
+        $isMaster            = $processManager->isMaster($process_name);
+        $fromProcessName     = $this->getProcessName();
         $fromProcessWorkerId = $this->getProcessWorkerId();
 
         if ($fromProcessName == $process_name && $process_worker_id == $fromProcessWorkerId) {
@@ -1160,10 +1160,10 @@ abstract class AbstractProcess
             // for Example reboot/600s after 600s reboot this process
             if ($cron_expression < 120) {
                 $sleepTime = 60;
-                $tickTime = (30+$randNum) * 1000;
+                $tickTime  = (30 + $randNum) * 1000;
             } else {
                 $sleepTime = $cron_expression;
-                $tickTime = (60+$randNum) * 1000;
+                $tickTime  = (60 + $randNum) * 1000;
             }
 
             \Swoole\Timer::tick($tickTime, function () use ($sleepTime, $waitTime) {
@@ -1423,10 +1423,10 @@ abstract class AbstractProcess
     {
         if ($this->getProcessType() == self::PROCESS_DYNAMIC_TYPE) {
             $processName = $this->getProcessName();
-            $workerId = $this->getProcessWorkerId();
+            $workerId    = $this->getProcessWorkerId();
             $processType = self::PROCESS_DYNAMIC_TYPE_NAME;
-            $pid = $this->getPid();
-            $logInfo = "start children_process【{$processType}】: {$processName}@{$workerId} start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid={$pid}";
+            $pid         = $this->getPid();
+            $logInfo     = "start children_process【{$processType}】: {$processName}@{$workerId} start(默认动态创建的进程不支持reload，可以使用 kill -10 pid 强制重启), Pid={$pid}";
             write_info($logInfo, 'red');
         }
     }

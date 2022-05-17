@@ -155,7 +155,7 @@ class CrontabManager
     protected function channelLoop(string $cron_name, string $expression, callable $func, float $msec)
     {
         $channel = new \Swoole\Coroutine\Channel(1);
-        $second = round($msec / 1000, 3);
+        $second  = round($msec / 1000, 3);
         if ($second < 0.001) {
             $second = 0.001;
         }
@@ -179,13 +179,14 @@ class CrontabManager
      */
     protected function loopHandle(string $cron_name, string $expression, callable $func)
     {
+        $cron          = CronExpression::factory($expression);
+        $nowTime       = time();
         $expressionKey = md5($expression);
-        $cron = CronExpression::factory($expression);
-        $nowTime = time();
+
         $cronNextDatetime = strtotime($cron->getNextRunDate()->format('Y-m-d H:i:s'));
         if ($cron->isDue()) {
             if (!isset($this->cronNextDatetimeArr[$cron_name][$expressionKey])) {
-                $this->expression[$cron_name][$expressionKey] = $expression;
+                $this->expression[$cron_name][$expressionKey]          = $expression;
                 $this->cronNextDatetimeArr[$cron_name][$expressionKey] = $cronNextDatetime;
             }
 

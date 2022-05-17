@@ -426,9 +426,9 @@ class ProcessManager
             /** @var AbstractProcess $process */
             foreach ($processes as $processWorkerId => $process) {
                 $processName = $process->getProcessName();
-                $workerId = $process->getProcessWorkerId();
-                $pid = $process->getPid();
-                $startTime = $process->getStartTime();
+                $workerId    = $process->getProcessWorkerId();
+                $pid         = $process->getPid();
+                $startTime   = $process->getStartTime();
                 if (is_numeric($startTime)) {
                     $startTime = date('Y-m-d H:i:s', $startTime);
                 }
@@ -571,22 +571,22 @@ class ProcessManager
                     case SIGUSR1  :
                     default  :
                         if (!(\Swoole\Process::kill($pid, 0))) {
-                            $process = $this->getProcessByPid($pid);
-                            $processName = $process->getProcessName();
-                            $processType = $process->getProcessType();
-                            $processWorkerId = $process->getProcessWorkerId();
+                            $process            = $this->getProcessByPid($pid);
+                            $processName        = $process->getProcessName();
+                            $processType        = $process->getProcessType();
+                            $processWorkerId    = $process->getProcessWorkerId();
                             $processRebootCount = $process->getRebootCount() + 1;
-                            $key = md5($processName);
-                            $list = $this->processLists[$key];
+                            $key                = md5($processName);
+                            $list               = $this->processLists[$key];
                             \Swoole\Event::del($process->getSwooleProcess()->pipe);
                             unset($this->processWorkers[$key][$processWorkerId]);
                             if (is_array($list)) {
                                 try {
-                                    $processName = $list['process_name'];
-                                    $processClass = $list['process_class'];
-                                    $async = $list['async'] ?? true;
-                                    $args = $list['args'] ?? [];
-                                    $extendData = $list['extend_data'] ?? null;
+                                    $processName     = $list['process_name'];
+                                    $processClass    = $list['process_class'];
+                                    $async           = $list['async'] ?? true;
+                                    $args            = $list['args'] ?? [];
+                                    $extendData      = $list['extend_data'] ?? null;
                                     $enableCoroutine = $list['enable_coroutine'] ?? false;
                                     /** @var AbstractProcess $newProcess */
                                     $newProcess = new $processClass(
@@ -662,16 +662,16 @@ class ProcessManager
                     if ($msg && isset($fromProcessName) && isset($fromProcessWorkerId) && isset($toProcessName) && isset($toProcessWorkerId)) {
                         try {
                             if ($toProcessName == $this->getMasterWorkerName()) {
-                                $action = $msg['action'] ?? '';
-                                $processName = $msg['process_name'] ?? '';
-                                $data = $msg['data'] ?? [];
+                                $action           = $msg['action'] ?? '';
+                                $processName      = $msg['process_name'] ?? '';
+                                $data             = $msg['data'] ?? [];
                                 $actionHandleFlag = false;
                                 if ($action && $processName) {
                                     switch ($action) {
                                         case ProcessManager::CREATE_DYNAMIC_PROCESS_WORKER :
-                                            $actionHandleFlag = true;
+                                            $actionHandleFlag     = true;
                                             $dynamic_process_name = $processName;
-                                            $dynamic_process_num = $data['dynamic_process_num'] ?? 1;
+                                            $dynamic_process_num  = $data['dynamic_process_num'] ?? 1;
                                             if (is_callable($this->onCreateDynamicProcess)) {
                                                 $this->onCreateDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $fromProcessName, $fromProcessWorkerId);
                                             } else {
@@ -679,9 +679,9 @@ class ProcessManager
                                             }
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS_WORKER:
-                                            $actionHandleFlag = true;
+                                            $actionHandleFlag     = true;
                                             $dynamic_process_name = $processName;
-                                            $dynamic_process_num = $data['dynamic_process_num'] ?? -1;
+                                            $dynamic_process_num  = $data['dynamic_process_num'] ?? -1;
                                             if (is_callable($this->onDestroyDynamicProcess)) {
                                                 $this->onDestroyDynamicProcess->call($this, $dynamic_process_name, $dynamic_process_num, $fromProcessName, $fromProcessWorkerId);
                                             } else {
@@ -689,11 +689,11 @@ class ProcessManager
                                             }
                                             break;
                                         case AbstractProcess::WORKERFY_PROCESS_STATUS_FLAG:
-                                            $actionHandleFlag = true;
-                                            $worker_id = $data['worker_id'];
-                                            $status = $data['status'] ?? [];
+                                            $actionHandleFlag       = true;
+                                            $worker_id              = $data['worker_id'];
+                                            $status                 = $data['status'] ?? [];
                                             $status['process_name'] = $processName;
-                                            $status['worker_id'] = $worker_id;
+                                            $status['worker_id']    = $worker_id;
                                             $this->processStatusList[$processName][$worker_id] = $status;
                                             break;
                                     }
@@ -771,8 +771,8 @@ class ProcessManager
         }
 
         $processWorkerNum = $this->processLists[$key]['process_worker_num'];
-        $process_name = $this->processLists[$key]['process_name'];
-        $processClass = $this->processLists[$key]['process_class'];
+        $process_name     = $this->processLists[$key]['process_name'];
+        $processClass     = $this->processLists[$key]['process_class'];
         if (isset($this->processLists[$key]['dynamic_process_worker_num']) && $this->processLists[$key]['dynamic_process_worker_num'] > 0) {
             $totalProcessNum = $processWorkerNum + $this->processLists[$key]['dynamic_process_worker_num'] + $process_num;
         } else {
@@ -934,33 +934,33 @@ class ProcessManager
                 $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_STATUS_FLAG, $workerId);
             }
         }
-        $cpu_num = swoole_cpu_num();
-        $phpVersion = PHP_VERSION;
-        $swooleVersion = swoole_version();
-        $enableCliPipe = is_resource($this->cliPipeFd) ? 1 : 0;
-        list($msgSysvmsgInfo, $sysKernel) = $this->getSysvmsgInfo();
+        $cpu_num         = swoole_cpu_num();
+        $phpVersion      = PHP_VERSION;
+        $swooleVersion   = swoole_version();
+        $enableCliPipe   = is_resource($this->cliPipeFd) ? 1 : 0;
         $swooleTableInfo = $this->getSwooleTableInfo(false);
-        $cliParams = $this->getCliParams(true);
-        $hostName = gethostname();
+        $cliParams       = $this->getCliParams(true);
+        $hostName        = gethostname();
+        list($msgSysvmsgInfo, $sysKernel) = $this->getSysvmsgInfo();
         $status['master'] = [
-            'start_script_file' => START_SCRIPT_FILE,
-            'pid_file' => PID_FILE,
-            'running_status' => $running_status,
-            'cli_params' => $cliParams,
-            'master_pid' => $this->getMasterPid(),
-            'cpu_num' => $cpu_num,
-            'memory' => Helper::getMemoryUsage(),
-            'php_version' => $phpVersion,
-            'swoole_version' => $swooleVersion,
-            'enable_cli_pipe' => $enableCliPipe,
-            'hostname' => $hostName,
+            'start_script_file'  => START_SCRIPT_FILE,
+            'pid_file'           => PID_FILE,
+            'running_status'     => $running_status,
+            'cli_params'         => $cliParams,
+            'master_pid'         => $this->getMasterPid(),
+            'cpu_num'            => $cpu_num,
+            'memory'             => Helper::getMemoryUsage(),
+            'php_version'        => $phpVersion,
+            'swoole_version'     => $swooleVersion,
+            'enable_cli_pipe'    => $enableCliPipe,
+            'hostname'           => $hostName,
             'msg_sysvmsg_kernel' => $sysKernel,
-            'msg_sysvmsg_info' => $msgSysvmsgInfo,
-            'swoole_table_info' => $swooleTableInfo,
-            'children_num' => $childrenNum,
-            'children_process' => [],
-            'stop_time' => !$running_status ? date("Y-m-d H:i:s") : '',
-            'report_time' => date("Y-m-d H:i:s")
+            'msg_sysvmsg_info'   => $msgSysvmsgInfo,
+            'swoole_table_info'  => $swooleTableInfo,
+            'children_num'       => $childrenNum,
+            'children_process'   => [],
+            'stop_time'          => !$running_status ? date("Y-m-d H:i:s") : '',
+            'report_time'        => date("Y-m-d H:i:s")
         ];
 
         $runningChildrenNum = 0;
@@ -972,9 +972,9 @@ class ProcessManager
                  * @var AbstractProcess $process
                  */
                 $processName = $process->getProcessName();
-                $workerId = $process->getProcessWorkerId();
-                $pid = $process->getPid();
-                $startTime = $process->getStartTime();
+                $workerId    = $process->getProcessWorkerId();
+                $pid         = $process->getPid();
+                $startTime   = $process->getStartTime();
                 if (is_numeric($startTime)) {
                     $startTime = date('Y-m-d H:i:s', $startTime);
                 }
@@ -991,13 +991,13 @@ class ProcessManager
                     $processStatus = 'running';
                     $childrenStatus[$processName][$workerId] = [
                         'process_name' => $processName,
-                        'worker_id' => $workerId,
-                        'pid' => $pid,
+                        'worker_id'    => $workerId,
+                        'pid'          => $pid,
                         'process_type' => $processType,
-                        'start_time' => $startTime,
+                        'start_time'   => $startTime,
                         'reboot_count' => $rebootCount,
-                        'status' => $processStatus,
-                        'runtime' => $this->processStatusList[$processName][$workerId] ?? []
+                        'status'       => $processStatus,
+                        'runtime'      => $this->processStatusList[$processName][$workerId] ?? []
                     ];
                     $runningChildrenNum++;
                 }
@@ -1375,12 +1375,12 @@ class ProcessManager
         if (function_exists('getCliPipeFile')) {
             $pipeFile = getCliPipeFile();
         } else {
-            $pathInfo = pathinfo(PID_FILE);
-            $pathDir = $pathInfo['dirname'];
-            $fileName = $pathInfo['basename'];
-            $ext = $pathInfo['extension'];
+            $pathInfo     = pathinfo(PID_FILE);
+            $pathDir      = $pathInfo['dirname'];
+            $fileName     = $pathInfo['basename'];
+            $ext          = $pathInfo['extension'];
             $pipeFileName = str_replace($ext, 'pipe', $fileName);
-            $pipeFile = $pathDir . '/' . $pipeFileName;
+            $pipeFile     = $pathDir . '/' . $pipeFileName;
         }
         return $pipeFile;
     }
@@ -1640,18 +1640,18 @@ class ProcessManager
                 $childrenNum += count($processes);
             }
             $startScriptFile = START_SCRIPT_FILE;
-            $pidPile = PID_FILE;
-            $cpuNum = swoole_cpu_num();
-            $memory = Helper::getMemoryUsage();
-            $phpVersion = PHP_VERSION;
-            $swooleVersion = swoole_version();
-            $enableCliPipe = is_resource($this->cliPipeFd) ? 1 : 0;
+            $pidPile         = PID_FILE;
+            $cpuNum          = swoole_cpu_num();
+            $memory          = Helper::getMemoryUsage();
+            $phpVersion      = PHP_VERSION;
+            $swooleVersion   = swoole_version();
+            $enableCliPipe   = is_resource($this->cliPipeFd) ? 1 : 0;
             list($msgSysvmsgInfo, $sysKernel) = $this->getSysvmsgInfo();
             $swooleTableInfo = $this->getSwooleTableInfo();
-            $cliParams = $this->getCliParams(false);
-            $maxNum = $this->getMaxProcessNum();
-            $hostname = gethostname();
-            $info =
+            $cliParams       = $this->getCliParams(false);
+            $maxNum          = $this->getMaxProcessNum();
+            $hostname        = gethostname();
+            $info            =
                 <<<EOF
 \r
  Master Process Runtime:
