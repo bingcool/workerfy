@@ -226,13 +226,13 @@ class ProcessManager
         }
 
         $this->processLists[$key] = [
-            'process_name' => $process_name,
-            'process_class' => $process_class,
+            'process_name'       => $process_name,
+            'process_class'      => $process_class,
             'process_worker_num' => $process_worker_num,
-            'async' => $async,
-            'args' => $args,
-            'extend_data' => $extend_data,
-            'enable_coroutine' => $enable_coroutine
+            'async'              => $async,
+            'args'               => $args,
+            'extend_data'        => $extend_data,
+            'enable_coroutine'   => $enable_coroutine
         ];
     }
 
@@ -246,13 +246,13 @@ class ProcessManager
     {
         foreach($conf['worker_conf'] ?? [] as $config)
         {
-            $processName = $config['process_name'];
-            $processClass = $config['handler'];
+            $processName      = $config['process_name'];
+            $processClass     = $config['handler'];
             $processWorkerNum = $config['worker_num'] ?? 1;
-            $async = true;
-            $args = $config['args'] ?? [];
-            $extendData = $config['extend_data'] ?? null;
-            $enableCoroutine = true;
+            $async            = true;
+            $args             = $config['args'] ?? [];
+            $extendData       = $config['extend_data'] ?? null;
+            $enableCoroutine  = true;
             $this->addProcess($processName, $processClass, $processWorkerNum, $async, $args, $extendData, $enableCoroutine);
         }
 
@@ -309,11 +309,11 @@ class ProcessManager
             $processWorkerNum = $list['process_worker_num'] ?? 1;
             for ($workerId = 0; $workerId < $processWorkerNum; $workerId++) {
                 try {
-                    $processName = $list['process_name'];
-                    $processClass = $list['process_class'];
-                    $async = $list['async'] ?? true;
-                    $args = $list['args'] ?? [];
-                    $extendData = $list['extend_data'] ?? null;
+                    $processName     = $list['process_name'];
+                    $processClass    = $list['process_class'];
+                    $async           = $list['async'] ?? true;
+                    $args            = $list['args'] ?? [];
+                    $extendData      = $list['extend_data'] ?? null;
                     $enableCoroutine = $list['enable_coroutine'] ?? true;
                     /**
                      * @var AbstractProcess $process
@@ -521,11 +521,14 @@ class ProcessManager
                     if(!\Swoole\Process::kill($masterPid, 0)) {
                         $masterPid = posix_getpid();
                     }
-                    if(version_compare(phpversion(), '8.0.0', '>=')) {
-                        @\Swoole\Process::kill($masterPid, SIGKILL);
-                        exit(0);
-                    }else {
-                        exit(0);
+                    sleep(1);
+                    if(count($this->processWorkers) == 0) {
+                        if(version_compare(phpversion(), '8.0.0', '>=')) {
+                            @\Swoole\Process::kill($masterPid, SIGKILL);
+                            exit(0);
+                        }else {
+                            exit(0);
+                        }
                     }
                 }
             });
@@ -783,11 +786,12 @@ class ProcessManager
         if ($totalProcessNum > $this->processLists[$key]['args']['max_process_num']) {
             $totalProcessNum = $this->processLists[$key]['args']['max_process_num'];
         }
+        $async                   = $this->processLists[$key]['async'];
+        $args                    = $this->processLists[$key]['args'];
+        $extendData              = $this->processLists[$key]['extend_data'];
+        $enableCoroutine         = $this->processLists[$key]['enable_coroutine'];
         $runningProcessWorkerNum = $processWorkerNum + $this->processLists[$key]['dynamic_process_worker_num'];
-        $async = $this->processLists[$key]['async'];
-        $args = $this->processLists[$key]['args'];
-        $extendData = $this->processLists[$key]['extend_data'];
-        $enableCoroutine = $this->processLists[$key]['enable_coroutine'];
+
         // 超出限定总数，禁止动态创建
         if ($runningProcessWorkerNum >= $totalProcessNum) {
             $msg = "【Warning】 Children process num={$totalProcessNum}, achieve max_process_num，forbidden to create process";
