@@ -22,6 +22,11 @@ class TableManager
     private $swooleTables = [];
 
     /**
+     * @var array
+     */
+    private $tableSetting = [];
+
+    /**
      * @param string $table_name
      * @param array $setting
      * @return \Swoole\Table
@@ -54,8 +59,7 @@ class TableManager
         $this->setTableColumn($table, $fields);
         $table->create();
 
-        $table->setting = $setting;
-        $table->table_name = $table_name;
+        $this->tableSetting[$table_name] = $setting;
         $this->swooleTables[$table_name] = $table;
 
         // enable flag
@@ -135,10 +139,7 @@ class TableManager
      */
     public function getTableSetting(string $table_name)
     {
-        $table = $this->getTable($table_name);
-        if (isset($table) && is_object($table) && isset($table->setting)) {
-            return $table->setting;
-        }
+        return $this->tableSetting[$table_name] ?? [];
     }
 
     /**
@@ -174,8 +175,8 @@ class TableManager
             array_push($info, 0);
         }
 
-        if (isset($table->setting)) {
-            array_push($info, $table->setting);
+        if (isset($this->tableSetting[$table_name])) {
+            array_push($info, $this->tableSetting[$table_name]);
         } else {
             array_push($info, []);
         }
