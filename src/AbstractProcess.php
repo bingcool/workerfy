@@ -16,6 +16,7 @@ use Swoole\Process;
 use Swoole\Coroutine\Channel;
 use Workerfy\Coroutine\GoCoroutine;
 use Workerfy\Crontab\CrontabManager;
+use Workerfy\Dto\MessageDto;
 use Workerfy\Exception\UserTriggerException;
 
 /**
@@ -304,17 +305,25 @@ abstract class AbstractProcess
             if ($this->async) {
                 Event::add($this->swooleProcess->pipe, function () {
                     try {
-                        $targetMsg = $this->swooleProcess->read(64 * 1024);
-                        if (is_string($targetMsg)) {
-                            $targetMsg = json_decode($targetMsg, true);
-                            @list($msg, $fromProcessName, $fromProcessWorkerId, $isProxyByMaster) = $targetMsg;
+                        $message = $this->swooleProcess->read(64 * 1024);
+                        if (is_string($message)) {
+                            $messageDto = unserialize($message);
+                            if (!$messageDto instanceof MessageDto) {
+                                write_info("【Error】Accept message type error");
+                                return;
+                            } else {
+                                $msg                 = $messageDto->data;
+                                $fromProcessName     = $messageDto->fromProcessName;
+                                $fromProcessWorkerId = $messageDto->fromProcessWorkerId;
+                                $isProxyByMaster     = $messageDto->isProxy;
+                            }
                             if (!isset($isProxyByMaster) || is_null($isProxyByMaster) || $isProxyByMaster === false) {
                                 $isProxyByMaster = false;
                             } else {
                                 $isProxyByMaster = true;
                             }
                         }
-                        if ($msg && isset($fromProcessName) && isset($fromProcessWorkerId)) {
+                        if (isset($msg) && isset($fromProcessName) && isset($fromProcessWorkerId)) {
                             $actionHandleFlag = false;
                             if (is_string($msg)) {
                                 switch ($msg) {
@@ -588,8 +597,14 @@ abstract class AbstractProcess
         }
 
         if ($isMaster) {
-            $toProcessWorkerId = 0;
-            $message = json_encode([$data, $fromProcessName, $fromProcessWorkerId, $processManager->getMasterWorkerName(), $toProcessWorkerId], JSON_UNESCAPED_UNICODE);
+            $toProcessWorkerId               = 0;
+            $messageDto                      = new MessageDto();
+            $messageDto->fromProcessName     = $fromProcessName;
+            $messageDto->fromProcessWorkerId = $fromProcessWorkerId;
+            $messageDto->toProcessName       = $processManager->getMasterWorkerName();
+            $messageDto->toProcessWorkerId   = $toProcessWorkerId;
+            $messageDto->data                = $data;
+            $message = serialize($messageDto);
             $this->getSwooleProcess()->write($message);
             return true;
         }
@@ -602,20 +617,28 @@ abstract class AbstractProcess
             $processWorkers = $toTargetProcess;
         }
 
-        foreach ($processWorkers as $process_worker_id => $process) {
+        foreach ($processWorkers as $process) {
             if ($process->isRebooting() || $process->isExiting()) {
                 write_info("【Warning】the process(worker_id={$this->getProcessWorkerId()}) is in isRebooting or isExiting status, not send msg to other process");
                 continue;
             }
-            $toProcessName = $process->getProcessName();
-            $toProcessWorkerId = $process->getProcessWorkerId();
 
-            $message = json_encode([$data, $fromProcessName, $fromProcessWorkerId, $toProcessName, $toProcessWorkerId], JSON_UNESCAPED_UNICODE);
+            $messageDto  = new MessageDto();
             if ($is_use_master_proxy) {
+                $messageDto->fromProcessName     = $fromProcessName;
+                $messageDto->fromProcessWorkerId = $fromProcessWorkerId;
+                $messageDto->toProcessName       = $process->getProcessName();
+                $messageDto->toProcessWorkerId   = $process->getProcessWorkerId();
+                $messageDto->data                = $data;
+                $messageDto->isProxy             = true;
+                $message = serialize($messageDto);
                 $this->getSwooleProcess()->write($message);
             } else {
-                $isProxy = false;
-                $message = json_encode([$data, $fromProcessName, $fromProcessWorkerId, $isProxy], JSON_UNESCAPED_UNICODE);
+                $messageDto->fromProcessName     = $fromProcessName;
+                $messageDto->fromProcessWorkerId = $fromProcessWorkerId;
+                $messageDto->data                = $data;
+                $messageDto->isProxy             = false;
+                $message = serialize($messageDto);
                 $process->getSwooleProcess()->write($message);
             }
         }

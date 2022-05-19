@@ -11,6 +11,7 @@
 
 namespace Workerfy;
 
+use Workerfy\Dto\MessageDto;
 use Workerfy\Traits;
 use Workerfy\Log\LogManager;
 use Workerfy\Memory\TableManager;
@@ -653,16 +654,21 @@ class ProcessManager
             foreach ($processes as $process) {
                 $swooleProcess = $process->getSwooleProcess();
                 \Swoole\Event::add($swooleProcess->pipe, function ($pipe) use ($swooleProcess) {
-                    $targetMsg = $swooleProcess->read(64 * 1024);
-                    if (is_string($targetMsg)) {
-                        $targetMsg = json_decode($targetMsg, true);
-                        if (!is_array($targetMsg)) {
-                            write_info("【Error】Accept msg={$targetMsg}");
+                    $message = $swooleProcess->read(64 * 1024);
+                    if (is_string($message)) {
+                        $messageDto = unserialize($message);
+                        if (!$messageDto instanceof MessageDto) {
+                            write_info("【Error】Accept message type error");
+                            return;
                         } else {
-                            list($msg, $fromProcessName, $fromProcessWorkerId, $toProcessName, $toProcessWorkerId) = $targetMsg;
+                            $msg                 = $messageDto->data;
+                            $fromProcessName     = $messageDto->fromProcessName;
+                            $fromProcessWorkerId = $messageDto->fromProcessWorkerId;
+                            $toProcessName       = $messageDto->toProcessName;
+                            $toProcessWorkerId   = $messageDto->toProcessWorkerId;
                         }
                     }
-                    if ($msg && isset($fromProcessName) && isset($fromProcessWorkerId) && isset($toProcessName) && isset($toProcessWorkerId)) {
+                    if (isset($msg) && isset($fromProcessName) && isset($fromProcessWorkerId) && isset($toProcessName) && isset($toProcessWorkerId)) {
                         try {
                             if ($toProcessName == $this->getMasterWorkerName()) {
                                 $action           = $msg['action'] ?? '';
@@ -1163,9 +1169,14 @@ class ProcessManager
         } else if (is_array($process)) {
             $processWorkers = $process;
         }
-        $proxy = false;
-        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId(), $proxy], JSON_UNESCAPED_UNICODE);
-        foreach ($processWorkers as $process_worker_id => $process) {
+
+        $messageDto                      = new MessageDto();
+        $messageDto->fromProcessName     = $this->getMasterWorkerName();
+        $messageDto->fromProcessWorkerId = $this->getMasterWorkerId();
+        $messageDto->data                = $data;
+        $messageDto->isProxy             = false;
+        $message = serialize($messageDto);
+        foreach ($processWorkers as $process) {
             $process->getSwooleProcess()->write($message);
         }
     }
@@ -1192,9 +1203,14 @@ class ProcessManager
         } else if (is_array($process)) {
             $processWorkers = $process;
         }
-        $proxy = true;
-        $message = json_encode([$data, $from_process_name, $from_process_worker_id, $proxy], JSON_UNESCAPED_UNICODE);
-        foreach ($processWorkers as $process_worker_id => $process) {
+
+        $messageDto                      = new MessageDto();
+        $messageDto->fromProcessName     = $from_process_name;
+        $messageDto->fromProcessWorkerId = $from_process_worker_id;
+        $messageDto->data                = $data;
+        $messageDto->isProxy             = true;
+        $message = serialize($messageDto);
+        foreach ($processWorkers as $process) {
             $process->getSwooleProcess()->write($message);
         }
     }
@@ -1207,12 +1223,17 @@ class ProcessManager
      */
     public function broadcastProcessWorker(string $process_name, $data = '')
     {
-        $message = json_encode([$data, $this->getMasterWorkerName(), $this->getMasterWorkerId()], JSON_UNESCAPED_UNICODE);
+        $messageDto                      = new MessageDto();
+        $messageDto->fromProcessName     = $this->getMasterWorkerName();
+        $messageDto->fromProcessWorkerId = $this->getMasterWorkerId();
+        $messageDto->data                = $data;
+        $messageDto->isProxy             = true;
+        $message = serialize($messageDto);
         if ($process_name) {
             $key = md5($process_name);
             if (isset($this->processWorkers[$key])) {
                 $process_workers = $this->processWorkers[$key];
-                foreach ($process_workers as $process_worker_id => $process) {
+                foreach ($process_workers as $process) {
                     $process->getSwooleProcess()->write($message);
                 }
             } else {
