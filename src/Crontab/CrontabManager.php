@@ -90,15 +90,15 @@ class CrontabManager
         int $msec = 1 * 1000)
     {
         if (!class_exists('Cron\\CronExpression')) {
-            throw new CrontabException("If you want to use crontab, you need to install 'composer require dragonmantank/cron-expression' ");
+            throw new CrontabException("If you want to use Cron Expression, you need to install 'composer require dragonmantank/cron-expression' ");
         }
 
         if (!CronExpression::isValidExpression($expression)) {
-            throw new CrontabException("Crontab expression format is wrong, please check it");
+            throw new CrontabException("Cron Expression format is wrong, please check it");
         }
 
         if (!is_callable($func)) {
-            throw new CrontabException("Params func must be callable type");
+            throw new CrontabException("Params function must be callable type");
         }
 
         if (!in_array($loop_type, [self::loopChannelType, self::loopTickType])) {
@@ -108,7 +108,7 @@ class CrontabManager
         if (!isset($this->cronTasks[$cron_name])) {
             $this->cronTasks[$cron_name] = [$expression, $func, $loop_type];
         } else {
-            throw new CrontabException("Cron_name=$cron_name had exist, forbidden set same cron_name again");
+            throw new CrontabException("Cron Name=$cron_name haded exist, forbidden set same cron name again");
         }
 
         if ($loop_type == self::loopChannelType) {
@@ -262,7 +262,7 @@ class CrontabManager
             unset($this->timerIds[$cron_name]);
         }
 
-        write_info("【Info】tickName={$cron_name} has been cancel");
+        write_info("【Info】TickName={$cron_name} has been cancel");
 
         if (count($this->channels) == 0 && count($this->timerIds) == 0) {
             write_info("【Info】Process had not exit tick task");
