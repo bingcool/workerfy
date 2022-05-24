@@ -11,7 +11,7 @@
 
 namespace Workerfy\Dto;
 
-class MessageDto
+class MessageDto extends \stdClass
 {
     /**
      * @var string
@@ -42,4 +42,12 @@ class MessageDto
      * @var mixed
      */
     public $data;
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return (array)$this;
+    }
 }

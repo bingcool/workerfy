@@ -749,7 +749,14 @@ abstract class AbstractProcess
                 }
 
                 // wait sleep
-                \Swoole\Coroutine\System::sleep($dynamicDestroyProcessTime);
+                if(class_exists('Swoole\Coroutine\System'))
+                {
+                    \Swoole\Coroutine\System::sleep($dynamicDestroyProcessTime);
+                }else
+                {
+                    \Swoole\Coroutine::sleep($dynamicDestroyProcessTime);
+                }
+
             }catch (\Throwable $exception) {
                 throw $exception;
             } finally {
@@ -799,7 +806,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * getProcess 获取process进程对象
+     * getProcess
      * @return \Swoole\Process
      */
     public function getProcess()
@@ -893,7 +900,6 @@ abstract class AbstractProcess
     }
 
     /**
-     * 静态创建进程，属于进程池进程，可以自重启，退出
      *
      * @return bool
      */
@@ -906,7 +912,6 @@ abstract class AbstractProcess
     }
 
     /**
-     * 动态创建进程,工作完只能退出，不能重启
      *
      * @return bool
      */
@@ -1078,6 +1083,7 @@ abstract class AbstractProcess
      * reboot
      *
      * @param null|float $wait_time
+     * @param bool $includeDynamicProcess
      * @return bool
      */
     public function reboot(?float $wait_time = null, bool $includeDynamicProcess = false)
@@ -1112,6 +1118,7 @@ abstract class AbstractProcess
                     $this->kill($pid, SIGUSR1);
                 }
             });
+
             $this->rebootTimerId = $timerId;
             // block wait to reboot
             if (\Swoole\Coroutine::getCid() > 0) {
@@ -1134,6 +1141,7 @@ abstract class AbstractProcess
         if ($this->isForceExit || $this->isReboot || $this->isExit) {
             return false;
         }
+
         $pid = $this->getPid();
         if (Process::kill($pid, 0)) {
             $this->isExit = true;
@@ -1195,9 +1203,9 @@ abstract class AbstractProcess
                 }
             });
         } else {
-            // crontab expression of timer to reboot this process
+            // cron expression of timer to reboot this process
             CrontabManager::getInstance()->addRule(
-                'register-tick-reboot',
+                'system-register-tick-reboot',
                 $cron_expression,
                 function () use ($waitTime) {
                     $this->reboot($waitTime);
@@ -1293,7 +1301,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * get current coroutine last cid, compare num reachive value to reboot process
+     * get current coroutine last cid, compare num achieve value to reboot process
      *
      * @return int
      */
