@@ -16,7 +16,7 @@ class Worker extends \Workerfy\AbstractProcess {
             ];
             $this->writeToMasterProcess(
                 \Workerfy\ProcessManager::MASTER_WORKER_NAME,
-                json_encode($data)
+                $data
             );
             var_dump("last_cid=".$process_name);
             sleep(3);

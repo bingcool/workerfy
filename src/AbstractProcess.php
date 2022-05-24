@@ -1143,7 +1143,7 @@ abstract class AbstractProcess
             $this->clearRebootTimer();
             $wait_time && $this->waitTime = $wait_time;
             $channel = new Channel(1);
-            $timerId = \Swoole\Timer::after($this->waitTime * 1000, function () use ($pid) {
+            $this->exitTimerId = \Swoole\Timer::after($this->waitTime * 1000, function () use ($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycleTimes);
                     $this->onShutDown();
@@ -1157,7 +1157,7 @@ abstract class AbstractProcess
                     }
                 }
             });
-            $this->exitTimerId = $timerId;
+
             // block wait to exit
             if (\Swoole\Coroutine::getCid() > 0) {
                 $channel->pop(-1);

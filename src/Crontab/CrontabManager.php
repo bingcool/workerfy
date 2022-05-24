@@ -261,7 +261,6 @@ class CrontabManager
             \Swoole\Timer::clear($tick_id);
             unset($this->timerIds[$cron_name]);
         }
-
         write_info("【Info】tickName={$cron_name} has been cancel");
 
         if (count($this->channels) == 0 && count($this->timerIds) == 0) {
