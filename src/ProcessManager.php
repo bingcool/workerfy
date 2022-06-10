@@ -158,11 +158,31 @@ class ProcessManager
      */
     public $onRegisterLogger;
 
+    /**
+     * @var int
+     */
     const NUM_PEISHU = 8;
+
+    /**
+     * @var int
+     */
     const REPORT_STATUS_TICK_TIME = 5;
+
+    /**
+     * @var string
+     */
     const MASTER_WORKER_NAME = 'master_worker';
+
+    /**
+     * @var string
+     */
     const CREATE_DYNAMIC_PROCESS_WORKER = 'create_dynamic_process_worker';
+
+    /**
+     * @var string
+     */
     const DESTROY_DYNAMIC_PROCESS_WORKER = 'destroy_dynamic_process_worker';
+
 
     /**
      * ProcessManager constructor
@@ -549,8 +569,9 @@ class ProcessManager
                 write_info("【Error】Swoole\Process::wait error");
                 return;
             }
-            $pid = $ret['pid'];
+            $pid  = $ret['pid'];
             $code = $ret['code'];
+
             try {
                 switch ($code) {
                     // exit
@@ -558,18 +579,18 @@ class ProcessManager
                     case SIGTERM :
                     case SIGKILL :
                         /**@var AbstractProcess $process */
-                        $process = $this->getProcessByPid($pid);
-                        $processName = $process->getProcessName();
+                        $process         = $this->getProcessByPid($pid);
+                        $processName     = $process->getProcessName();
                         $processWorkerId = $process->getProcessWorkerId();
-                        $key = md5($processName);
-                        if (isset($this->processWorkers[$key][$processWorkerId])) {
-                            unset($this->processWorkers[$key][$processWorkerId]);
-                            if (count($this->processWorkers[$key]) == 0) {
-                                unset($this->processWorkers[$key]);
+                            $key = md5($processName);
+                            if (isset($this->processWorkers[$key][$processWorkerId])) {
+                                unset($this->processWorkers[$key][$processWorkerId]);
+                                if (count($this->processWorkers[$key]) == 0) {
+                                    unset($this->processWorkers[$key]);
+                                }
                             }
-                        }
-                        \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                        $this->checkMasterToExit();
+                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
+                            $this->checkMasterToExit();
                         break;
                     // reboot
                     case SIGUSR1  :
@@ -633,9 +654,9 @@ class ProcessManager
     {
         $processWorkers = [];
         if (isset($currentProcess)) {
-            $processName = $currentProcess->getProcessName();
-            $processWorkerId = $currentProcess->getProcessWorkerId();
-            $key = md5($processName);
+            $processName                            = $currentProcess->getProcessName();
+            $processWorkerId                        = $currentProcess->getProcessWorkerId();
+            $key                                    = md5($processName);
             $processWorkers[$key][$processWorkerId] = $currentProcess;
         } else {
             $processWorkers = $this->processWorkers;
@@ -672,7 +693,7 @@ class ProcessManager
                                 if ($action && $processName) {
                                     switch ($action) {
                                         case ProcessManager::CREATE_DYNAMIC_PROCESS_WORKER :
-                                            $actionHandleFlag     = true;
+                                            $actionHandleFlag   = true;
                                             $dynamicProcessName = $processName;
                                             $dynamicProcessNum  = $data['dynamic_process_num'] ?? 1;
                                             if (is_callable($this->onCreateDynamicProcess)) {
@@ -682,7 +703,7 @@ class ProcessManager
                                             }
                                             break;
                                         case ProcessManager::DESTROY_DYNAMIC_PROCESS_WORKER:
-                                            $actionHandleFlag     = true;
+                                            $actionHandleFlag   = true;
                                             $dynamicProcessName = $processName;
                                             $dynamicProcessNum  = $data['dynamic_process_num'] ?? -1;
                                             if (is_callable($this->onDestroyDynamicProcess)) {

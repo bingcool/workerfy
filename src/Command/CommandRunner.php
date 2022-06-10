@@ -235,6 +235,8 @@ class CommandRunner
     }
 
     /**
+     *
+     * @param bool $isNeedCheck
      * @return bool
      */
     public function isNextHandle(bool $isNeedCheck = true)
@@ -249,7 +251,7 @@ class CommandRunner
                     if (($startTime + 60) > time()) {
                         $itemList[] = $item;
                     } else {
-                        // 超过1分钟系统调用程序没执行完的都会记录一次
+                        // exec more then  60s will be recorded into log
                         $command = $item['command'] ?? '';
                         $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                         if (is_object($logger)) {
