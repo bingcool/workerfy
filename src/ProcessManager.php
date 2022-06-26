@@ -385,7 +385,7 @@ class ProcessManager
     private function installMasterStopSignal()
     {
         if (!$this->isDaemon) {
-            // Ctrl+C 退出，master如果使用了协程，可能会出现Segmentation fault，因为是在退出阶段，对业务影响不大，可以忽略
+            // Ctrl+C
             \Swoole\Process::signal(SIGHUP, $this->signalHandle());
             return;
         }
@@ -960,7 +960,8 @@ class ProcessManager
                 $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_STATUS_FLAG, $workerId);
             }
         }
-        $cpu_num         = swoole_cpu_num();
+
+        $cpuNum          = swoole_cpu_num();
         $phpVersion      = PHP_VERSION;
         $swooleVersion   = swoole_version();
         $enableCliPipe   = is_resource($this->cliPipeFd) ? 1 : 0;
@@ -968,13 +969,14 @@ class ProcessManager
         $cliParams       = $this->getCliParams(true);
         $hostName        = gethostname();
         list($msgSysvmsgInfo, $sysKernel) = $this->getSysvmsgInfo();
+
         $status['master'] = [
             'start_script_file'  => START_SCRIPT_FILE,
             'pid_file'           => PID_FILE,
             'running_status'     => $running_status,
             'cli_params'         => $cliParams,
             'master_pid'         => $this->getMasterPid(),
-            'cpu_num'            => $cpu_num,
+            'cpu_num'            => $cpuNum,
             'memory'             => Helper::getMemoryUsage(),
             'php_version'        => $phpVersion,
             'swoole_version'     => $swooleVersion,

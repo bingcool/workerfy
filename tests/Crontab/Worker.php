@@ -75,7 +75,7 @@ class Worker extends \Workerfy\AbstractProcess {
                 var_dump("一分钟时间到了ddddddddd,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
 
                 if(date('Y-m-d H:i:s') == '2020-06-13 00:13:00') {
-                    CrontabManager::getInstance()->cancelCrontabTask($cron_name);
+                    CrontabManager::getInstance()->cancelCronTask($cron_name);
                 }
 
             }catch (\Throwable $throwable) {
