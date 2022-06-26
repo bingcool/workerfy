@@ -143,7 +143,7 @@ class TableManager
     }
 
     /**
-     * 获取table占用的内存，单位字节
+     * 获取table 占用的内存-单位字节
      *
      * @param string $table_name
      * @return mixed

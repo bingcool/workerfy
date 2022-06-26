@@ -31,6 +31,7 @@ class Timer
             while (true) {
                 $value = $channel->pop($second);
                 if($value !== false) {
+                    $channel->close();
                     break;
                 }
                 GoCoroutine::go(function ($callable) {
