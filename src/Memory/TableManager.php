@@ -107,7 +107,7 @@ class TableManager
     }
 
     /**
-     * 获取管理定义的table_name
+     * get all table_name instance
      * @return array
      */
     public function getAllTableName()
@@ -120,7 +120,7 @@ class TableManager
     }
 
     /**
-     * getAllTableKeyMapRowValue 获取所有table的key和value信息
+     * getAllTableKeyMapRowValue
      * @return array
      */
     public function getAllTableKeyMapRowValue()
@@ -143,7 +143,8 @@ class TableManager
     }
 
     /**
-     * 获取table占用的内存，单位字节
+     * 获取table 占用的内存-单位字节
+     *
      * @param string $table_name
      * @return mixed
      */
@@ -157,7 +158,7 @@ class TableManager
     }
 
     /**
-     * 返回table基本信息
+     *
      * @param string $table_name
      * @return array 返回格式 = [$size, $memory, $setting]
      */
@@ -185,7 +186,7 @@ class TableManager
     }
 
     /**
-     * 获取已设置的key
+     *
      * @param string $table
      * @return array
      */
@@ -205,7 +206,8 @@ class TableManager
     }
 
     /**
-     * 获取table的key映射的每一行数据rowValue
+     * get table every row Value
+     *
      * @param string $table
      * @return array
      */

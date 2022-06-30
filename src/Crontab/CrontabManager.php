@@ -248,7 +248,7 @@ class CrontabManager
     /**
      * @param string $cron_name
      */
-    public function cancelCrontabTask(string $cron_name)
+    public function cancelCronTask(string $cron_name)
     {
         $loopType = $this->getLoopType($cron_name) ?? null;
         if ($loopType == self::loopChannelType) {
@@ -287,7 +287,7 @@ class CrontabManager
      *
      * @return bool
      */
-    public function hasRunningCrontabTask()
+    public function hasRunningCronTask()
     {
         if (count($this->channels) > 0 || count($this->timerIds) > 0) {
             return true;
