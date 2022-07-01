@@ -178,7 +178,7 @@ function stop($cli_params)
         }
         write_info("【Info】Master and Children Process has stopped", 'light_green');
     } else {
-        write_info("【Warning】Master Process of Pid={$masterPid} is not exist");
+        write_info("【Warning】Master Process of Pid={$masterPid} is not running");
     }
     exit(0);
 }

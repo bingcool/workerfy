@@ -14,7 +14,7 @@ function json_validate(string $str, &$decodeData = null)
 
 /**
  * listen rand port
- * php_socket model
+ *
  * @return bool
  */
 function get_one_free_port()
@@ -36,7 +36,7 @@ function get_one_free_port()
 
 /**
  * rand get poet
- * swoole_coroutine
+ *
  * @return mixed
  */
 function get_one_free_port_coro()
