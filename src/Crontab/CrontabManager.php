@@ -21,12 +21,12 @@ class CrontabManager
     use \Workerfy\Traits\SingletonTrait;
 
     /**
-     * @var integer
+     * @var int
      */
     const loopChannelType = 0;
 
     /**
-     * @var integer
+     * @var int
      */
     const loopTickType = 1;
 

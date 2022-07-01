@@ -22,25 +22,30 @@ class Timer
      */
     public static function tick(int $timeMs, callable $callable)
     {
-        $channel = new Channel(1);
+        $timeChannel = new Channel(1);
         $second  = round($timeMs / 1000, 3);
         if ($second < 0.001) {
             $second = 0.001;
         }
-        GoCoroutine::go(function ($second, $callable) use ($channel) {
+        GoCoroutine::go(function ($second, $callable) use ($timeChannel) {
             while (true) {
-                $value = $channel->pop($second);
+                $value = $timeChannel->pop($second);
                 if($value !== false) {
-                    $channel->close();
+                    $timeChannel->close();
                     break;
                 }
-                GoCoroutine::go(function ($callable) {
-                    $callable();
-                }, $second, $callable);
+                try {
+                    GoCoroutine::go(function ($callable) use($timeChannel) {
+                        $callable($timeChannel);
+                    }, $callable);
+                }catch (\Throwable $exception)
+                {
+
+                }
             }
         }, $second, $callable);
 
-        return $channel;
+        return $timeChannel;
     }
 
     /**
@@ -61,21 +66,27 @@ class Timer
      */
     public static function after(int $timeMs, callable $callable)
     {
-        $channel = new Channel(1);
+        $timeChannel = new Channel(1);
         $second  = round($timeMs / 1000, 3);
         if ($second < 0.001) {
             $second = 0.001;
         }
-        GoCoroutine::go(function ($second, $callable) use ($channel) {
-            while (!$channel->pop($second)) {
-                GoCoroutine::go(function ($callable) {
-                    $callable();
-                }, $second, $callable);
+        GoCoroutine::go(function ($second, $callable) use ($timeChannel) {
+            while (!$timeChannel->pop($second)) {
+                try {
+                    GoCoroutine::go(function ($callable) use($timeChannel) {
+                        $callable($timeChannel);
+                    }, $callable);
+                }catch (\Throwable $exception) {
+                    throw $exception;
+                } finally {
+
+                }
                 break;
             }
         }, $second, $callable);
 
-        return $channel;
+        return $timeChannel;
     }
 
 }
