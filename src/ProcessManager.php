@@ -294,7 +294,7 @@ class ProcessManager
                 $this->installReportStatus();
                 $this->initStart();
                 // process->start 后，父进程会强制要求pdo,redis等API must be called in the coroutine中
-                $this->running();
+                $this->setRunning();
                 $this->installCliPipe();
                 $this->installSigchldSignal();
                 $this->installMasterStopSignal();
@@ -1536,7 +1536,7 @@ class ProcessManager
      * flag start
      * @return bool
      */
-    protected function running()
+    protected function setRunning()
     {
         $this->isRunning = true;
     }
