@@ -46,7 +46,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
                     //var_dump($timer_id);
 
-                    var_dump("一分钟时间到了,表达式=$expression,执行任务:" . date('Y-m-d H:i:s', time()));
+                    var_dump("1分钟时间到了,表达式=$expression,执行任务:" . date('Y-m-d H:i:s', time()));
 
                     if (date('Y-m-d H:i:s') == '2020-06-13 21:17:00') {
                         $this->reboot();
@@ -72,7 +72,7 @@ class Worker extends \Workerfy\AbstractProcess {
 
                 //var_dump($timer_id);
 
-                var_dump("一分钟时间到了ddddddddd,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
+                var_dump("2分钟时间到了ddddddddd,表达式=$expression,执行任务:".date('Y-m-d H:i:s', time()));
 
                 if(date('Y-m-d H:i:s') == '2020-06-13 00:13:00') {
                     CrontabManager::getInstance()->cancelCronTask($cron_name);

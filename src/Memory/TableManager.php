@@ -160,7 +160,7 @@ class TableManager
     /**
      *
      * @param string $table_name
-     * @return array 返回格式 = [$size, $memory, $setting]
+     * @return array return formatter of [$size, $memory, $setting]
      */
     public function getTableInfo(string $table_name)
     {

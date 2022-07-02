@@ -315,10 +315,12 @@ class ProcessManager
                     throw $throwable;
                 }
             }
+            write_info("【Info】Master && Children Process start OK!", 'light_green');
             return $masterPid;
         } catch (\Throwable $throwable) {
             $this->onHandleException->call($this, $throwable);
         }
+
     }
 
     /**

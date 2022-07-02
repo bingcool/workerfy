@@ -78,7 +78,7 @@ class CrontabManager
      * @param string $expression
      * @param mixed $func
      * @param int $type
-     * @param int $msec
+     * @param int $timeMs
      * @return mixed
      * @throws CrontabException
      */
@@ -87,7 +87,7 @@ class CrontabManager
         string $expression,
         callable $func,
         int $loop_type = self::loopChannelType,
-        int $msec = 1 * 1000)
+        int $timeMs = 1 * 1000)
     {
         if (!class_exists('Cron\\CronExpression')) {
             throw new CrontabException("If you want to use Cron Expression, you need to install 'composer require dragonmantank/cron-expression' ");
@@ -112,10 +112,10 @@ class CrontabManager
         }
 
         if ($loop_type == self::loopChannelType) {
-            $channel = $this->channelLoop($cron_name, $expression, $func, $msec);
+            $channel = $this->channelLoop($cron_name, $expression, $func, $timeMs);
             return $channel;
         } else {
-            $timerId = $this->tickLoop($cron_name, $expression, $func, $msec);
+            $timerId = $this->tickLoop($cron_name, $expression, $func, $timeMs);
             return $timerId;
         }
 
@@ -125,18 +125,18 @@ class CrontabManager
      * @param string $cron_name
      * @param string $expression
      * @param callable $func
-     * @param float $msec
+     * @param float $timeMs
      * @return mixed
      */
-    protected function tickLoop(string $cron_name, string $expression, callable $func, float $msec)
+    protected function tickLoop(string $cron_name, string $expression, callable $func, float $timeMs)
     {
         $channel = new \Swoole\Coroutine\Channel(1);
         GoCoroutine::go(function ($cron_name, $expression, $func, $msec) use ($channel) {
-            $timerId = \Swoole\Timer::tick($msec, function ($timer_id, $expression, $cron_name) use ($func) {
+            $timerId = \Swoole\Timer::tick($msec, function ($timerId, $expression, $cron_name) use ($func) {
                 $this->loopHandle($cron_name, $expression, $func);
             }, $expression, $cron_name);
             $channel->push($timerId);
-        }, $cron_name, $expression, $func, $msec);
+        }, $cron_name, $expression, $func, $timeMs);
 
         $timerId = $channel->pop();
         $this->timerIds[$cron_name] = $timerId;
@@ -149,24 +149,16 @@ class CrontabManager
      * @param string $cron_name
      * @param string $expression
      * @param callable $func
-     * @param float $msec
+     * @param float $timeMs
      * @return \Swoole\Coroutine\Channel
      */
-    protected function channelLoop(string $cron_name, string $expression, callable $func, float $msec)
+    protected function channelLoop(string $cron_name, string $expression, callable $func, float $timeMs)
     {
-        $channel = new \Swoole\Coroutine\Channel(1);
-        $second  = round($msec / 1000, 3);
-        if ($second < 0.001) {
-            $second = 0.001;
-        }
+        $channel = \Workerfy\Coroutine\Timer::tick($timeMs, function () use($cron_name, $expression, $func) {
+            $this->loopHandle($cron_name, $expression, $func);
+        });
+
         $this->channels[$cron_name] = $channel;
-        GoCoroutine::go(function ($cron_name, $expression, $func, $second) use ($channel) {
-            while (!$channel->pop($second)) {
-                GoCoroutine::go(function ($cron_name, $expression, $func) {
-                    $this->loopHandle($cron_name, $expression, $func);
-                }, $cron_name, $expression, $func);
-            }
-        }, $cron_name, $expression, $func, $second);
 
         return $channel;
     }
@@ -253,12 +245,11 @@ class CrontabManager
         $loopType = $this->getLoopType($cron_name) ?? null;
         if ($loopType == self::loopChannelType) {
             $channel = $this->channels[$cron_name];
-            $channel->push(true);
-            $channel->close();
-            unset($this->channels[$cron_name]);
+            \Workerfy\Coroutine\Timer::cancel($channel);
+            unset($this->channels[$cron_name], $channel);
         } else if ($loopType == self::loopTickType) {
-            $tick_id = $this->timerIds[$cron_name];
-            \Swoole\Timer::clear($tick_id);
+            $tickId = $this->timerIds[$cron_name];
+            \Swoole\Timer::clear($tickId);
             unset($this->timerIds[$cron_name]);
         }
         write_info("【Info】tickName={$cron_name} has been cancel");

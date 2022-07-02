@@ -78,12 +78,13 @@ class SysvmsgManager
     private $sysKernelMsgmnb;
 
     /**
-     * 默认公共消息类型
+     * default msg type
      */
     const COMMON_MSG_TYPE = 1;
 
     /**
-     * addMsgFtok 创建msgqueue实例
+     * addMsgFtok create Msg instance
+     *
      * @param string $msg_queue_name
      * @param string $path_name
      * @param string $project
@@ -138,7 +139,8 @@ class SysvmsgManager
     }
 
     /**
-     * getSysKernelInfo 读取系统底层设置信息
+     * getSysKernelInfo
+     *
      * @param bool $force
      * @return array
      */
@@ -159,6 +161,7 @@ class SysvmsgManager
 
     /**
      * registerMsgType 注册消息类型
+     *
      * @param string $msg_queue_name
      * @param string $msg_type_name
      * @param int $msg_type
@@ -201,7 +204,8 @@ class SysvmsgManager
     }
 
     /**
-     * push 向队列发送信息
+     * push msg
+     *
      * @param string $msg_queue_name
      * @param $msg
      * @param string|null $msg_type_name
@@ -245,7 +249,8 @@ class SysvmsgManager
     }
 
     /**
-     * msgRecive 消息接收
+     * msgRecive
+     *
      * @param string $msg_queue_name
      * @param string|null $msg_type_name
      * @param int $max_size
@@ -296,6 +301,7 @@ class SysvmsgManager
 
     /**
      * getMsgQueue 获取队列实例
+     *
      * @param string $msg_queue_name
      * @return mixed
      * @throws \Exception
@@ -316,6 +322,7 @@ class SysvmsgManager
 
     /**
      * getMsgType 获取注册的类型，默认是1，公共类型
+     *
      * @param string $msg_queue_name
      * @param string|null $msg_type_name
      * @return int|mixed
@@ -342,6 +349,7 @@ class SysvmsgManager
 
     /**
      * getMsgQueueWaitToPopNum 获取队列里面待读取消息体数量
+     *
      * @param string $msg_queue_name
      * @return mixed
      * @throws \Exception
@@ -359,7 +367,8 @@ class SysvmsgManager
     }
 
     /**
-     * 队列容量大小，单位字节
+     * 队列容量大小-单位字节
+     *
      * @param string $msg_queue_name
      * @return mixed
      * @throws \Exception
@@ -392,7 +401,7 @@ class SysvmsgManager
         // remove all
         if (!empty($this->msgQueues)) {
             foreach ($this->msgQueues as $msgQueue) {
-                // 存在数据，不应该强制删除
+
                 if (is_resource($msgQueue)) {
                     $status = msg_stat_queue($msgQueue);
                     if ($status['msg_qnum'] == 0) {

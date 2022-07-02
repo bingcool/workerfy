@@ -18,13 +18,12 @@ class Worker extends \Workerfy\AbstractProcess
                 // 取消当前的定时器
                 \Workerfy\Coroutine\Timer::cancel($timeChannel);
             }
-            var_dump("hello-".date('Y-m-d H:i:s'));
+            var_dump("tick-".date('Y-m-d H:i:s'));
         });
 
 
         \Workerfy\Coroutine\Timer::after(5000, function() {
-            throw new Exception('mmm');
-            //var_dump("after timer-".date('Y-m-d H:i:s'));
+            var_dump("after-".date('Y-m-d H:i:s'));
         });
 
     }

@@ -51,12 +51,12 @@ class Timer
     /**
      * cancel tick timer
      *
-     * @param Channel $channel
+     * @param Channel $timeChannel
      * @return mixed
      */
-    public static function cancel(Channel $channel)
+    public static function cancel(Channel $timeChannel)
     {
-        return $channel->push(1);
+        return $timeChannel->push(1);
     }
 
     /**

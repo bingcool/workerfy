@@ -17,7 +17,7 @@ use Workerfy\Exception\RuntimeException;
 class Context
 {
     /**
-     * @return ArrayObject|null
+     * @return ArrayObject
      * @throws RuntimeException
      */
     public static function getContext()
