@@ -138,14 +138,14 @@ class GoWaitGroup
 
     /**
      * done
-     * @return void
+     * @return mixed
      */
     public function done(string $key = null, $data = null, float $timeout = -1)
     {
         if (!empty($key) && !empty($data)) {
             $this->result[$key] = $data;
         }
-        $this->channel->push(1, $timeout);
+        return $this->channel->push(1, $timeout);
     }
 
     /**

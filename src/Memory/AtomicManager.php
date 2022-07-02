@@ -54,7 +54,7 @@ class AtomicManager
     /**
      * addAtomicLong
      * @param string $atomic_name
-     * @param int|integer $init_value
+     * @param int $init_value
      * @return \Swoole\Atomic\Long
      */
     public function addAtomicLong(string $atomic_name, int $init_value = 0)

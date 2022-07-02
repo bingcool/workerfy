@@ -239,6 +239,7 @@ class CrontabManager
 
     /**
      * @param string $cron_name
+     * @return void
      */
     public function cancelCronTask(string $cron_name)
     {

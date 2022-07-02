@@ -15,7 +15,9 @@ namespace Simps\MQTT;
 
 use Simps\MQTT\Exception\RuntimeException;
 use Simps\MQTT\Hex\ReasonCode;
+use Simps\MQTT\Protocol\Types;
 use Swoole\Coroutine;
+use Simps\MQTT;
 
 class Client
 {
@@ -150,9 +152,9 @@ class Client
     public function send(array $data, $response = true)
     {
         if ($this->config['protocol_level'] === 5) {
-            $package = ProtocolV5::pack($data);
+            $package = Protocol\V5::pack($data);
         } else {
-            $package = Protocol::pack($data);
+            $package = Protocol\V3::pack($data);
         }
         $this->client->send($package);
         if ($response) {
@@ -176,10 +178,10 @@ class Client
             }
         } elseif (strlen($response) > 0) {
             if ($this->config['protocol_level'] === 5) {
-                return ProtocolV5::unpack($response);
+                return Protocol\V5::unpack($response);
             }
 
-            return Protocol::unpack($response);
+            return Protocol\V3::unpack($response);
         }
 
         return true;

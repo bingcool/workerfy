@@ -27,6 +27,7 @@ class GoCoroutine
 
     /**
      * @param callable $callback
+     * @return mixed
      * @throws Throwable
      */
     public static function go(callable $callback, ...$params)

@@ -111,6 +111,7 @@ class CommandRunner
     /**
      * 执行外部系统程序，包括php,shell so on
      * 禁止swoole提供的process->exec，因为swoole的process->exec调用的程序会替换当前子进程
+     *
      * @param string $execBinFile
      * @param string $commandRouter
      * @param array $args

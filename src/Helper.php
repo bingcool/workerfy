@@ -7,7 +7,7 @@ use Workerfy\Exception\InvalidArgumentException;
 class Helper
 {
     /**
-     * @param $instance
+     * @param object $instance
      * @param string $action
      * @param array $params
      * @return array
@@ -68,7 +68,7 @@ class Helper
 
     /**
      * @param string $name
-     * @return array|null|string|false
+     * @return array|string|false
      */
     public static function getCliParams(string $name = '')
     {

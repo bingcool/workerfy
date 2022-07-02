@@ -66,13 +66,13 @@ class SysvmsgManager
     private $msgTypes = [];
 
     /**
-     * 读取sys_kernel
+     * read from sys_kernel
      * @var array
      */
     private $sysKernelInfo = [];
 
     /**
-     * 队列最大容量
+     * max msg size
      * @var int
      */
     private $sysKernelMsgmnb;
@@ -207,7 +207,7 @@ class SysvmsgManager
      * push msg
      *
      * @param string $msg_queue_name
-     * @param $msg
+     * @param mixed $msg
      * @param string|null $msg_type_name
      * @return bool
      * @throws \Exception
@@ -391,7 +391,7 @@ class SysvmsgManager
      * @return bool
      * @throws \Exception
      */
-    public function destroyMsgQueue(string $msg_queue_name = null)
+    public function destroyMsgQueue(?string $msg_queue_name = null)
     {
         if ($msg_queue_name) {
             $msgQueue = $this->getMsgQueue($msg_queue_name);

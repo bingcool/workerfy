@@ -36,7 +36,7 @@ class Parallel
     private $concurrent = 5;
 
     /**
-     * @var callable[]
+     * @var array
      */
     private $callbacks = [];
 

@@ -315,7 +315,6 @@ class ProcessManager
                     throw $throwable;
                 }
             }
-            write_info("【Info】Master && Children Process start OK!", 'light_green');
             return $masterPid;
         } catch (\Throwable $throwable) {
             $this->onHandleException->call($this, $throwable);
@@ -325,6 +324,7 @@ class ProcessManager
 
     /**
      * initStart
+     * @return void
      */
     private function initStart()
     {
@@ -492,6 +492,8 @@ class ProcessManager
      * 主进程注册监听自定义的SIGUSR2作为通知子进程重启的信号
      * 每个子进程收到重启指令后，等待wait_time后正式退出，那么在这个wait_time过程
      * 子进程逻辑应该通过$this->isRebooting() || $this->isExiting()判断是否在重启状态中，这个状态中不能再处理新的任务数据
+     *
+     * @return void
      */
     private function installMasterReloadSignal()
     {
@@ -533,6 +535,7 @@ class ProcessManager
 
     /**
      * checkMasterToExit
+     * @return void
      */
     protected function checkMasterToExit() {
         if (count($this->processWorkers) == 0) {
@@ -649,7 +652,7 @@ class ProcessManager
     }
 
     /**
-     * @param null|AbstractProcess $currentProcess
+     * @param AbstractProcess|null $currentProcess
      * @return mixed
      */
     private function swooleEventAdd(?AbstractProcess $currentProcess = null)
@@ -760,7 +763,7 @@ class ProcessManager
     }
 
     /**
-     * @param $status
+     * @param array $status
      * @return void
      */
     public function saveStatusToFile(array $status = [])
@@ -930,7 +933,7 @@ class ProcessManager
     }
 
     /**
-     * @param string $key
+     * @param string $process_name
      * @return bool
      */
     public function isMaster(string $process_name)
@@ -944,6 +947,7 @@ class ProcessManager
     /**
      * getProcessStatus
      *
+     * @param int $running_status
      * @return array
      */
     public function getProcessStatus(int $running_status = 1)
@@ -1283,7 +1287,7 @@ class ProcessManager
      * @param callable $function
      * @return void
      */
-    public function addSignal($signal, callable $function)
+    public function addSignal(int $signal, callable $function)
     {
         // forbidden over has registered signal
         if (!in_array($signal, [SIGTERM, SIGUSR2, SIGUSR1, SIGCHLD])) {
@@ -1391,6 +1395,7 @@ class ProcessManager
      * addProcessByCli
      * @param string $process_name
      * @param int $num
+     * @return void
      * @throws \Exception
      */
     private function addProcessByCli(string $process_name, int $num = 1)
@@ -1407,6 +1412,7 @@ class ProcessManager
      * removeProcessByCli
      * @param string $process_name
      * @param int $num
+     * @return void
      * @throws \Exception
      */
     private function removeProcessByCli(string $process_name, int $num = 1)
@@ -1490,6 +1496,7 @@ class ProcessManager
 
     /**
      * installErrorHandler
+     * @return void
      */
     private function installErrorHandler()
     {
@@ -1557,6 +1564,7 @@ class ProcessManager
 
     /**
      * getSwooleTableInfo
+     * @param bool $simple
      * @return string
      */
     private function getSwooleTableInfo(bool $simple = true)
@@ -1668,23 +1676,23 @@ class ProcessManager
     }
 
     /**
-     * statusInfoFormat
-     * @param $process_name
-     * @param $worker_id
-     * @param $pid
-     * @param $status
-     * @param null $start_time
+     * @param string $process_name
+     * @param int $worker_id
+     * @param int $pid
+     * @param string $status
+     * @param string $start_time
      * @param int $reboot_count
+     * @param string $process_type
      * @return string
      */
     private function statusInfoFormat(
-        $process_name,
-        $worker_id,
-        $pid,
-        $status,
-        $start_time = null,
-        $reboot_count = 0,
-        $process_type = ''
+        string $process_name,
+        int $worker_id,
+        int $pid,
+        string $status,
+        string $start_time = '',
+        int $reboot_count = 0,
+        string $process_type = ''
     )
     {
         if ($process_name == $this->getMasterWorkerName()) {

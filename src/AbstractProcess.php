@@ -1474,6 +1474,7 @@ abstract class AbstractProcess
      * @param string $from_process_name
      * @param int $from_process_worker_id
      * @param bool $is_proxy_by_master
+     * @return mixed
      */
     public function onPipeMsg($msg, string $from_process_name, int $from_process_worker_id, bool $is_proxy_by_master)
     {

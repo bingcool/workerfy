@@ -15,8 +15,7 @@ namespace Simps\MQTT;
 
 use Simps\MQTT\Client;
 use Simps\MQTT\Protocol;
-use Simps\MQTT\ProtocolV5;
-use Simps\MQTT\Types;
+use Simps\MQTT\Protocol\Types;
 use Simps\MQTT\Hex\ReasonCode;
 use Simps\MQTT\Exception\RuntimeException;
 use Simps\MQTT\Exception\InvalidArgumentException;
@@ -151,9 +150,9 @@ class ClientStream extends Client
             $this->reConnect();
         }if (strlen($response) > 0) {
             if($this->config['protocol_level'] === 5) {
-                return ProtocolV5::unpack($response);
+                return Protocol\V5::unpack($response);
             }
-            return Protocol::unpack($response);
+            return Protocol\V3::unpack($response);
         }
 
         return true;
@@ -164,10 +163,10 @@ class ClientStream extends Client
         $response = $this->getCompletePacket();
         if(strlen($response) > 0) {
             if ($this->config['protocol_level'] === 5) {
-                return ProtocolV5::unpack($response);
+                return Protocol\V5::unpack($response);
             }
 
-            return Protocol::unpack($response);
+            return Protocol\V3::unpack($response);
         }
 
         return true;
@@ -236,12 +235,5 @@ class ClientStream extends Client
         $packetData = $byte.$remainingLengthHeaderByte.$string;
 
         return $packetData;
-    }
-
-    public function close(int $code = ReasonCode::NORMAL_DISCONNECTION)
-    {
-        $this->send(['type' => Types::DISCONNECT, 'code' => $code], false);
-
-        return fclose($this->client);
     }
 }

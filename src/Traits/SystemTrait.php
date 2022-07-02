@@ -15,6 +15,7 @@ trait SystemTrait
 {
     /**
      * @param bool $enableCoroutine
+     * @return void
      */
     public function resetAsyncCoroutine(bool $enableCoroutine)
     {
