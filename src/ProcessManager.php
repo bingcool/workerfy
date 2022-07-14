@@ -667,7 +667,7 @@ class ProcessManager
             $processWorkers = $this->processWorkers;
         }
 
-        foreach ($processWorkers as $key => $processes) {
+        foreach ($processWorkers as $processes) {
             foreach ($processes as $process) {
                 /**
                  * @var \Swoole\Process $swooleProcess
@@ -1697,7 +1697,7 @@ class ProcessManager
     {
         if ($process_name == $this->getMasterWorkerName()) {
             $childrenNum = 0;
-            foreach ($this->processWorkers as $key => $processes) {
+            foreach ($this->processWorkers as $processes) {
                 $childrenNum += count($processes);
             }
             $startScriptFile = START_SCRIPT_FILE;
