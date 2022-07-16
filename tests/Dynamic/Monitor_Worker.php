@@ -15,12 +15,18 @@ class Monitor_Worker extends \Workerfy\AbstractProcess {
                  // 创建
                 if(time() - $start_time > 2 && time() - $start_time < 8) {
                     //var_dump($dynamic_process_name);
-                    $this->notifyMasterCreateDynamicProcess($dynamic_process_name, 5);
+                    try {
+                        $this->notifyMasterCreateDynamicProcess($dynamic_process_name, 5);
+                    } catch (\Exception $e) {
+                    }
                 }
 
                 // 销毁
                 if(time() - $start_time > 100 && time() - $start_time < 200) {
-                    $this->notifyMasterDestroyDynamicProcess($dynamic_process_name);
+                    try {
+                        $this->notifyMasterDestroyDynamicProcess($dynamic_process_name);
+                    } catch (\Throwable $e) {
+                    }
                 }
 
 //                if(time() - $start_time > 25 && time() - $start_time < 30) {

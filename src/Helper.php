@@ -78,14 +78,14 @@ class Helper
         } else {
             $cliParams = getenv('WORKERFY_CLI_PARAMS') ? json_decode(getenv('WORKERFY_CLI_PARAMS'), true) : [];
             $params = [];
-            foreach ($cliParams as $param) {
-                $value = @getenv($param);
+            foreach ($cliParams as $paramName) {
+                $value = @getenv($paramName);
                 if ($value !== false) {
-                    $params[$param] = $value;
+                    $params[$paramName] = $value;
                 }
             }
+            return $params;
         }
-        return $params;
     }
 
     /**
