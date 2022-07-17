@@ -10,15 +10,24 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
-        // GoWaitGroup并发处理
-        if($this->getProcessWorkerId() == 1) {
-            $this->waitGroup();
-            //$this->parallel();
-        }
-
         // 阻塞串行执行
         if($this->getProcessWorkerId() == 0) {
             $this->blockRun();
+        }
+
+        // GoWaitGroup并发处理
+        if($this->getProcessWorkerId() == 1) {
+            $this->waitGroup();
+        }
+
+        // parallel并发
+        if($this->getProcessWorkerId() == 2) {
+            $this->parallel();
+        }
+
+        // coroutine Map并发
+        if($this->getProcessWorkerId() == 3) {
+            $this->swoole_map();
         }
 
     }
@@ -37,7 +46,6 @@ class Worker extends \Workerfy\AbstractProcess {
         $start_time = microtime(true);
 
         $waitGroup->go(function($name) use($waitGroup) {
-            var_dump($name);
             $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
             $cli->set(['timeout' => 10]);
             $cli->setHeaders([
@@ -46,8 +54,10 @@ class Worker extends \Workerfy\AbstractProcess {
                 'Accept' => 'text/html,application/xhtml+xml,application/xml',
                 'Accept-Encoding' => 'gzip',
             ]);
-            throw new \Exception("jjjjjjjjjjjjjj");
+
+
             $ret = $cli->get('/');
+
             $waitGroup->done('www.baidu.com', 'g1-test-wait-group');
         }, 'nnnnnn');
 
@@ -70,7 +80,7 @@ class Worker extends \Workerfy\AbstractProcess {
         $end_time = microtime(true);
 
         $last_time = $end_time - $start_time;
-        var_dump("并发请求时长:". $last_time);
+        var_dump("waitGroup并发请求时长:". $last_time);
     }
 
     public function blockRun() {
@@ -109,45 +119,121 @@ class Worker extends \Workerfy\AbstractProcess {
         $end_time = microtime(true);
 
         $last_time = $end_time - $start_time;
-        var_dump("阻塞串行请求时长:". $last_time);
+        var_dump("blockRun阻塞串行请求时长:". $last_time);
     }
 
     public function parallel() {
 
-        $parallel = new \Workerfy\Coroutine\Parallel(5);
+        sleep(1);
 
+        $parallel = new \Workerfy\Coroutine\Parallel(5);
         $parallel->add(function () {
-            sleep(2);
-            throw new \Exception('vvvvvvvvv');
-            return 'test1';
+            $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
+            $cli->set(['timeout' => 10]);
+            $cli->setHeaders([
+                'Host'            => "www.baidu.com",
+                "User-Agent"      => 'Chrome/49.0.2587.3',
+                'Accept'          => 'text/html,application/xhtml+xml,application/xml',
+                'Accept-Encoding' => 'gzip',
+            ]);
+            $ret = $cli->get('/');
+            return 'parallel-1';
         },'key1');
 
         $parallel->add(function () {
-            sleep(2);
-            return 'test2';
+            $cli = new \Swoole\Coroutine\Http\Client('www.163.com', 80);
+            $cli->set(['timeout' => 10]);
+            $cli->setHeaders([
+                "User-Agent" => 'Chrome/49.0.2587.3',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml',
+                'Accept-Encoding' => 'gzip',
+            ]);
+            $ret = $cli->get('/');
+            return 'parallel-2';
         },'key2');
 
         $parallel->add(function () {
-            sleep(3);
-            throw new \Exception('gggggggg');
-            return 'test3';
+            $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
+            $cli->set(['timeout' => 10]);
+            $cli->setHeaders([
+                'Host'            => "www.baidu.com",
+                "User-Agent"      => 'Chrome/49.0.2587.3',
+                'Accept'          => 'text/html,application/xhtml+xml,application/xml',
+                'Accept-Encoding' => 'gzip',
+            ]);
+            $ret = $cli->get('/');
+            return 'parallel-3';
         },'key3');
 
         $parallel->add(function () {
-            sleep(2);
-            return 'test4';
+            $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
+            $cli->set(['timeout' => 10]);
+            $cli->setHeaders([
+                'Host'            => "www.baidu.com",
+                "User-Agent"      => 'Chrome/49.0.2587.3',
+                'Accept'          => 'text/html,application/xhtml+xml,application/xml',
+                'Accept-Encoding' => 'gzip',
+            ]);
+            $ret = $cli->get('/');
+            return 'parallel-4';
         },'key4');
 
+        //$parallel->ignoreCallbacks(['key3']);
+
         $start_time = microtime(true);
-        $parallel->ignoreCallbacks(['key3']);
+
         $result = $parallel->wait(5);
 
         $end_time = microtime(true);
 
         $time = $end_time - $start_time;
 
-        var_dump('query-time:'.$time);
+        var_dump('parallel并发请求时长:'.$time);
 
+        var_dump($result);
+
+    }
+
+    protected function swoole_map()
+    {
+        sleep(1);
+        $startTime = microtime(true);
+
+        $result = [];
+        \Swoole\Coroutine\map([1,2], function ($n) use(&$result) {
+            var_dump($n);
+           switch ($n) {
+               case 1:
+                   $cli = new \Swoole\Coroutine\Http\Client('www.baidu.com', 80);
+                   $cli->set(['timeout' => 10]);
+                   $cli->setHeaders([
+                       'Host'            => "www.baidu.com",
+                       "User-Agent"      => 'Chrome/49.0.2587.3',
+                       'Accept'          => 'text/html,application/xhtml+xml,application/xml',
+                       'Accept-Encoding' => 'gzip',
+                   ]);
+                   $ret = $cli->get('/');
+                   $result['map1'] = 'www.baidu.com';
+               break;
+
+               case 2:
+                   $cli = new \Swoole\Coroutine\Http\Client('www.163.com', 80);
+                   $cli->set(['timeout' => 10]);
+                   $cli->setHeaders([
+                       "User-Agent" => 'Chrome/49.0.2587.3',
+                       'Accept' => 'text/html,application/xhtml+xml,application/xml',
+                       'Accept-Encoding' => 'gzip',
+                   ]);
+                   $ret = $cli->get('/');
+                   $result['map2'] = 'www.163.com';
+               break;
+           }
+        }, 5);
+
+        $endTime = microtime(true);
+        $time = $endTime - $startTime;
+
+        var_dump('swooleMap并发请求时长:'.$time);
         var_dump($result);
 
     }

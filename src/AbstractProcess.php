@@ -1082,11 +1082,11 @@ abstract class AbstractProcess
     /**
      * reboot
      *
-     * @param null|float $wait_time
+     * @param float $wait_time
      * @param bool $includeDynamicProcess
      * @return bool
      */
-    public function reboot(?float $wait_time = null, bool $includeDynamicProcess = false)
+    public function reboot(float $wait_time = 0, bool $includeDynamicProcess = false)
     {
         if(!$includeDynamicProcess) {
             if (!$this->isStaticProcess()) {
@@ -1100,7 +1100,7 @@ abstract class AbstractProcess
             return false;
         }
 
-        if ($wait_time) {
+        if ($wait_time > 0) {
             $this->waitTime = $wait_time;
         }
 
@@ -1135,7 +1135,7 @@ abstract class AbstractProcess
      * @param float $wait_time
      * @return bool
      */
-    public function exit(bool $is_force = false, ?float $wait_time = null)
+    public function exit(bool $is_force = false, ?float $wait_time = 0)
     {
         // reboot or exit status
         if ($this->isForceExit || $this->isReboot || $this->isExit) {
@@ -1149,7 +1149,11 @@ abstract class AbstractProcess
                 $this->isForceExit = true;
             }
             $this->clearRebootTimer();
-            $wait_time && $this->waitTime = $wait_time;
+
+            if($wait_time > 0) {
+                $this->waitTime = $wait_time;
+            }
+
             $channel = new Channel(1);
             $this->exitTimerId = \Swoole\Timer::after($this->waitTime * 1000, function () use ($pid) {
                 try {
@@ -1184,8 +1188,9 @@ abstract class AbstractProcess
      */
     protected function registerTickReboot($cron_expression)
     {
+        $waitTime   = 5;
         $tickSecond = 2;
-        $waitTime = 5;
+
         if (is_numeric($cron_expression)) {
             $randNum = rand(1, 10);
             // for Example reboot/600s after 600s reboot this process

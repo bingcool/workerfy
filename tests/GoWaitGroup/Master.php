@@ -5,7 +5,7 @@ require dirname(__DIR__).'/Common.php';
 $processManager = \Workerfy\ProcessManager::getInstance();
 $process_name = 'test-go-wait-group';
 $process_class = \Workerfy\Tests\GoWaitGroup\Worker::class;
-$process_worker_num = 2;
+$process_worker_num = 4;
 $async = true;
 $args = [
     'wait_time' => 1

@@ -80,7 +80,6 @@ class CrontabManager
      * @param int $type
      * @param int $timeMs
      * @return mixed
-     * @throws CrontabException
      */
     public function addRule(
         string $cron_name,
