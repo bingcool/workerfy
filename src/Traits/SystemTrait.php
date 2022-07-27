@@ -11,6 +11,8 @@
 
 namespace Workerfy\Traits;
 
+use Workerfy\Exception\UserTriggerException;
+
 trait SystemTrait
 {
     /**
@@ -64,4 +66,31 @@ trait SystemTrait
 
         return $hookFlags;
     }
+
+    /**
+     * installErrorHandler
+     *
+     * @return void
+     */
+    protected function installErrorHandler()
+    {
+        set_error_handler(function ($errNo, $errStr, $errFile, $errLine) {
+            switch ($errNo) {
+                case E_ERROR:
+                case E_PARSE:
+                case E_CORE_ERROR:
+                case E_COMPILE_ERROR:
+                case E_USER_ERROR:
+                    @ob_end_clean();
+                    $errorStr = sprintf("%s in file %s on line %d",
+                        $errStr,
+                        $errFile,
+                        $errLine
+                    );
+                    $exception = new UserTriggerException($errorStr, $errNo);
+                    $this->onHandleException($exception);
+            }
+        });
+    }
+
 }
