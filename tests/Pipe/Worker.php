@@ -6,6 +6,10 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run() {
         // 模拟处理业务
         sleep(1);
+        $options = \Swoole\Coroutine::getOptions();
+
+        var_dump($options);
+
         $process_name = $this->getProcessName().'@'.$this->getProcessWorkerId();
         // 向父进程发送消息
         var_dump($process_name."子进程开始向父进程发信息.....");

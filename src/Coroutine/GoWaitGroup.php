@@ -41,7 +41,9 @@ class GoWaitGroup
     }
 
     /**
-     * go function
+     * @param \Closure $callBack
+     * @param mixed ...$params
+     * @throws Throwable
      */
     public function go(\Closure $callBack, ...$params)
     {
@@ -137,7 +139,9 @@ class GoWaitGroup
     }
 
     /**
-     * done
+     * @param string|null $key
+     * @param null $data
+     * @param float $timeout
      * @return mixed
      */
     public function done(string $key = null, $data = null, float $timeout = -1)
@@ -160,6 +164,7 @@ class GoWaitGroup
 
     /**
      * wait
+     * @param float $timeout
      * @return array
      */
     public function wait(float $timeout = 0)

@@ -93,7 +93,7 @@ class Parallel
     }
 
     /**
-     * @param $key
+     * @param array $key
      * @return void
      */
     public function ignoreCallbacks(array $keys)

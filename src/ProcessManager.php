@@ -360,6 +360,7 @@ class ProcessManager
                 }
             }
         }
+
         foreach ($this->processWorkers as $key => $workers) {
             foreach ($workers as $workerId => $process) {
                 $process->start();
