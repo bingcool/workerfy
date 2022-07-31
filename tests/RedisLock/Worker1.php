@@ -24,26 +24,30 @@ class Worker1 extends \Workerfy\AbstractProcess {
             // lockKey与业务数据结合
             $lockKey = 'test_lock_'.$orderId;
             $mutex = new PredisMutex([$predis], $lockKey,10);
-            var_dump($this->getProcessWorkerId());
+            //var_dump($this->getProcessWorkerId());
 
             // 获取锁
             $lock = $mutex->acquireLock();
-            var_dump($lock);
+            //var_dump($lock);
 
-            // 处理业务
-            if($lock)
+            try {
+                // 处理业务
+                if($lock)
+                {
+                    //var_dump('get lock worker_id='.$this->getProcessWorkerId());
+                    // 模拟处理业务
+                    sleep(2);
+                    $mutex->releaseLock();
+                }else
+                {
+                    // 同一时间没获得锁的
+                    // 放在延迟队列，或者不确认是否完全消费
+                }
+            }catch (\Throwable $throwable)
             {
-                var_dump('get lock worker_id='.$this->getProcessWorkerId());
-
-                // 模拟处理业务
-                sleep(2);
-
                 $mutex->releaseLock();
-            }else
-            {
-                // 同一时间没获得锁的
-                // 放在延迟队列，或者不确认是否完全消费
             }
+
             \Swoole\Coroutine\System::sleep(0.01);
         }
 

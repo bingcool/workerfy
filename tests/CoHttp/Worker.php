@@ -1,6 +1,8 @@
 <?php
 namespace Workerfy\Tests\CoHttp;
 
+use Workerfy\Tests\Make;
+
 class Worker extends \Workerfy\AbstractProcess {
 
     protected $server;
@@ -8,6 +10,8 @@ class Worker extends \Workerfy\AbstractProcess {
     public function init($name = 'bingcool', int $clientId = 1)
     {
        var_dump($name ?? '', $clientId);
+       $redis = Make::makeRedis();
+       \Common\Library\Uuid\UuidManager::getInstance($redis, 'uuid-key')->tickPreBatchGenerateIds(2,1000);
     }
 
     public function run() {
@@ -51,7 +55,14 @@ class Worker extends \Workerfy\AbstractProcess {
 
             $this->reboot(1);
         });
-        
+
+        $server->handle('/getUuids', function ($request, $response) use ($server) {
+            $redis = Make::makeRedis();
+            $ids = \Common\Library\Uuid\UuidManager::getInstance()->getIncrIds($redis, 10);
+            var_export($ids);
+            $response->end("<h1>Test</h1>");
+        });
+
         $server->start();
     }
 

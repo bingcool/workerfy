@@ -11,12 +11,7 @@ class Worker extends \Workerfy\AbstractProcess {
     public function run()
     {
         $predis = \Workerfy\Tests\Make::makePredis();
-        if($this->getProcessWorkerId() == 1) {
-            //sleep(1);
-            var_dump('start-'.$this->getProcessWorkerId());
-        }else {
-            var_dump('start-0');
-        }
+        var_dump('start-'.$this->getProcessWorkerId());
 
         while(1)
         {
@@ -30,18 +25,20 @@ class Worker extends \Workerfy\AbstractProcess {
             try {
                 // 获得锁,并进行回调处理, 业务尽可能简单处理，在规定时间内完成
                 $mutex->synchronized(function () {
-                    go(function ()
-                    {
-                        var_dump('get lock worker_id='.$this->getProcessWorkerId());
-                        if($this->getProcessWorkerId() == 1)
-                        {
-                            sleep(2);
-                        }else {
-                            sleep(8);
-                        }
-                    });
-//                    var_dump($this->getProcessWorkerId());
-//                    sleep(9);
+//                    go(function ()
+//                    {
+//                        var_dump('get lock worker_id='.$this->getProcessWorkerId());
+//                        if($this->getProcessWorkerId() == 1)
+//                        {
+//                            sleep(2);
+//                        }else {
+//                            sleep(8);
+//                        }
+//                    });
+
+
+                    var_dump('lock-worker-id='.$this->getProcessWorkerId());
+                    sleep(1);
 
                     // 最好用事务处理，可以使用协程
     //                if($this->getProcessWorkerId() == 0) {
@@ -51,7 +48,7 @@ class Worker extends \Workerfy\AbstractProcess {
     //                var_dump('test-lock-'.$this->getProcessWorkerId());
                 });
 
-            }catch (\Exception $exception) {
+            }catch (\Throwable $exception) {
                 // 超时还没获的锁
                 if($exception instanceof TimeoutException)
                 {
