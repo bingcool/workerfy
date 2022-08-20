@@ -11,36 +11,13 @@
 
 namespace Workerfy\Dto;
 
-class MessageDto extends AbstractDto
+class AbstractDto extends \stdClass
 {
     /**
-     * @var string
+     * toArray
      */
-    public $fromProcessName;
-
-    /**
-     * @var int
-     */
-    public $fromProcessWorkerId;
-
-    /**
-     * @var string
-     */
-    public $toProcessName;
-
-    /**
-     * @var int
-     */
-    public $toProcessWorkerId;
-
-    /**
-     * @var bool
-     */
-    public $isProxy = true;
-
-    /**
-     * @var mixed
-     */
-    public $data;
-
+    public function toArray()
+    {
+        return (array)$this;
+    }
 }

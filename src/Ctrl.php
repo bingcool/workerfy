@@ -176,7 +176,7 @@ function stop($cli_params)
         if (\Swoole\Process::kill($masterPid, 0)) {
             \Swoole\Process::kill($masterPid, SIGKILL);
         }
-        write_info("【Info】Master and Children Process has stopped", 'light_green');
+        write_info("【Info】Master and Children Process Stop OK", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} is not running");
     }
@@ -256,7 +256,7 @@ function restart($cli_params)
             }
             sleep(1);
         }
-        write_info("【Info】Master and Children Process has stopped", 'light_green');
+        write_info("【Info】Master and Children Process Stop OK", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} not exist");
         exit;

@@ -159,6 +159,11 @@ class ProcessManager
     public $onRegisterLogger;
 
     /**
+     * @var \Closure
+     */
+    private $onRegisterShutdownFunction;
+
+    /**
      * @var int
      */
     const NUM_PEISHU = 8;
@@ -396,7 +401,7 @@ class ProcessManager
     }
 
     /**
-     * 终止进程处理函数
+     * master进程退出处理函数
      *
      * @return \Closure
      */
@@ -409,7 +414,7 @@ class ProcessManager
                 case SIGTERM:
                     if (!$this->isExit) {
                         $this->isExit = true;
-                        foreach ($this->processWorkers as $key => $processes) {
+                        foreach ($this->processWorkers as $processes) {
                             foreach ($processes as $workerId => $process) {
                                 try {
                                     $processName = $process->getProcessName();
@@ -419,6 +424,7 @@ class ProcessManager
                                 }
                             }
                         }
+                        call_user_func($this->onRegisterShutdownFunction);
                         $this->isExit = false;
                     }
                     break;
@@ -1465,34 +1471,36 @@ class ProcessManager
      */
     private function installRegisterShutdownFunction()
     {
-        register_shutdown_function(function () {
-            // children process extends this register_shutdown_function, so ignore for children process
-            if(in_master_process_env()) {
-                try {
-                    // exit handle
-                    is_callable($this->onExit) && $this->onExit->call($this);
+        if(!in_master_process_env()) {
+            return;
+        }
 
-                } catch (\Throwable $throwable) {
-                    $this->onHandleException->call($this, $throwable);
-                } finally {
-                    // close pipe fifo
-                    if (is_resource($this->cliPipeFd)) {
-                        @\Swoole\Event::del($this->cliPipeFd);
-                        fclose($this->cliPipeFd);
-                    }
-                    @unlink($this->getCliPipeFile());
-                    // remove sysvmsg queue
-                    $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
-                    $sysvmsgManager->destroyMsgQueue();
-                    unset($sysvmsgManager);
-                    // remove signal
-                    @\Swoole\Process::signal(SIGUSR1, null);
-                    @\Swoole\Process::signal(SIGUSR2, null);
-                    @\Swoole\Process::signal(SIGTERM, null);
+        $this->onRegisterShutdownFunction = function () {
+            // children process extends this register_shutdown_function, so ignore for children process
+            try {
+                // exit handle
+                is_callable($this->onExit) && $this->onExit->call($this);
+
+            } catch (\Throwable $throwable) {
+                $this->onHandleException->call($this, $throwable);
+            } finally {
+                // close pipe fifo
+                if (is_resource($this->cliPipeFd)) {
+                    @\Swoole\Event::del($this->cliPipeFd);
+                    fclose($this->cliPipeFd);
                 }
-                write_info("【Warning】终端关闭，master进程stop, master_pid={$this->masterPid}");
+                @unlink($this->getCliPipeFile());
+                // remove sysvmsg queue
+                $sysvmsgManager = \Workerfy\Memory\SysvmsgManager::getInstance();
+                $sysvmsgManager->destroyMsgQueue();
+                unset($sysvmsgManager);
+                // remove signal
+                @\Swoole\Process::signal(SIGUSR1, null);
+                @\Swoole\Process::signal(SIGUSR2, null);
+                @\Swoole\Process::signal(SIGTERM, null);
             }
-        });
+            write_info("【Warning】终端关闭，master进程stop, master_pid={$this->masterPid}");
+        };
     }
 
     /**
