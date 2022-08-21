@@ -15,6 +15,10 @@ $args = [
 $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
-$processManager->onStart = function ($pid) {};
-$processManager->onExit = function() use($configFilePath) {};
+$processManager->onStart = function ($pid) {
+
+};
+$processManager->onExit = function() {
+
+};
 $master_pid = $processManager->start();

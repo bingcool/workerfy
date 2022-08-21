@@ -38,7 +38,7 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
     var_dump("父进程开始向子进程回复信息.....");
 };
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function()  {
     //var_dump("master exit",$configFilePath);
 };
 

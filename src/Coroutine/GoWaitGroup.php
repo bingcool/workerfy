@@ -140,7 +140,7 @@ class GoWaitGroup
 
     /**
      * @param string|null $key
-     * @param null $data
+     * @param mixed $data
      * @param float $timeout
      * @return mixed
      */
@@ -154,7 +154,7 @@ class GoWaitGroup
 
     /**
      * @param string $key
-     * @param null $data
+     * @param mixed $data
      * @return void
      */
     public function initResult(string $key, $data = null)

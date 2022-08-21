@@ -17,7 +17,6 @@ use Swoole\Coroutine\Channel;
 use Workerfy\Coroutine\GoCoroutine;
 use Workerfy\Crontab\CrontabManager;
 use Workerfy\Dto\MessageDto;
-use Workerfy\Exception\UserTriggerException;
 
 /**
  * Class AbstractProcess
@@ -168,13 +167,13 @@ abstract class AbstractProcess
     protected $initSystemCoroutineNum = 2;
 
     /**
-     * 静态进程
+     * static process
      * @var int
      */
     const PROCESS_STATIC_TYPE = 1;
 
     /**
-     * 动态进程
+     * dynamic process
      * @var int
      */
     const PROCESS_DYNAMIC_TYPE = 2;
@@ -839,7 +838,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * @param int $wait_time
+     * @param float $wait_time
      */
     public function setWaitTime(float $wait_time = 30)
     {
@@ -1017,7 +1016,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * @return mixed
+     * @return int
      */
     public function getExitTimerId()
     {
@@ -1155,7 +1154,7 @@ abstract class AbstractProcess
     }
 
     /**
-     * registerTickReboot register time reboot, wiil be do in init() function
+     * registerTickReboot register time reboot, will be called in init() function
      *
      * @param $cron_expression
      * @return void
@@ -1219,11 +1218,11 @@ abstract class AbstractProcess
     }
 
     /**
-     * @param $pid
-     * @param $signal
+     * @param int $pid
+     * @param int $signal
      * @return void
      */
-    public function kill($pid, $signal)
+    protected function kill($pid, $signal)
     {
         if (Process::kill($pid, 0)) {
             // force exit

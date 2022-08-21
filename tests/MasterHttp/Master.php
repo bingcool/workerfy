@@ -34,7 +34,7 @@ $processManager->onReportStatus = function($status) {
     });
 };
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
     //var_dump("master exit",$configFilePath);
 };
 

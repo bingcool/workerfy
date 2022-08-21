@@ -40,8 +40,7 @@ $processManager->onProxyMsg = function($msg, $from_process_name, $from_process_w
     var_dump($array);
 };
 
-$processManager->onExit = function() use($configFilePath) {
-    //var_dump("master exit", $configFilePath);
+$processManager->onExit = function() {
 };
 
 $master_pid = $processManager->start();

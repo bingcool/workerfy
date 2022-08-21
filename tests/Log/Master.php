@@ -47,7 +47,7 @@ $processManager->onRegisterLogger = function () {
     return $logger;
 };
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() '' {
     //var_dump("master exit", $configFilePath);
 };
 

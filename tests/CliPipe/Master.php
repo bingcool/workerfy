@@ -29,7 +29,7 @@ $processManager->onCliMsg = function($msg) {
     var_dump("父进程收到来自于cli终端信息：".$msg);
 };
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
 
 };
 

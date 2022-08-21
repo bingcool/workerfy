@@ -54,8 +54,8 @@ class TableManager
         }
 
         $size = $setting['size'] ?? 128;
-        $conflict_proportion = $setting['conflict_proportion'] ?? 0.2;
-        $table = new \Swoole\Table($size, $conflict_proportion);
+        $conflictProportion = $setting['conflict_proportion'] ?? 0.2;
+        $table = new \Swoole\Table($size, $conflictProportion);
         $this->setTableColumn($table, $fields);
         $table->create();
 

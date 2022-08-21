@@ -43,7 +43,7 @@ $processManager->onCreateDynamicProcess = function ($process_name, $process_num)
 };
 
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
     //var_dump("master exit",$configFilePath);
 };
 

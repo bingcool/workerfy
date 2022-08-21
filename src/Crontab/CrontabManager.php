@@ -170,7 +170,12 @@ class CrontabManager
      */
     protected function loopHandle(string $cron_name, string $expression, callable $func)
     {
-        $cron          = CronExpression::factory($expression);
+        if(class_exists(CronExpression::class,'factory')) {
+            $cron = CronExpression::factory($expression);
+        }else {
+            $cron = new CronExpression($expression);
+        }
+
         $nowTime       = time();
         $expressionKey = md5($expression);
 
@@ -208,7 +213,6 @@ class CrontabManager
             if (isset($this->cronTasks[$cron_name])) {
                 return $this->cronTasks[$cron_name];
             }
-            return null;
         }
         return $this->cronTasks;
     }
@@ -223,7 +227,6 @@ class CrontabManager
             if (isset($this->timerIds[$cron_name])) {
                 return $this->timerIds[$cron_name];
             }
-            return null;
         }
     }
 
@@ -271,7 +274,6 @@ class CrontabManager
                 return $loopType;
             }
         }
-        return null;
     }
 
     /**

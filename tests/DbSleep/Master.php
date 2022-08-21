@@ -29,8 +29,8 @@ $processManager->onReportStatus =  function ($status) {
 };
 
 
-$processManager->onExit = function() use($configFilePath) {
-    //var_dump("master exit",$configFilePath);
+$processManager->onExit = function() {
+
 };
 
 $master_pid = $processManager->start();

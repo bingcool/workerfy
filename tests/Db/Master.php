@@ -46,7 +46,7 @@ $processManager->onPipeMsg = function($msg, $from_process_name, $from_process_wo
 };
 
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() '' {
     //var_dump("master exit",$configFilePath);
 };
 

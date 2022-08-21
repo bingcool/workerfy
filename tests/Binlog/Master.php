@@ -14,7 +14,7 @@ $extend_data = null;
 
 $processManager->addProcess($process_name, $process_class, $process_worker_num, $async, $args, $extend_data);
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
     //var_dump("master exit", $configFilePath);
 };
 

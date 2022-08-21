@@ -17,7 +17,7 @@ $processManager->onStart = function ($pid) {
     file_put_contents(PID_FILE, $pid);
 };
 
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
     //var_dump("master exit",$configFilePath);
 };
 

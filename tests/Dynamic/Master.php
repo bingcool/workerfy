@@ -60,7 +60,7 @@ $processManager->onDestroyDynamicProcess = function ($dynamic_process_name, $dyn
 };
 
 // 父进程退出，只有子进程全部退出后，父进程才会退出
-$processManager->onExit = function() use($configFilePath) {
+$processManager->onExit = function() {
     //var_dump("master exit",$configFilePath);
 };
 
