@@ -42,4 +42,8 @@ $processManager->onExit = function()  {
     //var_dump("master exit",$configFilePath);
 };
 
+$processManager->onCliMsg = function(\Workerfy\Dto\PipeMsgDto $pipeMsgDto) {
+    var_dump($pipeMsgDto->toArray());
+};
+
 $master_pid = $processManager->start();

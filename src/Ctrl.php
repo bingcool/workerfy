@@ -9,6 +9,8 @@
  * +----------------------------------------------------------------------
  */
 
+use \Workerfy\Dto\PipeMsgDto;
+
 include __DIR__ . '/WorkerfyConst.php';
 include __DIR__ . '/EachColor.php';
 
@@ -115,7 +117,7 @@ switch ($command) {
         exit(0);
 }
 
-function start($cli_params)
+function start($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -131,11 +133,11 @@ function start($cli_params)
             exit(0);
         }
     }
-    setCliParamsEnv($cli_params);
+    setCliParamsEnv($cliParams);
     write_info("【Info】Master && Children Process ready to start, please wait a time ......", 'light_green');
 }
 
-function stop($cli_params)
+function stop($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -149,7 +151,11 @@ function stop($cli_params)
 
     if (\Swoole\Process::kill($masterPid, 0)) {
         if (getenv('force')) {
-            $pipeMsg = json_encode([CLI_STOP, '', ''], JSON_UNESCAPED_UNICODE);
+
+            $pipeMsgDto = new PipeMsgDto();
+            $pipeMsgDto->action = CLI_STOP;
+            $pipeMsg = serialize($pipeMsgDto);
+
             $pipeFile = getCliPipeFile();
             $pipe = @fopen($pipeFile, 'w+');
             if (flock($pipe, LOCK_EX)) {
@@ -158,13 +164,15 @@ function stop($cli_params)
             }
             fclose($pipe);
             sleep(2);
-            $res = @\Swoole\Process::kill($masterPid, SIGKILL);
+            $result = @\Swoole\Process::kill($masterPid, SIGKILL);
         } else {
-            $res = \Swoole\Process::kill($masterPid, SIGTERM);
+            $result = \Swoole\Process::kill($masterPid, SIGTERM);
         }
-        if ($res) {
+
+        if ($result) {
             write_info("【Info】Master and Children Process start to stop, please wait a time", 'light_green');
         }
+
         $startStopTime = time();
         while (\Swoole\Process::kill($masterPid, 0)) {
             if (time() - $startStopTime > 10) {
@@ -176,14 +184,16 @@ function stop($cli_params)
         if (\Swoole\Process::kill($masterPid, 0)) {
             \Swoole\Process::kill($masterPid, SIGKILL);
         }
+
         write_info("【Info】Master and Children Process Stop OK", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} is not running");
     }
+
     exit(0);
 }
 
-function reload($cli_params)
+function reload($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -196,10 +206,11 @@ function reload($cli_params)
     }
 
     if (\Swoole\Process::kill($masterPid, 0)) {
-        $res = \Swoole\Process::kill($masterPid, SIGUSR2);
-        if ($res) {
+        $result = \Swoole\Process::kill($masterPid, SIGUSR2);
+        if ($result) {
             write_info("【Info】Children Process start to reload, please wait a time", 'light_green');
         }
+
         $startStopTime = time();
         while (\Swoole\Process::kill($masterPid, 0)) {
             if (time() - $startStopTime > 5) {
@@ -207,24 +218,27 @@ function reload($cli_params)
             }
             sleep(1);
         }
-        status($cli_params);
+        status($cliParams);
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} is not exist");
     }
     exit(0);
 }
 
-function restart($cli_params)
+function restart($cliParams)
 {
     $colors = new \Workerfy\EachColor();
     echo PHP_EOL;
     echo $colors->getColoredString('Are you sure you want to restart process use daemon model? (yes or no):', $foreground = "red", $background = "black");
+
     $handle = fopen("php://stdin", "r");
-    $line = fgets($handle);
+    $line   = fgets($handle);
+
     if (trim($line) != 'yes') {
         write_info("【Warning】You give up to restart process.");
-        exit;
+        exit(0);
     }
+
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
         if (is_numeric($masterPid) && $masterPid > 0) {
@@ -236,7 +250,11 @@ function restart($cli_params)
     }
 
     if (\Swoole\Process::kill($masterPid, 0)) {
-        $pipeMsg = json_encode([CLI_STOP, '', ''], JSON_UNESCAPED_UNICODE);
+
+        $pipeMsgDto = new PipeMsgDto();
+        $pipeMsgDto->action = CLI_STOP;
+        $pipeMsg = serialize($pipeMsgDto);
+
         $pipeFile = getCliPipeFile();
         $pipe = @fopen($pipeFile, 'w+');
         if (flock($pipe, LOCK_EX)) {
@@ -245,10 +263,11 @@ function restart($cli_params)
         }
         fclose($pipe);
         sleep(1);
-        $res = @\Swoole\Process::kill($masterPid, SIGKILL);
-        if ($res) {
+        $result = @\Swoole\Process::kill($masterPid, SIGKILL);
+        if ($result) {
             write_info("【Info】Master and Children Process start to stop, please wait a time", 'light_green');
         }
+
         $startStopTime = time();
         while (@\Swoole\Process::kill($masterPid, 0)) {
             if (time() - $startStopTime > 5) {
@@ -256,18 +275,19 @@ function restart($cli_params)
             }
             sleep(1);
         }
+
         write_info("【Info】Master and Children Process Stop OK", 'light_green');
     } else {
         write_info("【Warning】Master Process of Pid={$masterPid} not exist");
-        exit;
+        exit(0);
     }
     // restart must daemon model
     putenv('daemon=1');
-    setCliParamsEnv($cli_params);
+    setCliParamsEnv($cliParams);
     write_info("【Info】Master and Children Process ready to restart, please wait a time", 'light_green');
 }
 
-function status($cli_params)
+function status($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -292,7 +312,11 @@ function status($cli_params)
     }
 
     $pipe = fopen($pipeFile, 'r+');
-    $pipeMsg = json_encode([CLI_STATUS, $ctlPipeFile, ''], JSON_UNESCAPED_UNICODE);
+    $pipeMsgDto = new PipeMsgDto();
+    $pipeMsgDto->action = CLI_STATUS;
+    $pipeMsgDto->targetHandler = $ctlPipeFile;
+
+    $pipeMsg = serialize($pipeMsgDto);
     if (file_exists($ctlPipeFile)) {
         unlink($ctlPipeFile);
     }
@@ -309,6 +333,7 @@ function status($cli_params)
         write_info($msg, 'light_green');
         \Swoole\Event::exit();
     });
+
     sleep(1);
     fwrite($pipe, $pipeMsg);
     \Swoole\Event::wait();
@@ -318,7 +343,7 @@ function status($cli_params)
     exit(0);
 }
 
-function checkReboot($cli_params)
+function checkReboot($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -334,12 +359,12 @@ function checkReboot($cli_params)
     if (!\Swoole\Process::kill($masterPid, 0)) {
         sleep(1);
         if(!\Swoole\Process::kill($masterPid, 0)) {
-            start($cli_params);
+            start($cliParams);
         }
     }
 }
 
-function pipe($cli_params)
+function pipe($cliParams)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -350,6 +375,7 @@ function pipe($cli_params)
             exit(0);
         }
     }
+
     if (!\Swoole\Process::kill($masterPid, 0)) {
         write_info("【Warning】Master Process of Pid={$masterPid} is not exist");
         exit(0);
@@ -367,20 +393,21 @@ function pipe($cli_params)
         exit(0);
     }
 
-    $msg = $cli_params['msg'] ?? '';
+    $msg = $cliParams['msg'] ?? '';
     if ($msg) {
         write_info("【Info】Start write msg={$msg} to master", 'light_green');
-        fwrite($pipe, $msg);
+        $pipeMsgDto = new PipeMsgDto();
+        $pipeMsgDto->action = CLI_PIPE;
+        $pipeMsgDto->message = $msg;
+        fwrite($pipe, serialize($pipeMsgDto));
     } else {
-        fclose($pipe);
         write_info("【Warning】Please use: pipe --msg=xxxxx");
-        exit(0);
     }
     fclose($pipe);
     exit(0);
 }
 
-function add($cli_params, int $wait_time = 3)
+function add($cliParams, int $waitTime = 3)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -408,26 +435,33 @@ function add($cli_params, int $wait_time = 3)
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $name = $cli_params['name'] ?? '';
-    $num = $cli_params['num'] ?? 1;
-    $pipeMsg = json_encode([CLI_ADD, $name, $num], JSON_UNESCAPED_UNICODE);
+
+    $name = $cliParams['name'] ?? '';
+    $num  = $cliParams['num'] ?? 1;
+
+    $pipeMsgDto = new PipeMsgDto();
+    $pipeMsgDto->action = CLI_ADD;
+    $pipeMsgDto->targetHandler = $name;
+    $pipeMsgDto->message = $num;
+
+    $pipeMsg = serialize($pipeMsgDto);
     if ($name) {
-        write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$wait_time}s)", 'light_green');
+        write_info("【Info】 Master Process start to create dynamic process, please wait a time (about {$waitTime}s)", 'light_green');
         fwrite($pipe, $pipeMsg);
+        flock($pipe, LOCK_UN);
+        fclose($pipe);
+        sleep($waitTime);
+        status($cliParams);
+        exit(0);
     } else {
         write_info("【Warning】 Please use: add --name=xxxxx --num=1");
         flock($pipe, LOCK_UN);
         fclose($pipe);
         exit(0);
     }
-    flock($pipe, LOCK_UN);
-    fclose($pipe);
-    sleep($wait_time);
-    status($cli_params);
-    exit(0);
 }
 
-function remove($cli_params, int $wait_time = 3)
+function remove($cliParams, int $waitTime = 3)
 {
     if (is_file(PID_FILE)) {
         $masterPid = file_get_contents(PID_FILE);
@@ -453,20 +487,28 @@ function remove($cli_params, int $wait_time = 3)
         write_info("【Warning】 Get file flock failed");
         exit(0);
     }
-    $name = $cli_params['name'] ?? null;
-    $num = $cli_params['num'] ?? 1;
-    $pipeMsg = json_encode([CLI_REMOVE, $name, $num], JSON_UNESCAPED_UNICODE);
+
+    $name = $cliParams['name'] ?? null;
+    $num  = $cliParams['num'] ?? 1;
+
+    $pipeMsgDto = new PipeMsgDto();
+    $pipeMsgDto->action = CLI_REMOVE;
+    $pipeMsgDto->targetHandler = $name;
+    $pipeMsgDto->message = $num;
+
+    $pipeMsg = serialize($pipeMsgDto);
     if (isset($name)) {
-        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$wait_time}s)", 'light_green');
+        write_info("【Info】 Master Process start to remova all dynamic process, please wait a time (about {$waitTime}s)", 'light_green');
         fwrite($pipe, $pipeMsg);
+        fclose($pipe);
+        sleep($waitTime);
+        status($cliParams);
+        exit(0);
     } else {
+        fclose($pipe);
         write_info("【Warning】 Please use: remove --name=xxxxx");
         exit(0);
     }
-    fclose($pipe);
-    sleep($wait_time);
-    status($cli_params);
-    exit(0);
 }
 
 /**
@@ -510,12 +552,12 @@ function getCtlLogFile()
 }
 
 /**
- * @param $cli_params
+ * @param $cliParams
  */
-function setCliParamsEnv($cli_params)
+function setCliParamsEnv($cliParams)
 {
-    $paramKeys = array_keys($cli_params);
-    foreach ($cli_params as $param => $value) {
+    $paramKeys = array_keys($cliParams);
+    foreach ($cliParams as $param => $value) {
         putenv("{$param}={$value}");
     }
     putenv('WORKERFY_CLI_PARAMS=' . json_encode($paramKeys));

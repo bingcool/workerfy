@@ -12,6 +12,8 @@
 namespace Workerfy;
 
 use Workerfy\Dto\MessageDto;
+use Workerfy\Dto\PipeMsgDto;
+use Workerfy\Exception\CommandException;
 use Workerfy\Traits;
 use Workerfy\Log\LogManager;
 use Workerfy\Memory\TableManager;
@@ -1026,7 +1028,7 @@ class ProcessManager
                     $processType = AbstractProcess::PROCESS_DYNAMIC_TYPE_NAME;
                 }
                 if (\Swoole\Process::kill($pid, 0)) {
-                    // loop report should be handle(exit) some deal process
+                    // loop report should be handed (exit) some deal process
                     $this->rebootOrExitHandle();
                     $processStatus = 'running';
                     $childrenStatus[$processName][$workerId] = [
@@ -1191,11 +1193,11 @@ class ProcessManager
     public function writeByProcessName(string $process_name, $data, int $process_worker_id = 0)
     {
         if ($this->isMaster($process_name)) {
-            throw new RuntimeException("Master process can not write msg to master process self");
+            throw new CommandException("Master process can not write msg to master process self");
         }
 
         if (!$this->isRunning()) {
-            throw new RuntimeException("Master process is not start, you can not use writeByProcessName(), please checkout it");
+            throw new CommandException("Master process is not start, you can not use writeByProcessName(), please checkout it");
         }
 
         $processWorkers = [];
@@ -1227,7 +1229,13 @@ class ProcessManager
      * @return bool
      * @throws \Exception
      */
-    public function writeByMasterProxy($data, string $from_process_name, int $from_process_worker_id, string $to_process_name, int $to_process_worker_id)
+    public function writeByMasterProxy(
+        $data,
+        string $from_process_name,
+        int $from_process_worker_id,
+        string $to_process_name,
+        int $to_process_worker_id
+    )
     {
         if ($this->isMaster($to_process_name)) {
             return false;
@@ -1352,45 +1360,45 @@ class ProcessManager
         is_resource($this->cliPipeFd) && stream_set_blocking($this->cliPipeFd, false);
         \Swoole\Event::add($this->cliPipeFd, function () {
             try {
-                $targetMsg = fread($this->cliPipeFd, 8192);
-                $actionHandleFlag = false;
-                if (($pipeMsgArr = json_decode($targetMsg, true)) !== null) {
-                    if (is_array($pipeMsgArr) && count($pipeMsgArr) == 3) {
-                        list($action, $processName, $num) = $pipeMsgArr;
-                        switch ($action) {
-                            case CLI_ADD :
-                                !isset($num) && $num = 1;
-                                $actionHandleFlag = true;
-                                $this->addProcessByCli($processName, $num);
-                                break;
-                            case CLI_REMOVE :
-                                $actionHandleFlag = true;
-                                $this->removeProcessByCli($processName, $num);
-                                break;
-                            case CLI_STATUS :
-                                $actionHandleFlag = true;
-                                $this->masterStatusToCliFifoPipe($processName);
-                                break;
-                            case CLI_STOP:
-                                $actionHandleFlag = true;
-                                foreach ($this->processWorkers as $processes) {
-                                    ksort($processes);
-                                    /**
-                                     * @var AbstractProcess $process
-                                     */
-                                    foreach ($processes as $process) {
-                                        $processName = $process->getProcessName();
-                                        $workerId = $process->getProcessWorkerId();
-                                        $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $workerId);
-                                    }
+                $pipeMsg = fread($this->cliPipeFd, 8192);
+                $pipeMsgDto = unserialize($pipeMsg);
+                if ($pipeMsgDto instanceof PipeMsgDto) {
+                    switch ($pipeMsgDto->action) {
+                        case CLI_ADD :
+                            !isset($num) && $num = ($pipeMsgDto->message ?? 1);
+                            $this->addProcessByCli($pipeMsgDto->targetHandler, $num);
+                            break;
+                        case CLI_REMOVE :
+                            !isset($num) && $num = ($pipeMsgDto->message ?? 1);
+                            $this->removeProcessByCli($pipeMsgDto->targetHandler, $num);
+                            break;
+                        case CLI_STATUS :
+                            $this->masterStatusToCliFifoPipe($pipeMsgDto->targetHandler);
+                            break;
+                        case CLI_STOP :
+                            foreach ($this->processWorkers as $processes) {
+                                ksort($processes);
+                                /**
+                                 * @var AbstractProcess $process
+                                 */
+                                foreach ($processes as $process) {
+                                    $processName = $process->getProcessName();
+                                    $workerId = $process->getProcessWorkerId();
+                                    $this->writeByProcessName($processName, AbstractProcess::WORKERFY_PROCESS_EXIT_FLAG, $workerId);
                                 }
-                                break;
-                        }
+                            }
+                            break;
+                        case CLI_PIPE :
+                            if ($this->onCliMsg instanceof \Closure) {
+                                $this->onCliMsg->call($this, $pipeMsgDto);
+                            }
+                            break;
+
+                        default:
+                            break;
                     }
                 }
-                if ($actionHandleFlag === false && $this->onCliMsg instanceof \Closure) {
-                    $this->onCliMsg->call($this, $targetMsg);
-                }
+
             } catch (\Throwable $throwable) {
                 $this->onHandleException->call($this, $throwable);
             }

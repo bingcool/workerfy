@@ -16,9 +16,7 @@ class Helper
     public static function parseActionParams($instance, string $action, array $params)
     {
         $method = new \ReflectionMethod($instance, $action);
-        $args = [];
-        $missing = [];
-        $actionParams = [];
+        $args = $missing = $actionParams = [];
         foreach ($method->getParameters() as $param) {
             $name = $param->getName();
             if (array_key_exists($name, $params)) {
