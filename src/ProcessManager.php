@@ -19,7 +19,6 @@ use Workerfy\Memory\SysvmsgManager;
 use Workerfy\Exception\RuntimeException;
 use Workerfy\Exception\BroadcastException;
 use Workerfy\Exception\DynamicException;
-use Workerfy\Exception\UserTriggerException;
 
 /**
  * Class ProcessManager
@@ -1553,7 +1552,7 @@ class ProcessManager
      */
     private function getSwooleTableInfo(bool $simple = true)
     {
-        $swooleTableInfo = "Disable swoole table(没启用)";
+        $swooleTableInfo = "Disable swoole table (unenabled)";
         if (defined('ENABLE_WORKERFY_SWOOLE_TABLE') && ENABLE_WORKERFY_SWOOLE_TABLE == 1) {
             $tableManager = TableManager::getInstance();
             if ($simple) {
@@ -1567,7 +1566,7 @@ class ProcessManager
                 if (!empty($allTableInfo)) {
                     $swooleTableInfo = $allTableInfo;
                 } else {
-                    $swooleTableInfo = "swoole table(已启用), but missing table_name";
+                    $swooleTableInfo = "swoole table (enabled), but missing table_name";
                 }
             }
 
@@ -1581,7 +1580,7 @@ class ProcessManager
      */
     private function getSysvmsgInfo()
     {
-        $msgSysvmsgInfo = 'Disable sysvmsg(没启用)';
+        $msgSysvmsgInfo = 'Disable sysvmsg (unenable)';
         $sysvmsgManager = SysvmsgManager::getInstance();
         if (defined('ENABLE_WORKERFY_SYSVMSG_MSG') && ENABLE_WORKERFY_SYSVMSG_MSG == 1) {
             $msgQueueInfo = $sysvmsgManager->getAllMsgQueueWaitToPopNum();
