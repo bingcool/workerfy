@@ -150,20 +150,20 @@ function stop($cliParams)
     }
 
     if (\Swoole\Process::kill($masterPid, 0)) {
+        $pipeMsgDto = new PipeMsgDto();
+        $pipeMsgDto->action = CLI_STOP;
+        $pipeMsg = serialize($pipeMsgDto);
+
+        $pipeFile = getCliPipeFile();
+        $pipe = @fopen($pipeFile, 'w+');
+        if (flock($pipe, LOCK_EX)) {
+            fwrite($pipe, $pipeMsg);
+            flock($pipe, LOCK_UN);
+        }
+        fclose($pipe);
+        sleep(3);
+
         if (getenv('force')) {
-
-            $pipeMsgDto = new PipeMsgDto();
-            $pipeMsgDto->action = CLI_STOP;
-            $pipeMsg = serialize($pipeMsgDto);
-
-            $pipeFile = getCliPipeFile();
-            $pipe = @fopen($pipeFile, 'w+');
-            if (flock($pipe, LOCK_EX)) {
-                fwrite($pipe, $pipeMsg);
-                flock($pipe, LOCK_UN);
-            }
-            fclose($pipe);
-            sleep(2);
             $result = @\Swoole\Process::kill($masterPid, SIGKILL);
         } else {
             $result = \Swoole\Process::kill($masterPid, SIGTERM);
@@ -595,8 +595,9 @@ function write_info($msg, $foreground = "red", $background = 'black')
             unlink(CTL_LOG_FILE);
         }
         $logFd = fopen(CTL_LOG_FILE, 'a+');
-        $date = date("Y-m-d H:i:s");
-        $writeMsg = "【{$date}】" . $msg . "\n\n";
+        $date  = date("Y-m-d H:i:s");
+        $pid   = getmypid();
+        $writeMsg = "【{$date}】【PID={$pid}】" . $msg . "\n";
         fwrite($logFd, $writeMsg);
         fclose($logFd);
     }

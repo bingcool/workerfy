@@ -13,10 +13,17 @@ class Worker extends \Workerfy\AbstractProcess {
     }
 
     public function run() {
+        $workerId = $this->getProcessWorkerId();
+        var_dump("worker-start-{$workerId}-".date('Y-m-d H:i:s'));
         while (1)
         {
-            var_dump('hello-'.rand(1,10000));
-            sleep(10);
+            if(!$this->isDue()) {
+                continue;
+            }
+
+            $workerId = $this->getProcessWorkerId();
+            var_dump("hello-".rand(1,10000));
+            sleep(1);
         }
     }
 

@@ -14,6 +14,10 @@ class Worker extends \Workerfy\AbstractProcess {
         // 向父进程发送消息
         var_dump($process_name."子进程开始向父进程发信息.....");
         while (true) {
+            if($this->isExiting() || $this->isForceExit() || $this->isRebooting()) {
+                sleep(1);
+                continue;
+            }
             // 发送数组，那么master进程在onPipe中收到会是数组，发送的是字符串，那么收到的将是字符串
             $data = [
                 'msg' =>'您好，父进程，我是子进程：'.$this->getProcessName().'@'.$this->getProcessWorkerId()

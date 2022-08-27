@@ -168,6 +168,8 @@ class CommandRunner
     }
 
     /**
+     * 支持外部程序,支持回调处理
+     *
      * @param callable $callable
      * @param string $execBinFile
      * @param array $args
@@ -252,7 +254,7 @@ class CommandRunner
                     if (($startTime + 60) > time()) {
                         $itemList[] = $item;
                     } else {
-                        // exec more then  60s will be recorded into log
+                        // exec more then 60s will be recorded into log
                         $command = $item['command'] ?? '';
                         $logger = LogManager::getInstance()->getLogger(LogManager::RUNTIME_ERROR_TYPE);
                         if (is_object($logger)) {

@@ -333,7 +333,7 @@ abstract class AbstractProcess
                                                 $this->reboot();
                                             } else {
                                                 // from cli ctl, dynamic process can not reload. only exit
-                                                $this->exit(true);
+                                                $this->exit(true, 10);
                                             }
                                         });
                                         break;
@@ -341,9 +341,9 @@ abstract class AbstractProcess
                                         $actionHandleFlag = true;
                                         \Swoole\Coroutine::create(function () use ($fromProcessName) {
                                             if ($fromProcessName == ProcessManager::MASTER_WORKER_NAME) {
-                                                $this->exit(true);
+                                                $this->exit(true,10);
                                             } else {
-                                                $this->exit();
+                                                $this->exit(false, 30);
                                             }
                                         });
                                         break;
@@ -409,7 +409,7 @@ abstract class AbstractProcess
                     $masterPid       = $this->getMasterPid();
                     $this->masterLiveTimerId = null;
                     write_info("【Warning】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
-                    $this->exit(true, 1);
+                    $this->exit(true, 5);
                 }
 
                 if ($this->isMasterLive() && $this->getProcessWorkerId() == 0 && $this->masterPid) {
@@ -419,7 +419,7 @@ abstract class AbstractProcess
 
             if (PHP_OS != 'Darwin') {
                 $processTypeName = $this->getProcessTypeName();
-                $this->swooleProcess->name("php-process-worker[{$processTypeName}]:" . $this->getProcessName() . '@' . $this->getProcessWorkerId());
+                $this->swooleProcess->name("php-process-worker[{$processTypeName}-{$this->masterPid}]:" . $this->getProcessName() . '@' . $this->getProcessWorkerId());
             }
 
             $this->writeStartFormatInfo();
@@ -469,6 +469,7 @@ abstract class AbstractProcess
                 Event::del($this->swooleProcess->pipe);
                 Event::exit();
                 $this->swooleProcess->exit($signo);
+                $this->isExit = false;
             }
         };
     }
@@ -496,6 +497,7 @@ abstract class AbstractProcess
                 Event::del($this->swooleProcess->pipe);
                 Event::exit();
                 $this->swooleProcess->exit(SIGUSR1);
+                $this->isReboot = false;
             }
         };
     }
@@ -873,6 +875,31 @@ abstract class AbstractProcess
     }
 
     /**
+     * isForceExit
+     *
+     * @return bool
+     */
+    public function isForceExit()
+    {
+        return $this->isForceExit;
+    }
+
+    /**
+     * loop consumer
+     *
+     * @return bool
+     */
+    public function isDue()
+    {
+        if($this->isRebooting() || $this->isForceExit() || $this->isExiting()) {
+            sleep(1);
+            write_info("【INFO】Process Wait to Exit or Reboot");
+            return false;
+        }
+        return true;
+    }
+
+    /**
      *
      * @return bool
      */
@@ -1068,20 +1095,22 @@ abstract class AbstractProcess
             }
         }
 
-        // reboot or exit status
-        if ($this->isForceExit || $this->isReboot || $this->isExit) {
+        // rebooting or exiting or force exiting status
+        if (!$this->isDue()) {
             return false;
         }
 
         if ($wait_time > 0) {
-            $this->waitTime = $wait_time;
+            $waitTime = $wait_time;
+        }else {
+            $waitTime = $this->getWaitTime();
         }
 
         $pid = $this->getPid();
         if (Process::kill($pid, 0)) {
             $this->isReboot = true;
             $channel = new Channel(1);
-            $timerId = \Swoole\Timer::after($this->waitTime * 1000, function () use ($pid) {
+            $timerId = \Swoole\Timer::after($waitTime * 1000, function () use ($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycleTimes);
                     $this->onShutDown();
@@ -1110,8 +1139,8 @@ abstract class AbstractProcess
      */
     public function exit(bool $is_force = false, ?float $wait_time = 0)
     {
-        // reboot or exit status
-        if ($this->isForceExit || $this->isReboot || $this->isExit) {
+        // rebooting or exiting or force exiting status
+        if (!$this->isDue()) {
             return false;
         }
 
@@ -1121,14 +1150,17 @@ abstract class AbstractProcess
             if ($is_force) {
                 $this->isForceExit = true;
             }
+
             $this->clearRebootTimer();
 
             if($wait_time > 0) {
-                $this->waitTime = $wait_time;
+                $waitTime = $wait_time;
+            }else {
+                $waitTime = $this->waitTime;
             }
 
             $channel = new Channel(1);
-            $this->exitTimerId = \Swoole\Timer::after($this->waitTime * 1000, function () use ($pid) {
+            $this->exitTimerId = \Swoole\Timer::after($waitTime * 1000, function () use ($pid) {
                 try {
                     $this->runtimeCoroutineWait($this->cycleTimes);
                     $this->onShutDown();
@@ -1161,11 +1193,8 @@ abstract class AbstractProcess
      */
     protected function registerTickReboot($cron_expression)
     {
-        $waitTime   = 5;
-        $tickSecond = 2;
-
         if (is_numeric($cron_expression)) {
-            $randNum = rand(1, 10);
+            $randNum = rand(30, 60);
             // for Example reboot/600s after 600s reboot this process
             if ($cron_expression < 120) {
                 $sleepTime = 60;
@@ -1175,21 +1204,26 @@ abstract class AbstractProcess
                 $tickTime  = (60 + $randNum) * 1000;
             }
 
-            \Swoole\Timer::tick($tickTime, function () use ($sleepTime, $waitTime) {
+            \Swoole\Timer::tick($tickTime, function () use ($sleepTime) {
                 if (time() - $this->getStartTime() >= $sleepTime) {
-                    $this->reboot($waitTime);
+                    $this->reboot($this->waitTime);
                 }
             });
         } else {
+            $randSleep   = rand(5, 15);
+            $isWorkerId0 = $this->isWorker0();
             // cron expression of timer to reboot this process
             CrontabManager::getInstance()->addRule(
                 'system-register-tick-reboot',
                 $cron_expression,
-                function () use ($waitTime) {
-                    $this->reboot($waitTime);
+                function () use ($randSleep, $isWorkerId0) {
+                    if(!$isWorkerId0) {
+                        sleep($randSleep);
+                    }
+                    $this->reboot($this->waitTime);
                 },
                 CrontabManager::loopChannelType,
-                $tickSecond * 1000);
+                1000);
         }
 
     }
@@ -1205,16 +1239,6 @@ abstract class AbstractProcess
         if (isset($this->rebootTimerId) && !empty($this->rebootTimerId)) {
             \Swoole\Timer::clear($this->rebootTimerId);
         }
-    }
-
-    /**
-     * isForceExit
-     *
-     * @return bool
-     */
-    public function isForceExit()
-    {
-        return $this->isForceExit;
     }
 
     /**
