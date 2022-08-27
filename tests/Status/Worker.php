@@ -4,7 +4,7 @@ namespace Workerfy\Tests\Status;
 class Worker extends \Workerfy\AbstractProcess {
 
     public $arr = [];
-    public function init()
+    public function init(array $name)
     {
         ini_set('memory_limit','15M');
         var_dump(swoole_get_vm_status());

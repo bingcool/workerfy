@@ -303,7 +303,7 @@ class SysvmsgManager
      * getMsgQueue 获取队列实例
      *
      * @param string $msg_queue_name
-     * @return mixed
+     * @return \SysvMessageQueue|resource
      * @throws \Exception
      */
     public function getMsgQueue(string $msg_queue_name)
@@ -316,8 +316,11 @@ class SysvmsgManager
                 $msg_queue_name
             ));
         }
-
-        return $this->msgQueues[$msgQueueNameKey];
+        /**
+         * @var \SysvMessageQueue|resource $msgQueue
+         */
+        $msgQueue = $this->msgQueues[$msgQueueNameKey];
+        return $msgQueue;
     }
 
     /**
@@ -330,8 +333,8 @@ class SysvmsgManager
      */
     public function getMsgType(string $msg_queue_name, ?string $msg_type_name = null)
     {
-        $msgQueueNameKey = md5($msg_queue_name);
         $msgType = self::COMMON_MSG_TYPE;
+        $msgQueueNameKey = md5($msg_queue_name);
         if ($msg_type_name) {
             $msgTypeNameKey = md5($msg_type_name);
             if (isset($this->msgTypes[$msgQueueNameKey][$msgTypeNameKey])) {
@@ -401,7 +404,6 @@ class SysvmsgManager
         // remove all
         if (!empty($this->msgQueues)) {
             foreach ($this->msgQueues as $msgQueue) {
-
                 if (is_resource($msgQueue)) {
                     $status = msg_stat_queue($msgQueue);
                     if ($status['msg_qnum'] == 0) {

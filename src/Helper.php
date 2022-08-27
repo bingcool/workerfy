@@ -21,7 +21,7 @@ class Helper
             $name = $param->getName();
             if (array_key_exists($name, $params)) {
                 $isValid = true;
-                if ($param->isArray()) {
+                if ($param->getType()->getName() == 'array') {
                     $params[$name] = (array)$params[$name];
                 } elseif (is_array($params[$name])) {
                     $isValid = false;
