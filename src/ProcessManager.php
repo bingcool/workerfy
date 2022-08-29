@@ -442,12 +442,12 @@ class ProcessManager
     /**
      * 父进程的status通过fifo有名管道信号回传
      *
-     * @param string $ctl_pipe_file
+     * @param string $ctlPipeFile
      * @return void
      */
-    private function masterStatusToCliFifoPipe(string $ctl_pipe_file)
+    private function masterStatusToCliFifoPipe(string $ctlPipeFile)
     {
-        $ctlPipe = fopen($ctl_pipe_file, 'w+');
+        $ctlPipe = fopen($ctlPipeFile, 'w+');
         $masterInfo = $this->statusInfoFormat(
             $this->getMasterWorkerName(),
             $this->getMasterWorkerId(),

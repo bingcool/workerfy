@@ -39,7 +39,7 @@ class Worker extends \Workerfy\AbstractProcess {
             var_dump($setting);
 
             // 通知父进程读，看是否可以读到新值
-            $this->writeToMasterProcess(\Workerfy\ProcessManager::MASTER_WORKER_NAME,['hello']);
+            $this->writeToMasterProcess(['hello']);
 
 //            foreach($table as $key=>$value) {
 //                var_dump($value);

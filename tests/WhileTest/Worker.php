@@ -12,6 +12,11 @@ class Worker extends \Workerfy\AbstractProcess {
 
     public function run() {
         while (1) {
+
+            if(!$this->isDue()) {
+                continue;
+            }
+
             // 在while中捕捉异常一定要try catch 不能抛出异常，否则就会停止继续循环，直接处理$this->onHandleException($exception);
             try {
                 if($this->isRebooting() == true) {

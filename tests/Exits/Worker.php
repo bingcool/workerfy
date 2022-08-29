@@ -7,6 +7,11 @@ class Worker extends \Workerfy\AbstractProcess {
         var_dump(\Swoole\Coroutine::getOptions());
         // 模拟处理业务
         while (true) {
+
+            if(!$this->isDue()) {
+                continue;
+            }
+
             try {
                 var_dump("2s后子进程开始自动退出");
                 sleep(2);

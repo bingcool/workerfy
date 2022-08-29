@@ -115,6 +115,16 @@ abstract class AbstractProcess
     /**
      * @var int
      */
+    private $readyRebootTime;
+
+    /**
+     * @var int
+     */
+    private $readyExitTime;
+
+    /**
+     * @var int
+     */
     private $rebootTimerId;
 
     /**
@@ -361,10 +371,7 @@ abstract class AbstractProcess
                                                 'status' => $systemStatus ?? []
                                             ]
                                         ];
-                                        $this->writeToMasterProcess(
-                                            ProcessManager::MASTER_WORKER_NAME,
-                                            $data
-                                        );
+                                        $this->writeToMasterProcess($data);
                                         break;
                                 }
 
@@ -415,6 +422,12 @@ abstract class AbstractProcess
                 if ($this->isMasterLive() && $this->getProcessWorkerId() == 0 && $this->masterPid) {
                     $this->saveMasterId($this->masterPid);
                 }
+
+                // strict reboot exit process
+                if(!empty($this->readyRebootTime) && $this->isRebooting() && time() - $this->readyRebootTime > 60) {
+                    \Swoole\Timer::clear($timer_id);
+                    $this->exit(true, 1);
+                }
             });
 
             if (PHP_OS != 'Darwin') {
@@ -424,25 +437,21 @@ abstract class AbstractProcess
 
             $this->writeStartFormatInfo();
 
-            try {
-                $targetAction = 'init';
-                if (method_exists(static::class, $targetAction)) {
-                    // init method will accept cli params from cli,as --sleep=5 --name=bing
-                    list($method, $args) = Helper::parseActionParams($this, $targetAction, Helper::getCliParams());
-                    $this->cliInitParams = $args;
-                    $this->{$targetAction}(...$args);
-                }
-
-                // reboot after handle can do send or record msg log or report msg
-                $method = self::WORKERFY_ON_EVENT_REBOOT;
-                if ($this->getRebootCount() > 0 && method_exists(static::class, $method)) {
-                    $this->$method();
-                }
-
-                $this->run();
-            } catch (\Throwable $throwable) {
-                $this->onHandleException($throwable);
+            $targetAction = 'init';
+            if (method_exists(static::class, $targetAction)) {
+                // init method will accept cli params from cli,as --sleep=5 --name=bing
+                list($method, $args) = Helper::parseActionParams($this, $targetAction, Helper::getCliParams());
+                $this->cliInitParams = $args;
+                $this->{$targetAction}(...$args);
             }
+
+            // reboot after handle can do send or record msg log or report msg
+            $method = self::WORKERFY_ON_EVENT_REBOOT;
+            if ($this->getRebootCount() > 0 && method_exists(static::class, $method)) {
+                $this->$method();
+            }
+
+            $this->run();
 
         } catch (\Throwable $throwable) {
             $this->onHandleException($throwable);
@@ -621,22 +630,19 @@ abstract class AbstractProcess
 
     /**
      * writeToMasterProcess direct semd message to other process
-     * @param string $process_name
      * @param mixed $data
-     * @param int $process_worker_id
      * @return bool
      * @throws Exception
      */
-    public function writeToMasterProcess(string $process_name = ProcessManager::MASTER_WORKER_NAME, $data = '', int $process_worker_id = 0)
+    public function writeToMasterProcess($data)
     {
         if (empty($data)) {
             return false;
         }
-        if ($process_name != ProcessManager::MASTER_WORKER_NAME) {
-            $process_name = ProcessManager::MASTER_WORKER_NAME;
-        }
+        $processName = ProcessManager::MASTER_WORKER_NAME;
         $isUseMasterProxy = false;
-        return $this->writeByProcessName($process_name, $data, $process_worker_id, $isUseMasterProxy);
+        $processWorkerId  = 0;
+        return $this->writeByProcessName($processName, $data, $processWorkerId, $isUseMasterProxy);
     }
 
     /**
@@ -676,7 +682,7 @@ abstract class AbstractProcess
                     'dynamic_process_num' => $dynamic_process_num
                 ]
         ];
-        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+        $this->writeToMasterProcess($data);
         $method = self::WORKERFY_ON_EVENT_CREATE_DYNAMIC_PROCESS;
         if(method_exists(static::class, $method)) {
             $this->$method($dynamic_process_name, $dynamic_process_num);
@@ -703,7 +709,7 @@ abstract class AbstractProcess
                         'dynamic_process_num' => $dynamic_process_num
                     ]
             ];
-            $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+            $this->writeToMasterProcess($data);
             try {
                 // 发出销毁指令后，需要在一定时间内避免继续调用动态创建和动态销毁通知这两个函数，因为进程销毁时存在wait_time
                 $this->isDynamicDestroy(true);
@@ -758,7 +764,7 @@ abstract class AbstractProcess
                 ]
         ];
 
-        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
+        $this->writeToMasterProcess($data);
     }
 
     /**
@@ -1128,9 +1134,10 @@ abstract class AbstractProcess
 
         $pid = $this->getPid();
         if (Process::kill($pid, 0)) {
-            $this->isReboot = true;
 
             $this->notifyMasterRebootNewProcess($this->getProcessName());
+            $this->isReboot = true;
+            $this->readyRebootTime = time() + $waitTime;
 
             $channel = new Channel(1);
             $timerId = \Swoole\Timer::after($waitTime * 1000, function () use ($pid) {
@@ -1167,6 +1174,12 @@ abstract class AbstractProcess
             return false;
         }
 
+        if($wait_time > 0) {
+            $waitTime = $wait_time;
+        }else {
+            $waitTime = $this->waitTime;
+        }
+
         $pid = $this->getPid();
         if (Process::kill($pid, 0)) {
             $this->isExit = true;
@@ -1176,11 +1189,7 @@ abstract class AbstractProcess
 
             $this->clearRebootTimer();
 
-            if($wait_time > 0) {
-                $waitTime = $wait_time;
-            }else {
-                $waitTime = $this->waitTime;
-            }
+            $this->readyExitTime = time() + $wait_time;
 
             $channel = new Channel(1);
             $this->exitTimerId = \Swoole\Timer::after($waitTime * 1000, function () use ($pid) {
@@ -1258,7 +1267,11 @@ abstract class AbstractProcess
      */
     public function clearRebootTimer()
     {
-        if ($this->isReboot) $this->isReboot = false;
+        if ($this->isReboot) {
+            $this->isReboot = false;
+            $this->readyRebootTime = null;
+        }
+
         if (isset($this->rebootTimerId) && !empty($this->rebootTimerId)) {
             \Swoole\Timer::clear($this->rebootTimerId);
         }

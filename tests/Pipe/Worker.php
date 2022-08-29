@@ -23,7 +23,6 @@ class Worker extends \Workerfy\AbstractProcess {
                 'msg' =>'您好，父进程，我是子进程：'.$this->getProcessName().'@'.$this->getProcessWorkerId()
             ];
             $this->writeToMasterProcess(
-                \Workerfy\ProcessManager::MASTER_WORKER_NAME,
                 $data
             );
             var_dump("last_cid=".$process_name);

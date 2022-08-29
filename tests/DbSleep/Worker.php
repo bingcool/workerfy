@@ -9,6 +9,11 @@ class Worker extends \Workerfy\AbstractProcess {
         //var_dump("子进程 开始 reboot start");
         if($this->getProcessWorkerId() == 0) {
             while (1) {
+
+                if(!$this->isDue()) {
+                    continue;
+                }
+
                 $db = \Workerfy\Tests\Make::makeMysql();
                 $res = $db->query("select sleep(8)");
                 var_dump($res);
@@ -18,6 +23,9 @@ class Worker extends \Workerfy\AbstractProcess {
 
         if($this->getProcessWorkerId() == 1) {
             while (1) {
+                if(!$this->isDue()) {
+                    continue;
+                }
                 $db = \Workerfy\Tests\Make::makeMysql();
                 $res = $db->query("select sleep(3)");
                 //var_dump($res);

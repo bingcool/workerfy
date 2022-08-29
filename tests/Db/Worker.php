@@ -22,6 +22,11 @@ class Worker extends \Workerfy\AbstractProcess {
             {
                 try
                 {
+
+                    if(!$this->isDue()) {
+                        continue;
+                    }
+
                     // 限制消费速度，特别是在请求第三方数据的时候
                     if($this->getCurrentRunCoroutineNum() > 10)
                     {

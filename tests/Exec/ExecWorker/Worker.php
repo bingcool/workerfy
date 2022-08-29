@@ -12,6 +12,10 @@ class Worker extends \Workerfy\AbstractProcess {
 
         while (1)
         {
+            if(!$this->isDue()) {
+                continue;
+            }
+
             $runner = CommandRunner::getInstance('exec-test',3);
             try {
                 if($runner->isNextHandle())
