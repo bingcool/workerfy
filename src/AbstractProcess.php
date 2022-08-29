@@ -387,13 +387,13 @@ abstract class AbstractProcess
                 });
             }
 
-            // exit
+            // exit signo
             Process::signal(SIGTERM, function ($signo) {
                 $function = $this->exitSingleHandle($signo);
                 $function();
             });
 
-            // reboot
+            // reboot signo
             Process::signal(SIGUSR1, function ($signo) {
                 $function = $this->rebootSingleHandle();
                 $function();
@@ -419,7 +419,7 @@ abstract class AbstractProcess
 
             if (PHP_OS != 'Darwin') {
                 $processTypeName = $this->getProcessTypeName();
-                $this->swooleProcess->name("php-process-worker[{$processTypeName}-{$this->masterPid}]:" . $this->getProcessName() . '@' . $this->getProcessWorkerId());
+                $this->swooleProcess->name("php-process-worker[{$processTypeName}-{$this->getPid()}]:" . $this->getProcessName() . '@' . $this->getProcessWorkerId());
             }
 
             $this->writeStartFormatInfo();
@@ -739,6 +739,26 @@ abstract class AbstractProcess
             }
 
         }
+    }
+
+    /**
+     * 通知maser进程重新拉起一个新进程
+     *
+     * @param string $processName
+     * @return void
+     */
+    private function notifyMasterRebootNewProcess(string $processName)
+    {
+        $data = [
+            'action' => ProcessManager::REBOOT_PROCESS_WORKER,
+            'process_name' => $processName,
+            'data' =>
+                [
+                    'worker_pid' => $this->getPid()
+                ]
+        ];
+
+        $this->writeToMasterProcess(ProcessManager::MASTER_WORKER_NAME, $data);
     }
 
     /**
@@ -1109,6 +1129,9 @@ abstract class AbstractProcess
         $pid = $this->getPid();
         if (Process::kill($pid, 0)) {
             $this->isReboot = true;
+
+            $this->notifyMasterRebootNewProcess($this->getProcessName());
+
             $channel = new Channel(1);
             $timerId = \Swoole\Timer::after($waitTime * 1000, function () use ($pid) {
                 try {

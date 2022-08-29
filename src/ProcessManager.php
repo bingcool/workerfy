@@ -189,6 +189,10 @@ class ProcessManager
      */
     const DESTROY_DYNAMIC_PROCESS_WORKER = 'destroy_dynamic_process_worker';
 
+    /**
+     * @var string
+     */
+    const REBOOT_PROCESS_WORKER = 'reboot_process_worker';
 
     /**
      * ProcessManager constructor
@@ -605,57 +609,63 @@ class ProcessManager
                             \Swoole\Event::del($process->getSwooleProcess()->pipe);
                             $this->checkMasterToExit();
                         break;
-                    // reboot
-                    case SIGUSR1  :
-                    default  :
-                        if (!(\Swoole\Process::kill($pid, 0))) {
-                            $process            = $this->getProcessByPid($pid);
-                            $processName        = $process->getProcessName();
-                            $processType        = $process->getProcessType();
-                            $processWorkerId    = $process->getProcessWorkerId();
-                            $processRebootCount = $process->getRebootCount() + 1;
-                            $key                = md5($processName);
-                            $list               = $this->processLists[$key];
-                            \Swoole\Event::del($process->getSwooleProcess()->pipe);
-                            unset($this->processWorkers[$key][$processWorkerId]);
-                            if (is_array($list)) {
-                                try {
-                                    $processName     = $list['process_name'];
-                                    $processClass    = $list['process_class'];
-                                    $async           = $list['async'] ?? true;
-                                    $args            = $list['args'] ?? [];
-                                    $extendData      = $list['extend_data'] ?? null;
-                                    $enableCoroutine = $list['enable_coroutine'] ?? false;
-                                    /** @var AbstractProcess $newProcess */
-                                    $newProcess = new $processClass(
-                                        $processName,
-                                        $async,
-                                        $args,
-                                        $extendData,
-                                        $enableCoroutine
-                                    );
-                                    $newProcess->setProcessWorkerId($processWorkerId);
-                                    $newProcess->setMasterPid($this->masterPid);
-                                    $newProcess->setProcessType($processType);
-                                    $newProcess->setRebootCount($processRebootCount);
-                                    $newProcess->setStartTime();
-                                    $this->processWorkers[$key][$processWorkerId] = $newProcess;
-                                    $newProcess->start();
-                                    $this->swooleEventAdd($newProcess);
-                                } catch (\Throwable $throwable) {
-                                    if (isset($this->processWorkers[$key][$processWorkerId])) {
-                                        unset($this->processWorkers[$key][$processWorkerId]);
-                                    }
-                                    $this->onHandleException->call($this, $throwable);
-                                }
 
-                            }
-                        }
+                    case SIGUSR1  :
+                            // do not something
+                        break;
+                    default :
+                            $this->rebootWorker($pid);
                         break;
                 }
             } catch (\Throwable $throwable) {
                 $this->onHandleException->call($this, $throwable);
             }
+        }
+    }
+
+    /**
+     * @param int $pid
+     * @return void
+     */
+    private function rebootWorker(int $pid)
+    {
+        $process            = $this->getProcessByPid($pid);
+        $processName        = $process->getProcessName();
+        $processType        = $process->getProcessType();
+        $processWorkerId    = $process->getProcessWorkerId();
+        $processRebootCount = $process->getRebootCount() + 1;
+        $key                = md5($processName);
+        $list               = $this->processLists[$key];
+        \Swoole\Event::del($process->getSwooleProcess()->pipe);
+        unset($this->processWorkers[$key][$processWorkerId]);
+        try {
+            $processName     = $list['process_name'];
+            $processClass    = $list['process_class'];
+            $async           = $list['async'] ?? true;
+            $args            = $list['args'] ?? [];
+            $extendData      = $list['extend_data'] ?? null;
+            $enableCoroutine = $list['enable_coroutine'] ?? false;
+            /** @var AbstractProcess $newProcess */
+            $newProcess = new $processClass(
+                $processName,
+                $async,
+                $args,
+                $extendData,
+                $enableCoroutine
+            );
+            $newProcess->setProcessWorkerId($processWorkerId);
+            $newProcess->setMasterPid($this->masterPid);
+            $newProcess->setProcessType($processType);
+            $newProcess->setRebootCount($processRebootCount);
+            $newProcess->setStartTime();
+            $this->processWorkers[$key][$processWorkerId] = $newProcess;
+            $newProcess->start();
+            $this->swooleEventAdd($newProcess);
+        } catch (\Throwable $throwable) {
+            if (isset($this->processWorkers[$key][$processWorkerId])) {
+                unset($this->processWorkers[$key][$processWorkerId]);
+            }
+            $this->onHandleException->call($this, $throwable);
         }
     }
 
@@ -724,6 +734,10 @@ class ProcessManager
                                             } else {
                                                 $this->destroyDynamicProcess($dynamicProcessName);
                                             }
+                                            break;
+                                        case ProcessManager::REBOOT_PROCESS_WORKER:
+                                                $pid = $data['worker_pid'];
+                                                $this->rebootWorker($pid);
                                             break;
                                         case AbstractProcess::WORKERFY_PROCESS_STATUS_FLAG:
                                             $actionHandleFlag       = true;
