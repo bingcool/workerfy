@@ -408,25 +408,43 @@ abstract class AbstractProcess
 
             $this->initSystemCoroutineNum = $this->getCurrentRunCoroutineNum();
 
-            $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timer_id) {
-                if (!$this->isMasterLive()) {
-                    \Swoole\Timer::clear($timer_id);
-                    $processName     = $this->getProcessName();
-                    $workerId        = $this->getProcessWorkerId();
-                    $masterPid       = $this->getMasterPid();
-                    $this->masterLiveTimerId = null;
-                    write_info("【Warning】check master_pid={$masterPid} not exist，children process={$processName},worker_id={$workerId} start to exit");
-                    $this->exit(true, 5);
-                }
+            $this->masterLiveTimerId = \Swoole\Timer::tick(($this->args['check_master_live_tick_time'] + rand(1, 5)) * 1000, function ($timerId) {
+                try {
+                    $exitFunction = function ($timerId, $masterPid) {
+                        \Swoole\Timer::clear($timerId);
+                        $processName     = $this->getProcessName();
+                        $workerId        = $this->getProcessWorkerId();
+                        $this->masterLiveTimerId = null;
+                        write_info("【Warning】Check Parent Master Pid={$masterPid}，children process={$processName},worker_id={$workerId} start to exit");
+                        $this->exit(true, 5);
+                    };
 
-                if ($this->isMasterLive() && $this->getProcessWorkerId() == 0 && $this->masterPid) {
-                    $this->saveMasterId($this->masterPid);
-                }
+                    if (!$this->isMasterLive()) {
+                        sleep(2);
+                        if(!$this->isMasterLive()) {
+                            $masterPid  = $this->getMasterPid();
+                            $exitFunction($timerId, $masterPid);
+                        }
+                    }else {
+                        $parentPid = posix_getppid();
+                        if($parentPid == 1) {
+                            $masterPid = '1(system init)';
+                            $exitFunction($timerId, $masterPid);
+                        }
+                    }
 
-                // strict reboot exit process
-                if(!empty($this->readyRebootTime) && $this->isRebooting() && time() - $this->readyRebootTime > 60) {
-                    \Swoole\Timer::clear($timer_id);
-                    $this->exit(true, 1);
+                    if ($this->isMasterLive() && $this->getProcessWorkerId() == 0 && $this->masterPid) {
+                        $this->saveMasterId($this->masterPid);
+                    }
+
+                    // strict reboot exit process
+                    if(!empty($this->readyRebootTime) && $this->isRebooting() && time() - $this->readyRebootTime > 60) {
+                        \Swoole\Timer::clear($timerId);
+                        $this->exit(true, 1);
+                    }
+
+                }catch (\Throwable $throwable) {
+                    write_info("【Error】Check Master Error Msg={$throwable->getMessage()},trace={$throwable->getTraceAsString()}");
                 }
             });
 
