@@ -11,14 +11,13 @@ class WorkerProc extends \Workerfy\AbstractProcess {
 
         while (true)
         {
-
             if(!$this->isDue()) {
                 continue;
             }
 
             // 设置$concurrent =1 就相当于阻塞模式了，轮训一个一个消费
-            $runner = CommandRunner::getInstance('procOpen-test',1);
-            try{
+            $runner = CommandRunner::getInstance('procOpen-test',2);
+            try {
                 if($runner->isNextHandle())
                 {
                     //var_dump('procOpen next');
@@ -32,7 +31,7 @@ class WorkerProc extends \Workerfy\AbstractProcess {
                         '--name=bingcool-'.rand(1,1000)
                     ];
                     // 调用命令程序
-                    $runner->procOpen(function ($pipe0, $pipe1, $pipe2, $status, $returnCode) {
+                    $runner->procOpen(function ($pipe0, $pipe1, $pipe2, $status) {
                         $buffer = fgets($pipe1, 8192);
                         var_dump(json_decode($buffer, true) ?? $buffer);
                         //var_dump('returnCode='.$returnCode);
