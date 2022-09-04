@@ -755,7 +755,7 @@ abstract class AbstractProcess
                 {
                     \Swoole\Coroutine::sleep($dynamicDestroyProcessTime);
                 }
-
+                $this->isDynamicDestroy(false);
             }catch (\Throwable $exception) {
                 throw $exception;
             } finally {
