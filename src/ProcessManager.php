@@ -104,7 +104,7 @@ class ProcessManager
     private $enablePipe = true;
 
     /**
-     * @var
+     * @var resource
      */
     private $cliPipeFd;
 
@@ -1407,7 +1407,6 @@ class ProcessManager
                                 $this->onCliMsg->call($this, $pipeMsgDto);
                             }
                             break;
-
                         default:
                             break;
                     }

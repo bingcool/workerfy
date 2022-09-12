@@ -38,8 +38,8 @@ trait SystemTrait
             }
 
             if (!$isSetFlag) {
-                if (method_exists('Swoole\Timer', 'set')) {
-                    @\Swoole\Timer::set([
+                if (function_exists('swoole_async_set')) {
+                    swoole_async_set([
                         'enable_coroutine' => $enableCoroutine,
                     ]);
                 }

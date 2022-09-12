@@ -288,7 +288,7 @@ abstract class AbstractProcess
                 $this->args['check_master_live_tick_time'] = self::CHECK_MASTER_LIVE_TICK_TIME;
             }
         }
-        $this->swooleProcess = new \Swoole\Process([$this, '__start'], false, 2, $enable_coroutine);
+        $this->swooleProcess = new \Swoole\Process([$this, '__start'], false, SOCK_DGRAM, $enable_coroutine);
     }
 
     /**
